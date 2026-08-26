@@ -1,0 +1,9 @@
+{
+  "name": "rt60",
+  "version": "1.0.0",
+  "description": "RT60 – Badanie akustyki pomieszczeń w przeglądarce",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Static site'"
+  }
+}

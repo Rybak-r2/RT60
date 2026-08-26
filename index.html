@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F1418">
+<title>Badanie akustyki pomieszczenia · ALACER</title>
+<style>
+:root{
+  --ink:#0F1418; --panel:#171D22; --panel2:#1E262C; --line:#2A343D;
+  --text:#E8EBEC; --muted:#8B98A2; --dim:#5F6C76;
+  --signal:#FFB020; --cool:#58C0C8; --bad:#E5544B; --ok:#7FC96B;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:15.5px;line-height:1.5;
+  padding:0 0 40px;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.03) 1px,transparent 1.6px);
+  background-size:14px 14px}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px}
+.steps{display:flex;gap:4px;padding:16px 0 20px}
+.steps i{flex:1;height:2px;background:var(--line);border-radius:1px}
+.steps i.on{background:var(--signal)} .steps i.past{background:#4A5A48}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--signal);margin:0 0 8px}
+h1{font-size:25px;line-height:1.15;margin:0 0 10px;font-weight:650;letter-spacing:-.02em}
+h2{font-size:18px;margin:20px 0 8px;font-weight:600}
+p{margin:0 0 13px} p.note{color:var(--muted);font-size:13.5px}
+ul.rules{list-style:none;margin:0 0 16px;padding:0}
+ul.rules li{position:relative;padding:0 0 0 30px;margin:0 0 13px;font-size:14.5px}
+ul.rules li b{display:block;font-weight:600;margin-bottom:1px}
+ul.rules li span{color:var(--muted);font-size:13.5px}
+ul.rules li::before{content:attr(data-n);position:absolute;left:0;top:1px;font-family:var(--mono);font-size:11px;color:var(--signal);letter-spacing:.06em}
+button{font-family:var(--sans);font-size:16px;font-weight:580;background:var(--signal);color:#101418;
+  border:0;border-radius:2px;padding:14px 22px;cursor:pointer;width:100%;transition:filter .12s}
+button:hover:not(:disabled){filter:brightness(1.09)}
+button:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+button:disabled{background:var(--panel2);color:#4E5A63;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--cool);border:1px solid var(--line);font-weight:480;font-size:14px;padding:11px 16px}
+button.ghost:hover:not(:disabled){background:var(--panel2);filter:none}
+.btnrow{display:flex;gap:9px;margin-top:6px}
+label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);flex:1}
+input,select{font-family:var(--mono);font-size:16px;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:2px;padding:11px 10px;width:100%}
+input:focus,select:focus{outline:1px solid var(--cool);border-color:var(--cool)}
+.dims{display:flex;gap:9px;margin-bottom:13px}
+.opt{display:block;border:1px solid var(--line);border-radius:2px;padding:13px 14px;margin-bottom:9px;cursor:pointer;background:var(--panel)}
+.opt.sel{border-color:var(--signal);background:rgba(255,176,32,.06)}
+.opt b{display:block;font-size:15px;margin-bottom:2px} .opt span{color:var(--muted);font-size:13px}
+.opt input{display:none}
+.gauge{position:relative;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;margin:14px 0 6px;overflow:hidden}
+.gauge .zone{position:absolute;top:0;bottom:0;background:rgba(127,201,107,.16);border-left:1px solid rgba(127,201,107,.5);border-right:1px solid rgba(127,201,107,.5)}
+.gauge .bar{position:absolute;top:0;bottom:0;left:0;background:var(--cool);opacity:.55;transition:width .25s}
+.gauge .bar.good{background:var(--ok)} .gauge .bar.bad{background:var(--bad)}
+.gauge .val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12.5px}
+.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.plan{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:12px;margin-bottom:14px}
+.plan svg{display:block;width:100%;height:auto}
+@keyframes puls{0%,100%{opacity:1}50%{opacity:.35}} .pulse{animation:puls 1.4s ease-in-out infinite}
+.dots{display:flex;gap:8px;margin:0 0 14px}
+.dots div{flex:1;border:1px solid var(--line);border-radius:2px;padding:9px 6px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em}
+.dots div.act{border-color:var(--signal);color:var(--signal)}
+.dots div.ok{border-color:#3C5C3A;background:rgba(127,201,107,.09);color:var(--ok)}
+.dots div.warn{border-color:#6B5424;background:rgba(255,176,32,.09);color:var(--signal)}
+.msg{font-family:var(--mono);font-size:13px;line-height:1.45;padding:11px 13px;border-radius:2px;margin:12px 0 0;border-left:2px solid}
+.msg.err{background:rgba(229,84,75,.09);border-color:var(--bad);color:#F0A9A3}
+.msg.warn{background:rgba(255,176,32,.08);border-color:var(--signal);color:#F2CE93}
+.msg.info{background:rgba(88,192,200,.07);border-color:var(--cool);color:#A9DDE1}
+.msg.good{background:rgba(127,201,107,.08);border-color:var(--ok);color:#B5DFA8}
+.big{text-align:center;padding:18px 0 6px}
+.big .num{font-family:var(--mono);font-size:52px;font-weight:300;letter-spacing:-.03em;line-height:1;color:var(--signal)}
+.big .num small{font-size:20px;color:var(--muted);margin-left:4px}
+.big .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:9px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0}
+.metrics div{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:12px}
+.metrics .m{font-family:var(--mono);font-size:23px;font-weight:300;color:var(--cool)}
+.metrics .l{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.metrics .d{font-size:12px;color:var(--dim);margin-top:5px;line-height:1.35}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+th{text-align:right;font-weight:500;color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:0 0 8px;border-bottom:1px solid var(--line)}
+th:first-child{text-align:left}
+td{text-align:right;padding:8px 0;border-bottom:1px solid rgba(42,52,61,.5)}
+td:first-child{text-align:left;color:var(--muted)}
+tr.weak td,tr.weak td:first-child{color:var(--dim)}
+.q{font-size:10px;letter-spacing:.08em}
+details{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.diag{display:grid;grid-template-columns:1fr auto;gap:3px 14px;font-family:var(--mono);font-size:12.5px;margin-top:12px}
+.diag span:nth-child(odd){color:var(--muted)} .diag span:nth-child(even){text-align:right}
+.g{color:var(--ok)}.r{color:var(--bad)}.y{color:var(--signal)}
+.hide{display:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="steps"><i id="p1" class="on"></i><i id="p2"></i><i id="p3"></i><i id="p4"></i><i id="p5"></i></div>
+
+<div id="v1">
+  <p class="eyebrow">Badanie akustyczne · 4 minuty</p>
+  <h1>Sprawdź, jak brzmi Twoje pomieszczenie</h1>
+  <p class="note">Telefon wygeneruje sygnał testowy i zmierzy, jak długo dźwięk wybrzmiewa.</p>
+  <h2>Zanim zaczniesz</h2>
+  <ul class="rules">
+    <li data-n="01"><b>Zapewnij ciszę</b><span>Wyłącz wentylację i muzykę. Nikt nie powinien rozmawiać ani chodzić w trakcie badania.</span></li>
+    <li data-n="02"><b>Odsuń telefon od źródła dźwięku</b><span>Co najmniej 2 metry od głośnika. Jeśli mierzysz głośnikiem samego telefonu, trzymaj go w wyciągniętej ręce, dolną krawędzią do góry, na wysokości mniej więcej 1,2 m.</span></li>
+    <li data-n="03"><b>Stań co najmniej metr od ścian i mebli</b><span>Aplikacja pokaże, gdzie dokładnie się ustawić.</span></li>
+    <li data-n="04"><b>Powtórzysz pomiar w trzech miejscach</b><span>Jeden punkt to za mało — dźwięk rozkłada się w pomieszczeniu nierównomiernie.</span></li>
+  </ul>
+  <button onclick="go(2)">Dalej</button>
+</div>
+
+<div id="v2" class="hide">
+  <p class="eyebrow">Krok 1 z 4</p>
+  <h1>Twoje pomieszczenie</h1>
+  <p class="note">Wymiary są potrzebne, żeby wskazać miejsca pomiaru i policzyć chłonność wnętrza. Wystarczy przybliżenie.</p>
+  <div class="dims">
+    <label class="fld">Długość [m]<input id="fL" type="number" inputmode="decimal" step="0.1" placeholder="5,8"></label>
+    <label class="fld">Szerokość [m]<input id="fW" type="number" inputmode="decimal" step="0.1" placeholder="4,2"></label>
+    <label class="fld">Wysokość [m]<input id="fH" type="number" inputmode="decimal" step="0.1" placeholder="2,9"></label>
+  </div>
+  <label class="fld" style="margin-bottom:14px">Przeznaczenie
+    <select id="fType">
+      <option value="biuro">Biuro</option><option value="openspace">Open space</option>
+      <option value="konferencja">Sala konferencyjna</option><option value="lekcyjna">Sala lekcyjna</option>
+      <option value="gastro">Restauracja / gastronomia</option><option value="odsluch">Pokój odsłuchowy / studio</option>
+      <option value="salon">Salon / mieszkanie</option><option value="inne">Inne</option>
+    </select></label>
+  <div id="m2"></div><button id="b2">Dalej</button>
+</div>
+
+<div id="v3" class="hide">
+  <p class="eyebrow">Krok 2 z 4</p>
+  <h1>Źródło dźwięku</h1>
+  <div id="srcPick">
+    <label class="opt sel" id="oPhone"><input type="radio" name="src" value="phone" checked>
+      <b>Głośnik telefonu</b><span>Szybciej. Węższy zakres — bez tonów niskich. Telefon musi być w wyciągniętej ręce.</span></label>
+    <label class="opt" id="oExt"><input type="radio" name="src" value="ext">
+      <b>Głośnik zewnętrzny · zalecane</b><span>Dowolny głośnik Bluetooth w rogu pomieszczenia, minimum 2 m od telefonu. Pełny zakres i wiarygodny wynik.</span></label>
+    <div id="extHint" class="msg info hide">Postaw głośnik w rogu, na wysokości około 1 m, zwrócony w głąb wnętrza. Odsuń się od niego na co najmniej 2 metry.</div>
+    <button id="b3a" style="margin-top:14px">Włącz mikrofon</button><div id="m3a"></div>
+  </div>
+  <div id="lvlBox" class="hide">
+    <h2>Ustaw głośność</h2>
+    <p class="note" id="lvlHint"></p>
+    <div class="gauge"><div class="zone" id="gz"></div><div class="bar" id="gb"></div><div class="val" id="gv">—</div></div>
+    <div class="scale"><span>za cicho</span><span>dobrze</span><span>za głośno</span></div>
+    <div id="m3b"></div>
+    <div class="btnrow"><button id="b3b">Sprawdź poziom</button></div>
+    <button id="b3c" class="hide" style="margin-top:9px">Rozpocznij pomiar</button>
+  </div>
+</div>
+
+<div id="v4" class="hide">
+  <p class="eyebrow">Krok 3 z 4</p>
+  <h1 id="mTitle">Punkt 1 z 3</h1>
+  <p class="note" id="mHint">Stań w miejscu oznaczonym na rysunku i naciśnij START. Nie ruszaj się przez kilka sekund.</p>
+  <div class="plan" id="planBox"></div>
+  <div class="dots"><div id="d1" class="act">PUNKT 1</div><div id="d2">PUNKT 2</div><div id="d3">PUNKT 3</div></div>
+  <button id="b4">START</button><div id="m4"></div>
+</div>
+
+<div id="v5" class="hide">
+  <p class="eyebrow">Krok 4 z 4 · wynik</p>
+  <h1>Twoje pomieszczenie</h1>
+  <div id="rFail"></div>
+  <div id="rOk" class="hide">
+    <div class="big"><div class="num" id="rT">—<small>s</small></div><div class="cap">czas pogłosu T<sub>mid</sub></div></div>
+    <div id="rVerdict"></div>
+    <div id="rSpeech"></div>
+    <h2>Pasma</h2><div id="rTbl"></div><div id="rStab"></div>
+  </div>
+  <div class="btnrow" style="margin-top:18px">
+    <button class="ghost" id="bJson">Pobierz dane (JSON)</button>
+    <button class="ghost" id="bWav">Pobierz IR (WAV)</button>
+  </div>
+  <details><summary>Tryb techniczny</summary><div class="diag" id="rDiag"></div><div id="rDiagMsg"></div></details>
+</div>
+</div>
+<script>
+"use strict";
+/*═════════════ FFT ═════════════*/
+function nextPow2(n){let p=1;while(p<n)p<<=1;return p;}
+function fft(re,im,inv){
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;
+    if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t;}}
+  for(let len=2;len<=n;len<<=1){
+    const h=len>>1,ang=(inv?2:-2)*Math.PI/len,wr=Math.cos(ang),wi=Math.sin(ang);
+    for(let i=0;i<n;i+=len){let cr=1,ci=0;
+      for(let k=0;k<h;k++){
+        if((k&31)===0){cr=Math.cos(ang*k);ci=Math.sin(ang*k);}
+        const a=i+k,b=i+k+h;
+        const vr=re[b]*cr-im[b]*ci,vi=re[b]*ci+im[b]*cr,ur=re[a],ui=im[a];
+        re[a]=ur+vr;im[a]=ui+vi;re[b]=ur-vr;im[b]=ui-vi;
+        const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t;}}}
+  if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n;}
+}
+function makeSweep(fs,dur,f1,f2){
+  const N=Math.round(fs*dur),s=new Float64Array(N),R=Math.log(f2/f1),L=dur/R;
+  const fi=Math.round(.02*fs),fo=Math.round(.06*fs);
+  for(let i=0;i<N;i++){const t=i/fs;let v=Math.sin(2*Math.PI*f1*L*(Math.exp(t/L)-1));
+    if(i<fi)v*=.5-.5*Math.cos(Math.PI*i/fi);
+    if(i>N-fo)v*=.5-.5*Math.cos(Math.PI*(N-i)/fo);s[i]=v;}
+  const k=new Float64Array(N);
+  for(let i=0;i<N;i++){const j=N-1-i;k[i]=s[j]*Math.exp(-(j/N)*R);}
+  return{sweep:s,inv:k,N:N};
+}
+function convolve(a,b){
+  const n=nextPow2(a.length+b.length);
+  const ar=new Float64Array(n),ai=new Float64Array(n),br=new Float64Array(n),bi=new Float64Array(n);
+  ar.set(a);br.set(b);fft(ar,ai,false);fft(br,bi,false);
+  for(let i=0;i<n;i++){const r=ar[i]*br[i]-ai[i]*bi[i];ai[i]=ar[i]*bi[i]+ai[i]*br[i];ar[i]=r;}
+  fft(ar,ai,true);return ar.subarray(0,a.length+b.length-1);
+}
+const BANDS=[125,250,500,1000,2000,4000,8000];
+
+/* ── energia pasmowa surowego sygnału: JEDNA transformata ──
+   To jest akustyczny SNR — mierzony PRZED dekonwolucją, więc
+   nie zawiera jej zysku przetwarzania.                        */
+function bandEnergy(sig,fs){
+  const n=nextPow2(sig.length);
+  const re=new Float64Array(n),im=new Float64Array(n);
+  re.set(sig);fft(re,im,false);
+  const out=new Float64Array(BANDS.length);
+  const df=fs/n;
+  BANDS.forEach((fc,k)=>{
+    const lo=fc/Math.SQRT2,hi=fc*Math.SQRT2;
+    let i1=Math.max(1,Math.floor(lo/df)),i2=Math.min(n/2,Math.ceil(hi/df));
+    let e=0;for(let i=i1;i<i2;i++)e+=re[i]*re[i]+im[i]*im[i];
+    out[k]=e/sig.length;
+  });
+  return out;
+}
+function bandFilter(ir,fs,fc){
+  const seg=ir.length,n=nextPow2(seg*2);
+  const re=new Float64Array(n),im=new Float64Array(n);re.set(ir);fft(re,im,false);
+  const lo=fc/Math.SQRT2,hi=fc*Math.SQRT2,lS=lo/Math.pow(2,1/6),hS=hi*Math.pow(2,1/6),df=fs/n;
+  for(let i=0;i<=n/2;i++){const f=i*df;let g;
+    if(f<=lS||f>=hS)g=0;
+    else if(f<lo)g=.5-.5*Math.cos(Math.PI*Math.log(f/lS)/Math.log(lo/lS));
+    else if(f>hi)g=.5-.5*Math.cos(Math.PI*Math.log(hS/f)/Math.log(hS/hi));
+    else g=1;
+    re[i]*=g;im[i]*=g;if(i>0&&i<n/2){re[n-i]*=g;im[n-i]*=g;}}
+  fft(re,im,true);return re.subarray(0,seg);
+}
+/* ── wykrycie martwej strefy: gwałtowny uskok poziomu na końcu ── */
+function validEnd(e,fs){
+  const bl=Math.max(1,Math.round(.05*fs)),nb=Math.floor(e.length/bl);
+  if(nb<6)return e.length-1;
+  const L=new Float64Array(nb);
+  for(let b=0;b<nb;b++){let s=0;for(let i=b*bl;i<(b+1)*bl;i++)s+=e[i];
+    L[b]=10*Math.log10(Math.max(s/bl,1e-30));}
+  let cut=nb,best=0;
+  for(let b=Math.floor(nb*.4);b<nb-1;b++){
+    const d=L[b]-L[b+1];
+    if(d>best&&d>8){best=d;cut=b+1;}
+  }
+  return Math.min(e.length-1,cut*bl-1);
+}
+/* ── iteracyjne wyznaczenie tła i punktu obcięcia (Lundeby) ── */
+function lundeby(e,fs,vEnd){
+  const w=Math.max(1,Math.round(.02*fs));
+  const sm=new Float64Array(vEnd+1);let acc=0;
+  for(let i=0;i<=vEnd;i++){acc+=e[i];if(i>=w)acc-=e[i-w];sm[i]=acc/Math.min(i+1,w);}
+  let pi=0,pk=0;for(let i=0;i<=vEnd;i++)if(sm[i]>pk){pk=sm[i];pi=i;}
+  let from=Math.max(pi+1,Math.floor(vEnd*.9)),noise=0,c=0;
+  for(let i=from;i<=vEnd;i++){noise+=e[i];c++;}
+  noise=c?noise/c:1e-20; if(noise<=0)noise=1e-20;
+  let tr=vEnd;
+  for(let it=0;it<6;it++){
+    const nd=10*Math.log10(noise);
+    let i2=-1;
+    for(let i=vEnd;i>pi;i--){if(10*Math.log10(Math.max(sm[i],1e-30))>nd+10){i2=i;break;}}
+    if(i2<pi+w)break;
+    let sx=0,sy=0,sxx=0,sxy=0,n=0;
+    for(let i=pi;i<=i2;i++){const x=i/fs,y=10*Math.log10(Math.max(sm[i],1e-30));
+      sx+=x;sy+=y;sxx+=x*x;sxy+=x*y;n++;}
+    const sl=(n*sxy-sx*sy)/(n*sxx-sx*sx);if(!(sl<0))break;
+    const it0=(sy-sl*sx)/n;
+    const tx=Math.round(((nd+5-it0)/sl)*fs);
+    if(!isFinite(tx)||tx<=pi+w)break;
+    tr=Math.min(vEnd,tx);
+    const nf=Math.min(vEnd,tr+Math.round(.05*fs));
+    let s2=0,c2=0;for(let i=nf;i<=vEnd;i++){s2+=e[i];c2++;}
+    if(!c2)break;
+    const nn=s2/c2; if(nn<=0)break;
+    if(Math.abs(10*Math.log10(nn)-nd)<.5){noise=nn;break;}
+    noise=nn;
+  }
+  return{noise:noise,tr:Math.max(tr,pi+w),pi:pi,peak:pk};
+}
+function decay(h,fs){
+  const N=h.length,e=new Float64Array(N);
+  for(let i=0;i<N;i++)e[i]=h[i]*h[i];
+  const vE=validEnd(e,fs);
+  const{noise,tr,pi,peak}=lundeby(e,fs,vE);
+  const M=tr+1,S=new Float64Array(M);let s=0;
+  for(let i=M-1;i>=0;i--){s+=e[i];S[i]=s;}
+  const S0=S[pi]>0?S[pi]:S[0],db=new Float64Array(M);
+  for(let i=0;i<M;i++)db[i]=10*Math.log10(Math.max(S[i],1e-30)/S0);
+  let range=0;for(let i=pi;i<M;i++)range=Math.min(range,db[i]);
+  function fit(d1,d2){
+    let i1=-1,i2=-1;
+    for(let i=pi;i<M;i++){if(i1<0&&db[i]<=-d1)i1=i;if(db[i]<=-d2){i2=i;break;}}
+    if(i1<0||i2<0||i2-i1<Math.round(.02*fs))return null;
+    let sx=0,sy=0,sxx=0,sxy=0;const n=i2-i1+1;
+    for(let i=i1;i<=i2;i++){const x=i/fs,y=db[i];sx+=x;sy+=y;sxx+=x*x;sxy+=x*y;}
+    const sl=(n*sxy-sx*sy)/(n*sxx-sx*sx);if(!(sl<0))return null;
+    const b=(sy-sl*sx)/n;let st=0,sr=0;const my=sy/n;
+    for(let i=i1;i<=i2;i++){const x=i/fs,y=db[i],p=sl*x+b;st+=(y-my)*(y-my);sr+=(y-p)*(y-p);}
+    const T=-60/sl;if(!isFinite(T)||T<.05||T>10)return null;
+    return{T:T,xi:st>0?(sr/st)*1000:999};
+  }
+  const i50=Math.min(M-1,pi+Math.round(.05*fs));
+  let early=0,total=0;
+  for(let i=pi;i<M;i++){if(i<=i50)early+=e[i];total+=e[i];}
+  return{T20:fit(5,25),T30:fit(5,35),range:-range,
+    snrDec:10*Math.log10(peak/noise),pi:pi,tr:tr,e:e,
+    C50:10*Math.log10(early/Math.max(total-early,1e-30)),
+    D50:100*early/Math.max(total,1e-30)};
+}
+/* MTF → STI */
+const MF=[.63,.8,1,1.25,1.6,2,2.5,3.15,4,5,6.3,8,10,12.5];
+function mti(e,fs,pi,tr){
+  let tot=0;for(let i=pi;i<=tr;i++)tot+=e[i];if(tot<=0)return null;
+  let sum=0;
+  for(const F of MF){let re=0,im=0;
+    for(let i=pi;i<=tr;i++){const a=2*Math.PI*F*(i-pi)/fs;re+=e[i]*Math.cos(a);im+=e[i]*Math.sin(a);}
+    let m=Math.min(Math.sqrt(re*re+im*im)/tot,.99);
+    let X=Math.max(-15,Math.min(15,10*Math.log10(m/(1-m))));
+    sum+=(X+15)/30;}
+  return sum/MF.length;
+}
+const A_M=[.085,.127,.230,.233,.309,.224,.173],B_M=[.085,.078,.065,.011,.047,.095];
+function stiFrom(m){
+  const v=[];
+  for(let k=0;k<7;k++){let x=m[k];
+    if(x==null)for(let d=1;d<7&&x==null;d++)x=m[k-d]??m[k+d];
+    if(x==null)return null;v.push(Math.max(0,Math.min(1,x)));}
+  let s=0;for(let k=0;k<7;k++)s+=A_M[k]*v[k];
+  for(let k=0;k<6;k++)s-=B_M[k]*Math.sqrt(v[k]*v[k+1]);
+  return Math.max(0,Math.min(1,s));
+}
+/*═════════════ PROGI WALIDACJI ═════════════*/
+const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
+/*═════════════ STAN ═════════════*/
+const ST={fs:48000,set:{},src:'phone',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,
+  tries:[0,0,0],peak:0,clip:false,rec:false,chunks:[]};
+const $=id=>document.getElementById(id);
+const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
+function go(n){for(let i=1;i<=5;i++){$('v'+i).classList.toggle('hide',i!==n);
+  $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
+function lbl(f){return f>=1000?(f/1000)+' kHz':f+' Hz';}
+
+$('b2').onclick=()=>{
+  const g=id=>parseFloat(($(id).value||'').replace(',','.'));
+  const L=g('fL'),W=g('fW'),H=g('fH');
+  if(!(L>1.5&&W>1.5&&H>1.8)){S($('m2'),'err','Uzupełnij wszystkie trzy wymiary.');return;}
+  ST.L=L;ST.W=W;ST.H=H;ST.V=L*W*H;ST.type=$('fType').value;S($('m2'),'');
+  ST.Test=Math.max(.35,Math.min(2.5,.35+ST.V/450));
+  drawPlan();go(3);
+};
+document.querySelectorAll('input[name=src]').forEach(r=>r.onchange=()=>{
+  ST.src=r.value;$('oPhone').classList.toggle('sel',ST.src==='phone');
+  $('oExt').classList.toggle('sel',ST.src==='ext');
+  $('extHint').classList.toggle('hide',ST.src!=='ext');drawPlan();});
+
+$('b3a').onclick=async()=>{
+  const b=$('b3a');b.disabled=true;b.textContent='Łączę…';
+  try{
+    try{ST.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});}
+    catch(e){ST.stream=await navigator.mediaDevices.getUserMedia({audio:true});}
+    ST.ctx=new (window.AudioContext||window.webkitAudioContext)();await ST.ctx.resume();
+    ST.fs=ST.ctx.sampleRate;
+    const tr=ST.stream.getAudioTracks()[0];ST.set=tr.getSettings?tr.getSettings():{};
+    const src=ST.ctx.createMediaStreamSource(ST.stream);
+    ST.proc=ST.ctx.createScriptProcessor(4096,1,1);
+    ST.proc.onaudioprocess=ev=>{
+      const d=ev.inputBuffer.getChannelData(0);let p=0;
+      for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>p)p=a;}
+      ST.peak=p;if(p>.985)ST.clip=true;
+      if(ST.rec)ST.chunks.push(new Float32Array(d));};
+    const g=ST.ctx.createGain();g.gain.value=0;src.connect(ST.proc);ST.proc.connect(g);g.connect(ST.ctx.destination);
+    $('srcPick').querySelectorAll('.opt').forEach(o=>o.style.pointerEvents='none');
+    b.classList.add('hide');S($('m3a'),'');$('lvlBox').classList.remove('hide');
+    $('lvlHint').textContent=ST.src==='phone'
+      ? 'Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.'
+      : 'Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.';
+    $('gz').style.left='58%';$('gz').style.width='27%';
+  }catch(e){b.disabled=false;b.textContent='Włącz mikrofon';
+    S($('m3a'),'err','Brak dostępu do mikrofonu ('+e.name+'). Strona musi działać przez HTTPS.');}
+};
+function record(ms){return new Promise(r=>{ST.chunks=[];ST.clip=false;ST.rec=true;
+  setTimeout(()=>{ST.rec=false;let n=0;ST.chunks.forEach(c=>n+=c.length);
+    const o=new Float64Array(n);let k=0;ST.chunks.forEach(c=>{o.set(c,k);k+=c.length;});
+    ST.chunks=[];r(o);},ms);});}
+const f1of=()=>ST.src==='ext'?80:200, f2of=()=>Math.min(16000,ST.fs*.45);
+
+async function runSweep(dur,tail,amp){
+  const sw=makeSweep(ST.fs,dur,f1of(),f2of());
+  const ab=ST.ctx.createBuffer(1,sw.N,ST.fs),ch=ab.getChannelData(0);
+  for(let i=0;i<sw.N;i++)ch[i]=sw.sweep[i]*amp;
+  const nd=ST.ctx.createBufferSource();nd.buffer=ab;nd.connect(ST.ctx.destination);
+  const p=record((.3+dur+tail)*1000);
+  setTimeout(()=>nd.start(),300);
+  const rec=await p;
+  /* akustyczny SNR — na surowym nagraniu, przed dekonwolucją */
+  const recE=bandEnergy(rec,ST.fs);
+  const snrAc=BANDS.map((f,k)=>ST.bgE?10*Math.log10(Math.max(recE[k],1e-30)/Math.max(ST.bgE[k],1e-30)):99);
+  const full=convolve(rec,sw.inv);
+  let pk=0,pi=0;
+  for(let i=0;i<full.length;i++){const a=Math.abs(full[i]);if(a>pk){pk=a;pi=i;}}
+  const from=Math.max(0,pi-Math.round(.005*ST.fs));
+  /* okno NIE dłuższe niż faktycznie nagrany ogon, z marginesem */
+  const to=Math.min(full.length,from+Math.round(Math.max(.4,tail-.15)*ST.fs));
+  const ir=new Float64Array(to-from);
+  for(let i=from;i<to;i++)ir[i-from]=full[i]/pk;
+  return{ir:ir,clip:ST.clip,snrAc:snrAc};
+}
+/* ocena jednego pasma */
+function judge(d,snrAc){
+  if(snrAc<SNR_AC_MIN)return{T:null,why:'brak pobudzenia'};
+  let pick=null,q='';
+  if(d.T30&&d.range>=35&&d.T30.xi<=XI_MAX){pick=d.T30;q=d.T30.xi<=XI_GOOD?'dobry':'orient.';}
+  else if(d.T20&&d.range>=25&&d.T20.xi<=XI_MAX){pick=d.T20;q=d.T20.xi<=XI_GOOD?'dobry':'orient.';}
+  if(!pick)return{T:null,why:d.range<25?'za mały zakres':'zanik nieliniowy'};
+  return{T:pick.T,xi:pick.xi,q:q};
+}
+$('b3b').onclick=async()=>{
+  const b=$('b3b');b.disabled=true;b.textContent='Sprawdzam…';S($('m3b'),'');
+  const bg=await record(1600);
+  let s=0;for(let i=0;i<bg.length;i++)s+=bg[i]*bg[i];
+  ST.bg=20*Math.log10(Math.max(Math.sqrt(s/bg.length),1e-12));
+  ST.bgE=bandEnergy(bg,ST.fs);
+  const r=await runSweep(1.5,Math.min(3,Math.max(1.6,ST.Test*2)),.85);
+  const k1=BANDS.indexOf(1000), sAc=r.snrAc[k1];
+  ST.active=BANDS.filter((f,k)=>r.snrAc[k]>=SNR_AC_MIN);
+  const d1=decay(bandFilter(r.ir,ST.fs,1000),ST.fs);
+  const j=judge(d1,sAc); if(j.T)ST.Test=Math.max(.2,Math.min(4,j.T));
+  const pct=Math.max(3,Math.min(100,sAc/45*100));
+  const gb=$('gb');gb.style.width=pct+'%';
+  gb.className='bar'+(r.clip?' bad':(sAc>=26?' good':''));
+  $('gv').textContent='zapas '+sAc.toFixed(0)+' dB';
+  b.disabled=false;b.textContent='Sprawdź ponownie';
+  if(r.clip){S($('m3b'),'err','Przesterowanie. '+(ST.src==='phone'?'Odsuń telefon od twardych powierzchni.':'Przycisz głośnik o dwie kreski.'));
+    $('b3c').classList.add('hide');return;}
+  if(sAc<SNR_AC_MIN){
+    S($('m3b'),'err',ST.src==='phone'
+      ? 'Za mały zapas nad hałasem tła. Sprawdź, czy głośność jest na maksimum i czy w pomieszczeniu jest cicho. Jeśli to nie pomoże — podłącz głośnik zewnętrzny.'
+      : 'Za cicho. Podgłośnij głośnik i sprawdź ponownie.');
+    $('b3c').classList.add('hide');return;}
+  if(d1.D50>D50_MAX){
+    S($('m3b'),'warn','Mikrofon jest za blisko źródła — rejestruje niemal wyłącznie dźwięk bezpośredni. Odsuń się od głośnika na co najmniej 2 metry'+(ST.src==='phone'?' albo wyciągnij rękę z telefonem przed siebie':'')+' i sprawdź ponownie.');
+    $('b3c').classList.remove('hide');return;}
+  if(sAc<26){S($('m3b'),'warn','Zapas wystarcza na wynik orientacyjny. '+(ST.src==='phone'?'Głośnik zewnętrzny dałby pewniejszy pomiar.':'Podgłośnij o kreskę.'));}
+  else{
+    if(ST.src==='ext'){
+      const q=await runSweep(1.5,Math.min(3,Math.max(1.6,ST.Test*2)),.28);
+      const dq=decay(bandFilter(q.ir,ST.fs,1000),ST.fs);
+      const jq=judge(dq,q.snrAc[k1]);
+      if(jq.T&&j.T&&jq.T>j.T*1.18){
+        S($('m3b'),'warn','Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie.');
+        $('b3c').classList.remove('hide');return;}
+    }
+    S($('m3b'),'good','Poziom prawidłowy. Nie zmieniaj już głośności.'+
+      (ST.active.length&&ST.active.length<BANDS.length?' Zakres badania: '+lbl(ST.active[0])+' – '+lbl(ST.active[ST.active.length-1])+'.':''));
+  }
+  $('b3c').classList.remove('hide');
+};
+$('b3c').onclick=()=>{drawPlan();go(4);};
+
+const PTS=[[.28,.30],[.72,.42],[.40,.75]];
+function drawPlan(){
+  if(!ST.L)return;
+  const W=520,PAD=34,ar=ST.W/ST.L;let w=W-2*PAD,h=w*ar;
+  if(h>300){h=300;w=h/ar;}
+  const H=h+2*PAD,x0=(W-w)/2,y0=PAD;
+  let g='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,monospace" font-size="11">';
+  g+='<rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" fill="#1E262C" stroke="#3B4750" stroke-width="2"/>';
+  g+='<text x="'+(x0+w/2)+'" y="'+(y0-12)+'" fill="#8B98A2" text-anchor="middle">'+ST.L.toFixed(1)+' m</text>';
+  g+='<text x="'+(x0-10)+'" y="'+(y0+h/2)+'" fill="#8B98A2" text-anchor="middle" transform="rotate(-90 '+(x0-10)+' '+(y0+h/2)+')">'+ST.W.toFixed(1)+' m</text>';
+  if(ST.src==='ext'){const sx=x0+w*.06,sy=y0+h*.10;
+    g+='<rect x="'+(sx-9)+'" y="'+(sy-9)+'" width="18" height="18" rx="2" fill="none" stroke="#58C0C8" stroke-width="1.5"/>';
+    g+='<circle cx="'+sx+'" cy="'+sy+'" r="3.5" fill="#58C0C8"/>';
+    g+='<text x="'+(sx+15)+'" y="'+(sy+4)+'" fill="#58C0C8">głośnik</text>';}
+  PTS.forEach((p,i)=>{
+    const cx=x0+w*p[0],cy=y0+h*p[1];
+    const st=ST.pos[i]?'ok':(i===ST.cur?'act':'idle');
+    const col=st==='ok'?'#7FC96B':(st==='act'?'#FFB020':'#4E5A63');
+    g+='<circle'+(st==='act'?' class="pulse"':'')+' cx="'+cx+'" cy="'+cy+'" r="15" fill="none" stroke="'+col+'" stroke-width="'+(st==='act'?2.5:1.5)+'"/>';
+    g+=st==='ok'?'<path d="M'+(cx-6)+','+cy+'l4,4l8,-9" fill="none" stroke="#7FC96B" stroke-width="2.2" stroke-linecap="round"/>'
+      :'<text x="'+cx+'" y="'+(cy+4)+'" fill="'+col+'" text-anchor="middle" font-size="13">'+(i+1)+'</text>';});
+  g+='</svg>';$('planBox').innerHTML=g;
+}
+$('b4').onclick=async()=>{
+  const b=$('b4');b.disabled=true;S($('m4'),'');
+  const T=ST.Test, dur=T<.7?3:(T<1.6?4:6), tail=Math.max(2,Math.min(8,T*2.2));
+  b.textContent='Sygnał — nie ruszaj się';
+  const r=await runSweep(dur,tail,.85);
+  b.textContent='Liczę…';await new Promise(z=>setTimeout(z,20));
+  const bands={},mtis=[],C=[],D=[];
+  BANDS.forEach((fc,k)=>{
+    if(r.snrAc[k]<SNR_AC_MIN){bands[fc]={T:null,why:'brak pobudzenia',snrAc:r.snrAc[k]};mtis[k]=null;return;}
+    const d=decay(bandFilter(r.ir,ST.fs,fc),ST.fs);
+    const j=judge(d,r.snrAc[k]);
+    bands[fc]={...j,snrAc:r.snrAc[k],D50:d.D50,C50:d.C50,range:d.range};
+    mtis[k]=j.T?mti(d.e,ST.fs,d.pi,d.tr):null;
+    if(fc>=500&&fc<=2000&&j.T){C.push(d.C50);D.push(d.D50);}
+  });
+  /* spójność międzypasmowa — mediana i odrzucenie odstających */
+  const vals=BANDS.map(f=>bands[f].T).filter(x=>x);
+  if(vals.length>=3){
+    const sorted=[...vals].sort((a,b)=>a-b),med=sorted[Math.floor(sorted.length/2)];
+    BANDS.forEach(f=>{if(bands[f].T&&(bands[f].T>med*2.5||bands[f].T<med/2.5)){
+      bands[f]={...bands[f],T:null,why:'odstaje od sąsiadów'};}});
+  }
+  const D50m=D.length?D.reduce((a,x)=>a+x)/D.length:null;
+  let ok=true,why='';
+  if(r.clip){ok=false;why='Przesterowanie w trakcie przebiegu. Odsuń telefon od twardych powierzchni i powtórz w tym punkcie.';}
+  else if(BANDS.filter(f=>bands[f].T).length<2){ok=false;
+    why='Za mało wiarygodnych pasm. Najczęstsza przyczyna to hałas w pomieszczeniu albo zbyt cichy sygnał. Powtórz w tym punkcie.';}
+  const i=ST.cur;
+  if(ok){
+    ST.pos[i]={bands:bands,mtis:mtis,snrAc:r.snrAc,
+      C50:C.length?C.reduce((a,x)=>a+x)/C.length:null,D50:D50m};
+    if(!ST.ir)ST.ir=r.ir;
+    /* PĘTLA ZERWANA: Test tylko z pasm, które przeszły walidację, i z ograniczeniem */
+    const ref=bands[1000].T||bands[500].T||bands[2000].T;
+    if(ref)ST.Test=Math.max(.2,Math.min(4,ref));
+    $('d'+(i+1)).className='ok';$('d'+(i+1)).textContent='PUNKT '+(i+1)+' ✓';
+    ST.cur++;
+    if(ST.cur>=3){finish();return;}
+    $('d'+(ST.cur+1)).className='act';
+    $('mTitle').textContent='Punkt '+(ST.cur+1)+' z 3';
+    $('mHint').textContent='Przejdź do punktu '+(ST.cur+1)+' oznaczonego na rysunku i naciśnij START.';
+    S($('m4'),'good','Punkt '+(i+1)+' zmierzony. Przejdź do punktu '+(ST.cur+1)+'.');
+    drawPlan();
+  }else{ST.tries[i]++;$('d'+(i+1)).className='warn';S($('m4'),'err',why);}
+  b.disabled=false;b.textContent='START';
+};
+function finish(){
+  const P=ST.pos.filter(Boolean),avg={},spread={},qual={};
+  BANDS.forEach(f=>{
+    const v=P.map(p=>p.bands[f]&&p.bands[f].T).filter(x=>x);
+    if(v.length){const m=v.reduce((a,x)=>a+x)/v.length;avg[f]=m;
+      spread[f]=v.length>1?(Math.max(...v)-Math.min(...v))/m:0;
+      qual[f]=P.map(p=>p.bands[f]&&p.bands[f].q).filter(Boolean).includes('orient.')?'orient.':'dobry';}
+    else{avg[f]=null;spread[f]=null;
+      qual[f]=(P[0]&&P[0].bands[f]&&P[0].bands[f].why)||'—';}
+  });
+  ST.avg=avg;
+  const mid=[500,1000].map(f=>avg[f]).filter(x=>x);
+  const Tmid=mid.length?mid.reduce((a,x)=>a+x)/mid.length:null;
+  ST.Tmid=Tmid;
+  const D50m=P.map(p=>p.D50).filter(x=>x!=null);
+  const D50=D50m.length?D50m.reduce((a,x)=>a+x)/D50m.length:null;
+  ST.D50=D50;
+  if(!Tmid){
+    $('rFail').innerHTML='<div class="msg err"><b>Pomiar nieudany.</b><br>'+
+      'W pasmach mowy (500 Hz i 1 kHz) nie udało się uzyskać wiarygodnego zaniku. '+
+      (ST.src==='phone'
+        ? 'Głośnik telefonu nie wypromieniował dość energii w tym zakresie. Podłącz głośnik zewnętrzny i powtórz badanie — to rozwiązuje problem w praktycznie każdym pomieszczeniu.'
+        : 'Podgłośnij głośnik, odsuń się od niego na co najmniej 2 metry i powtórz badanie w ciszy.')+
+      '</div>';
+    buildTable(avg,spread,qual);$('rOk').classList.remove('hide');
+    $('rT').innerHTML='—';$('rVerdict').innerHTML='';
+    document.querySelector('#rOk .big').classList.add('hide');
+    diag();go(5);return;
+  }
+  $('rT').innerHTML=Tmid.toFixed(2).replace('.',',')+'<small>s</small>';
+  let v;
+  if(Tmid<.45)v='<div class="msg good">Pomieszczenie wytłumione. Mowa jest wyraźna, dźwięk nie niesie się po wnętrzu.</div>';
+  else if(Tmid<.8)v='<div class="msg info">Akustyka umiarkowana. Rozmowa jest zrozumiała, ale przy większej liczbie osób hałas będzie narastał.</div>';
+  else if(Tmid<1.4)v='<div class="msg warn">Pogłos wyraźnie za długi. Mowa się zlewa, hałas kumuluje się przy większej liczbie osób. Wnętrze wymaga adaptacji.</div>';
+  else v='<div class="msg err">Bardzo długi pogłos. Rozmowa na dystans jest utrudniona, wnętrze męczy. Adaptacja przyniesie odczuwalną poprawę.</div>';
+  $('rVerdict').innerHTML=v;
+  /* BRAMKA D50 — metryki mowy tylko przy realnym polu pogłosowym */
+  if(D50!=null&&D50>D50_MAX){
+    $('rSpeech').innerHTML='<div class="msg warn"><b>Wskaźniki zrozumiałości pominięte.</b><br>'+
+      'Mikrofon rejestrował niemal wyłącznie dźwięk bezpośredni (D50 = '+Math.round(D50)+' %), '+
+      'więc C50, D50 i STI byłyby zawyżone. Odsuń się od źródła na co najmniej 2 metry i powtórz badanie, '+
+      'żeby otrzymać ocenę zrozumiałości mowy.</div>';
+  }else{
+    const C=P.map(p=>p.C50).filter(x=>x!=null);
+    const sv=P.map(p=>stiFrom(p.mtis)).filter(x=>x!=null);
+    let h='<div class="metrics">'+
+      '<div><div class="m">'+(D50!=null?Math.round(D50)+' %':'—')+'</div><div class="l">D50 · wyrazistość</div>'+
+      '<div class="d">Udział energii z pierwszych 50 ms. Poniżej 50 % mowa się zlewa.</div></div>'+
+      '<div><div class="m">'+(C.length?(C.reduce((a,x)=>a+x)/C.length).toFixed(1).replace('.',',')+' dB':'—')+'</div>'+
+      '<div class="l">C50 · przejrzystość</div><div class="d">Przewaga dźwięku bezpośredniego nad pogłosem. Dla mowy pożądane powyżej 0 dB.</div></div></div>';
+    if(sv.length){
+      const sti=sv.reduce((a,x)=>a+x)/sv.length;
+      const q=sti>=.75?'znakomita':sti>=.6?'dobra':sti>=.45?'dostateczna':sti>=.3?'słaba':'zła';
+      h+='<div class="msg info"><b>STI '+sti.toFixed(2).replace('.',',')+'</b> — zrozumiałość mowy '+q+'.<br>'+
+        'Wartość orientacyjna, wyznaczona z odpowiedzi impulsowej przy założeniu cichego tła. To górna granica tego wnętrza — rzeczywisty hałas ją obniża.</div>';
+    }
+    $('rSpeech').innerHTML=h;
+  }
+  buildTable(avg,spread,qual);
+  const sp=[500,1000,2000].map(f=>spread[f]).filter(x=>x!=null);
+  if(sp.length){const m=Math.max(...sp);
+    $('rStab').innerHTML=m<.12?'<div class="msg good">Pomiar stabilny — trzy punkty dały zgodne wyniki.</div>'
+      :m<.25?'<div class="msg warn">Umiarkowany rozrzut między punktami. Akustyka zmienia się w zależności od miejsca.</div>'
+      :'<div class="msg err">Duży rozrzut między punktami. Wnętrze zachowuje się bardzo różnie w różnych miejscach — wynik traktuj jako zgrubny.</div>';}
+  $('rOk').classList.remove('hide');diag();go(5);
+}
+function buildTable(avg,spread,qual){
+  let t='<table><thead><tr><th>pasmo</th><th>T [s]</th><th>rozrzut</th><th>jakość</th></tr></thead><tbody>';
+  BANDS.forEach(f=>{
+    if(avg[f]==null){t+='<tr class="weak"><td>'+lbl(f)+'</td><td colspan="3" class="q">'+qual[f]+'</td></tr>';return;}
+    t+='<tr><td>'+lbl(f)+'</td><td>'+avg[f].toFixed(2).replace('.',',')+'</td><td>±'+
+      Math.round(spread[f]*100)+' %</td><td class="q" style="color:'+(qual[f]==='dobry'?'#7FC96B':'#FFB020')+'">'+qual[f]+'</td></tr>';});
+  $('rTbl').innerHTML=t+'</tbody></table>';
+}
+function diag(){
+  const s=ST.set,yn=x=>x===undefined?'<span style="color:#5F6C76">n/d</span>':x?'<span class="r">WŁ.</span>':'<span class="g">wył.</span>';
+  $('rDiag').innerHTML=
+    '<span>próbkowanie</span><span>'+ST.fs+' Hz</span>'+
+    '<span>AEC</span><span>'+yn(s.echoCancellation)+'</span>'+
+    '<span>AGC</span><span>'+yn(s.autoGainControl)+'</span>'+
+    '<span>redukcja szumu</span><span>'+yn(s.noiseSuppression)+'</span>'+
+    '<span>tło</span><span>'+(ST.bg?ST.bg.toFixed(1):'—')+' dBFS</span>'+
+    '<span>źródło</span><span>'+(ST.src==='ext'?'zewnętrzne':'telefon')+'</span>'+
+    '<span>D50 średnie</span><span>'+(ST.D50!=null?ST.D50.toFixed(1)+' %':'—')+'</span>'+
+    '<span>kubatura</span><span>'+ST.V.toFixed(1)+' m³</span>'+
+    '<span>A (Sabine)</span><span>'+(ST.Tmid?(0.161*ST.V/ST.Tmid).toFixed(1):'—')+' m² Sab</span>'+
+    '<span>powtórki</span><span>'+ST.tries.join(' / ')+'</span>';
+  if(s.autoGainControl===true||s.echoCancellation===true)
+    S($('rDiagMsg'),'warn','Przeglądarka nie oddała surowego sygnału — automatyka mikrofonu pozostała aktywna.');
+}
+$('bJson').onclick=()=>{
+  const P=ST.pos.filter(Boolean);
+  const out={wersja:'silnik-v3',czas:new Date().toISOString(),
+    pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
+    tor:{fs:ST.fs,zrodlo:ST.src,tlo_dBFS:ST.bg,...ST.set},
+    Tmid:ST.Tmid?+ST.Tmid.toFixed(3):null,
+    A_sabine_m2:ST.Tmid?+(0.161*ST.V/ST.Tmid).toFixed(2):null,
+    D50_srednie:ST.D50!=null?+ST.D50.toFixed(1):null,
+    pasma:BANDS.map(f=>({fc:f,T:ST.avg&&ST.avg[f]?+ST.avg[f].toFixed(3):null,
+      snrAc_dB:P[0]&&P[0].snrAc?+P[0].snrAc[BANDS.indexOf(f)].toFixed(1):null,
+      xi:P[0]&&P[0].bands[f]&&P[0].bands[f].xi?+P[0].bands[f].xi.toFixed(1):null,
+      powod:P[0]&&P[0].bands[f]&&P[0].bands[f].why||null})),
+    pozycje:P.map((p,i)=>({punkt:i+1,C50:p.C50!=null?+p.C50.toFixed(2):null,
+      D50:p.D50!=null?+p.D50.toFixed(1):null,STI:stiFrom(p.mtis)?+stiFrom(p.mtis).toFixed(3):null}))};
+  dl(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),'badanie-akustyczne.json');
+};
+$('bWav').onclick=()=>{
+  if(!ST.ir)return;const n=ST.ir.length,fs=ST.fs;
+  const b=new ArrayBuffer(44+n*4),v=new DataView(b);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');
+  v.setUint32(16,16,true);v.setUint16(20,3,true);v.setUint16(22,1,true);
+  v.setUint32(24,fs,true);v.setUint32(28,fs*4,true);v.setUint16(32,4,true);v.setUint16(34,32,true);
+  w(36,'data');v.setUint32(40,n*4,true);
+  for(let i=0;i<n;i++)v.setFloat32(44+i*4,ST.ir[i],true);
+  dl(new Blob([b],{type:'audio/wav'}),'odpowiedz-impulsowa.wav');
+};
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+</script>
+</body>
+</html>
