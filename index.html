@@ -359,7 +359,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v8';
+const WERSJA='v9';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
 /* Progi wskaźnika poziomu. Rysunek paska liczy się z tych samych liczb, co
@@ -406,7 +406,19 @@ $('b2').onclick=()=>{
 document.querySelectorAll('input[name=src]').forEach(r=>r.onchange=()=>{
   ST.src=r.value;$('oPhone').classList.toggle('sel',ST.src==='phone');
   $('oExt').classList.toggle('sel',ST.src==='ext');
-  $('extHint').classList.toggle('hide',ST.src!=='ext');drawPlan();});
+  $('extHint').classList.toggle('hide',ST.src!=='ext');drawPlan();
+  /* Zmiana źródła po włączeniu mikrofonu jest dozwolona — mikrofon od niej nie
+     zależy, a dolna granica sweepu czytana jest dopiero przy generowaniu sygnału.
+     Unieważniamy jednak sprawdzenie poziomu: zmierzono je dla innego źródła. */
+  if(!$('lvlBox').classList.contains('hide')){
+    $('lvlHint').textContent=hintPoziomu();
+    $('gb').style.width='0';$('gb').className='bar';$('gv').textContent='—';
+    $('gAbs').textContent='—';$('b3c').classList.add('hide');
+    S($('m3b'),'info','Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika.');
+  }});
+function hintPoziomu(){return ST.src==='phone'
+  ? 'Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.'
+  : 'Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.';}
 
 $('b3a').onclick=async()=>{
   const b=$('b3a');b.disabled=true;b.textContent='Łączę…';
@@ -424,11 +436,11 @@ $('b3a').onclick=async()=>{
       ST.peak=p;if(p>.985)ST.clip=true;
       if(ST.rec)ST.chunks.push(new Float32Array(d));};
     const g=ST.ctx.createGain();g.gain.value=0;src.connect(ST.proc);ST.proc.connect(g);g.connect(ST.ctx.destination);
-    $('srcPick').querySelectorAll('.opt').forEach(o=>o.style.pointerEvents='none');
+    /* Wybór źródła zostaje aktywny. Wcześniej dostawał tu pointer-events:none,
+       przez co kafelki przestawały reagować bez żadnego sygnału dla użytkownika —
+       wyglądały normalnie, ale nie dało się ich przełączyć. */
     b.classList.add('hide');S($('m3a'),'');$('lvlBox').classList.remove('hide');
-    $('lvlHint').textContent=ST.src==='phone'
-      ? 'Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.'
-      : 'Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.';
+    $('lvlHint').textContent=hintPoziomu();
   }catch(e){b.disabled=false;b.textContent='Włącz mikrofon';
     S($('m3a'),'err','Brak dostępu do mikrofonu ('+e.name+'). Strona musi działać przez HTTPS.');}
 };
