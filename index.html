@@ -48,12 +48,18 @@ input:focus,select:focus{outline:1px solid var(--cool);border-color:var(--cool)}
 .opt.sel{border-color:var(--signal);background:rgba(255,176,32,.06)}
 .opt b{display:block;font-size:15px;margin-bottom:2px} .opt span{color:var(--muted);font-size:13px}
 .opt input{display:none}
-.gauge{position:relative;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;margin:14px 0 6px;overflow:hidden}
-.gauge .zone{position:absolute;top:0;bottom:0;background:rgba(127,201,107,.16);border-left:1px solid rgba(127,201,107,.5);border-right:1px solid rgba(127,201,107,.5)}
-.gauge .bar{position:absolute;top:0;bottom:0;left:0;background:var(--cool);opacity:.55;transition:width .25s}
-.gauge .bar.good{background:var(--ok)} .gauge .bar.bad{background:var(--bad)}
-.gauge .val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12.5px}
-.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.gauge{position:relative;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;margin:14px 0 5px;overflow:hidden}
+.gauge .seg{position:absolute;top:0;bottom:0}
+.gauge .seg.s1{background:rgba(229,84,75,.10)}
+.gauge .seg.s2{background:rgba(255,176,32,.11);border-left:1px solid rgba(255,176,32,.45)}
+.gauge .seg.s3{background:rgba(127,201,107,.12);border-left:1px solid rgba(127,201,107,.55)}
+.gauge .bar{position:absolute;top:0;bottom:0;left:0;background:var(--bad);opacity:.5;transition:width .25s}
+.gauge .bar.mid{background:var(--signal)} .gauge .bar.good{background:var(--ok)}
+.gauge .val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12.5px;font-weight:500}
+.scale{display:flex;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--dim)}
+.scale span{text-align:center}
+.lvlAbs{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:7px}
 .plan{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:12px;margin-bottom:14px}
 .plan svg{display:block;width:100%;height:auto}
 @keyframes puls{0%,100%{opacity:1}50%{opacity:.35}} .pulse{animation:puls 1.4s ease-in-out infinite}
@@ -145,8 +151,10 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <div id="lvlBox" class="hide">
     <h2>Ustaw głośność</h2>
     <p class="note" id="lvlHint"></p>
-    <div class="gauge"><div class="zone" id="gz"></div><div class="bar" id="gb"></div><div class="val" id="gv">—</div></div>
-    <div class="scale"><span>za cicho</span><span>dobrze</span><span>za głośno</span></div>
+    <div class="gauge"><span class="seg s1" id="sg1"></span><span class="seg s2" id="sg2"></span><span class="seg s3" id="sg3"></span>
+      <div class="bar" id="gb"></div><div class="val" id="gv">—</div></div>
+    <div class="scale"><span id="sl1">za mało</span><span id="sl2">orient.</span><span id="sl3">dobrze</span></div>
+    <div class="lvlAbs"><span>poziom nagrania</span><span id="gAbs">—</span></div>
     <div id="m3b"></div>
     <div class="btnrow"><button id="b3b">Sprawdź poziom</button></div>
     <button id="b3c" class="hide" style="margin-top:9px">Rozpocznij pomiar</button>
@@ -351,9 +359,18 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v7';
+const WERSJA='v8';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
+/* Progi wskaźnika poziomu. Rysunek paska liczy się z tych samych liczb, co
+   decyzja — wcześniej zielone okno stało na 58–85% szerokości, a napisy pod
+   spodem były rozłożone równomiernie, więc "dobrze" wypadało obok okna.
+   SNR_AC_GOOD to granica wyniku pełnego, SNR_AC_MIN — dolna granica w ogóle.
+   Dwa ostatnie pilnują poziomu BEZWZGLĘDNEGO: sam zapas nad tłem to stosunek,
+   więc w bardzo cichym pokoju ledwie słyszalny sygnał też go osiąga, choć nie
+   zniesie żadnego przypadkowego hałasu w trakcie badania. Progi są celowo
+   łagodne i czekają na kalibrację na realnych urządzeniach. */
+const SNR_AC_GOOD=26, SNR_SCALE=45, PEAK_LOW_DBFS=-40, PEAK_MIN_DBFS=-50;
 /*═════════════ STAN ═════════════*/
 const ST={fs:48000,set:{},src:'phone',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,
   tries:[0,0,0],peak:0,clip:false,rec:false,chunks:[]};
@@ -363,6 +380,20 @@ function go(n){for(let i=1;i<=5;i++){$('v'+i).classList.toggle('hide',i!==n);
   $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
 function lbl(f){return f>=1000?(f/1000)+' kHz':f+' Hz';}
 $('ver').textContent='silnik '+WERSJA;
+/* Układ paska wyprowadzony z progów, a nie wpisany ręcznie — dzięki temu
+   obraz nie może się rozjechać z logiką oceny. */
+(function rysujSkale(){
+  const a=SNR_AC_MIN/SNR_SCALE*100, b=SNR_AC_GOOD/SNR_SCALE*100;
+  $('sg1').style.cssText='left:0;width:'+a+'%';
+  $('sg2').style.cssText='left:'+a+'%;width:'+(b-a)+'%';
+  $('sg3').style.cssText='left:'+b+'%;right:0';
+  $('sl1').style.flex='0 0 '+a+'%';
+  $('sl2').style.flex='0 0 '+(b-a)+'%';
+  $('sl3').style.flex='1';
+  $('sl1').textContent='za mało';
+  $('sl2').textContent=SNR_AC_MIN+'–'+SNR_AC_GOOD;
+  $('sl3').textContent='dobrze (od '+SNR_AC_GOOD+' dB)';
+})();
 
 $('b2').onclick=()=>{
   const g=id=>parseFloat(($(id).value||'').replace(',','.'));
@@ -398,7 +429,6 @@ $('b3a').onclick=async()=>{
     $('lvlHint').textContent=ST.src==='phone'
       ? 'Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.'
       : 'Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.';
-    $('gz').style.left='58%';$('gz').style.width='27%';
   }catch(e){b.disabled=false;b.textContent='Włącz mikrofon';
     S($('m3a'),'err','Brak dostępu do mikrofonu ('+e.name+'). Strona musi działać przez HTTPS.');}
 };
@@ -441,7 +471,11 @@ async function runSweep(dur,tail,amp){
      jako potwierdzenie rozpoznania z pasma 125 Hz, nigdy jako jedyna
      podstawa decyzji. */
   const lat=(pi-(sw.N-1))/ST.fs-0.300;
-  return{ir:ir,clip:ST.clip,snrAc:snrAc,lat:lat};
+  /* Poziom BEZWZGLĘDNY nagrania. Zapas nad tłem jest stosunkiem, więc w bardzo
+     cichym pokoju osiąga go nawet sygnał ledwie słyszalny — a taki pomiar nie
+     zniesie żadnego przypadkowego hałasu w trakcie badania. */
+  let rp=0;for(let i=0;i<rec.length;i++){const a=Math.abs(rec[i]);if(a>rp)rp=a;}
+  return{ir:ir,clip:ST.clip,snrAc:snrAc,lat:lat,peakDb:20*Math.log10(Math.max(rp,1e-12))};
 }
 /* ocena jednego pasma */
 function judge(d,snrAc){
@@ -463,10 +497,15 @@ $('b3b').onclick=async()=>{
   ST.active=BANDS.filter((f,k)=>r.snrAc[k]>=SNR_AC_MIN);
   const d1=decay(bandFilter(r.ir,ST.fs,1000),ST.fs);
   const j=judge(d1,sAc); if(j.T)ST.Test=Math.max(.2,Math.min(4,j.T));
-  const pct=Math.max(3,Math.min(100,sAc/45*100));
+  const pct=Math.max(3,Math.min(100,sAc/SNR_SCALE*100));
   const gb=$('gb');gb.style.width=pct+'%';
-  gb.className='bar'+(r.clip?' bad':(sAc>=26?' good':''));
-  $('gv').textContent='zapas '+sAc.toFixed(0)+' dB';
+  gb.className='bar'+(sAc>=SNR_AC_GOOD?' good':(sAc>=SNR_AC_MIN?' mid':''));
+  $('gv').textContent='zapas nad tłem '+sAc.toFixed(0)+' dB';
+  ST.peakDb=r.peakDb;
+  $('gAbs').innerHTML=r.peakDb.toFixed(0)+' dBFS'+
+    (r.clip?' <span class="r">przester</span>'
+      :r.peakDb<PEAK_MIN_DBFS?' <span class="r">za cicho</span>'
+      :r.peakDb<PEAK_LOW_DBFS?' <span class="y">nisko</span>':' <span class="g">ok</span>');
   b.disabled=false;b.textContent='Sprawdź ponownie';
   /* Liczby diagnostyczne do rozpoznania źródła. NIE służą jeszcze do podejmowania
      decyzji — pierwsza próba automatycznego rozpoznania po zapasie przy 125 Hz
@@ -481,12 +520,21 @@ $('b3b').onclick=async()=>{
       ? 'Za mały zapas nad hałasem tła. Sprawdź, czy głośność jest na maksimum i czy w pomieszczeniu jest cicho. Jeśli to nie pomoże — podłącz głośnik zewnętrzny.'
       : 'Za cicho. Podgłośnij głośnik i sprawdź ponownie.');
     $('b3c').classList.add('hide');return;}
+  /* Zapas nad tłem jest STOSUNKIEM. W wyjątkowo cichym pokoju osiąga go nawet
+     sygnał ledwie słyszalny — i taki pomiar przewróci się od jednego trzaśnięcia
+     drzwiami. Dlatego obok stosunku sprawdzamy poziom bezwzględny. */
+  if(r.peakDb<PEAK_MIN_DBFS){
+    S($('m3b'),'err','Zapas nad tłem wynosi '+sAc.toFixed(0)+' dB, ale sam sygnał jest skrajnie cichy ('+r.peakDb.toFixed(0)+' dBFS). Wychodzi na to wyłącznie dlatego, że w pomieszczeniu jest wyjątkowo cicho — pomiar przewróci się od pierwszego przypadkowego dźwięku. '+
+      (ST.src==='phone'?'Podgłośnij telefon do maksimum':'Podgłośnij głośnik')+' i sprawdź ponownie.');
+    $('b3c').classList.add('hide');return;}
   if(d1.D50>D50_MAX){
     S($('m3b'),'warn',ST.src==='phone'
       ? 'Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu. Czas pogłosu zmierzysz mimo to — ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte, bo na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik.'
       : 'Mikrofon jest za blisko głośnika — rejestruje niemal wyłącznie dźwięk bezpośredni. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.');
     $('b3c').classList.remove('hide');return;}
-  if(sAc<26){S($('m3b'),'warn','Zapas wystarcza na wynik orientacyjny. '+(ST.src==='phone'?'Głośnik zewnętrzny dałby pewniejszy pomiar.':'Podgłośnij o kreskę.'));}
+  const cicho=r.peakDb<PEAK_LOW_DBFS
+    ? ' Sygnał jest przy tym nisko ('+r.peakDb.toFixed(0)+' dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar.' : '';
+  if(sAc<SNR_AC_GOOD){S($('m3b'),'warn','Zapas wystarcza na wynik orientacyjny.'+cicho+' '+(ST.src==='phone'?'Głośnik zewnętrzny dałby pewniejszy pomiar.':'Podgłośnij o kreskę.'));}
   else{
     if(ST.src==='ext'){
       const q=await runSweep(1.5,Math.min(3,Math.max(1.6,ST.Test*2)),.28);
@@ -496,7 +544,7 @@ $('b3b').onclick=async()=>{
         S($('m3b'),'warn','Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie.');
         $('b3c').classList.remove('hide');return;}
     }
-    S($('m3b'),'good','Poziom prawidłowy. Nie zmieniaj już głośności.'+
+    S($('m3b'),cicho?'warn':'good','Poziom prawidłowy. Nie zmieniaj już głośności.'+cicho+
       (ST.active.length&&ST.active.length<BANDS.length?' Zakres badania: '+lbl(ST.active[0])+' – '+lbl(ST.active[ST.active.length-1])+'.':''));
   }
   $('b3c').classList.remove('hide');
@@ -683,6 +731,7 @@ function diag(){
     '<span>AGC</span><span>'+yn(s.autoGainControl)+'</span>'+
     '<span>redukcja szumu</span><span>'+yn(s.noiseSuppression)+'</span>'+
     '<span>tło</span><span>'+(ST.bg?ST.bg.toFixed(1):'—')+' dBFS</span>'+
+    '<span>szczyt sygnału</span><span>'+(ST.peakDb!=null?ST.peakDb.toFixed(1)+' dBFS':'—')+'</span>'+
     '<span>źródło</span><span>'+(ST.src==='ext'?'zewnętrzne':'telefon')+' (deklarowane)</span>'+
     '<span>zapas przy 125 Hz</span><span>'+(ST.srcLo!=null?ST.srcLo.toFixed(1)+' dB':'—')+'</span>'+
     '<span>opóźnienie toru</span><span>'+(ST.lat!=null?'≈ '+Math.round(ST.lat*1000)+' ms':'—')+'</span>'+
@@ -703,6 +752,7 @@ $('bJson').onclick=()=>{
     pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
     tor:{fs:ST.fs,zrodlo:ST.src,
       zapas_125Hz_dB:r1(ST.srcLo),
+      szczyt_sygnalu_dBFS:r1(ST.peakDb),
       opoznienie_toru_ms:ST.lat!=null?Math.round(ST.lat*1000):null,
       sweep_od_Hz:f1of(),tlo_dBFS:ST.bg,...ST.set},
     Tmid:r3(ST.Tmid),
