@@ -123,9 +123,9 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <h1>Twoje pomieszczenie</h1>
   <p class="note">Wymiary są potrzebne, żeby wskazać miejsca pomiaru i policzyć chłonność wnętrza. Wystarczy przybliżenie.</p>
   <div class="dims">
-    <label class="fld">Długość [m]<input id="fL" type="number" inputmode="decimal" step="0.1" placeholder="5,8"></label>
-    <label class="fld">Szerokość [m]<input id="fW" type="number" inputmode="decimal" step="0.1" placeholder="4,2"></label>
-    <label class="fld">Wysokość [m]<input id="fH" type="number" inputmode="decimal" step="0.1" placeholder="2,9"></label>
+    <label class="fld">Długość [m]<input id="fL" type="text" inputmode="decimal" autocomplete="off" placeholder="5,8"></label>
+    <label class="fld">Szerokość [m]<input id="fW" type="text" inputmode="decimal" autocomplete="off" placeholder="4,2"></label>
+    <label class="fld">Wysokość [m]<input id="fH" type="text" inputmode="decimal" autocomplete="off" placeholder="2,9"></label>
   </div>
   <label class="fld" style="margin-bottom:14px">Przeznaczenie
     <select id="fType">
@@ -359,7 +359,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v9';
+const WERSJA='v10';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
 /* Progi wskaźnika poziomu. Rysunek paska liczy się z tych samych liczb, co
@@ -396,9 +396,29 @@ $('ver').textContent='silnik '+WERSJA;
 })();
 
 $('b2').onclick=()=>{
-  const g=id=>parseFloat(($(id).value||'').replace(',','.'));
+  /* Pola wymiarów są type="text", nie type="number". Przy type="number"
+     przeglądarka odrzuca przecinek jako niedozwolony znak i SKLEJA pozostałe
+     cyfry: wpisane "5,2" wracało jako "52", czyli pomieszczenie dziesięć razy
+     za długie, w dodatku bez żadnego sygnału dla użytkownika. Klawiatura
+     numeryczna na telefonie bierze się teraz z inputmode="decimal". */
+  const g=id=>{
+    const s=($(id).value||'').trim().replace(/\s/g,'').replace(',','.');
+    return /^\d*\.?\d+$/.test(s)?parseFloat(s):NaN;
+  };
   const L=g('fL'),W=g('fW'),H=g('fH');
-  if(!(L>1.5&&W>1.5&&H>1.8)){S($('m2'),'err','Uzupełnij wszystkie trzy wymiary.');return;}
+  const puste=[['fL','długość'],['fW','szerokość'],['fH','wysokość']].filter(([id])=>!($(id).value||'').trim());
+  if(puste.length){S($('m2'),'err','Uzupełnij '+(puste.length===3?'wszystkie trzy wymiary':puste.map(p=>p[1]).join(' i '))+'.');return;}
+  if([L,W,H].some(v=>!isFinite(v))){
+    S($('m2'),'err','Któryś wymiar nie jest liczbą. Wpisz same cyfry z przecinkiem lub kropką, na przykład 5,2.');return;}
+  /* Górna granica jest równie potrzebna, co dolna: bez niej literówka albo
+     zgubiony przecinek dawały objętość tysiąc razy za dużą, a błąd ujawniał się
+     dopiero w chłonności A, gdzie nikt by go nie rozpoznał. */
+  const zle=[],pl=v=>v.toFixed(1).replace('.',',');
+  if(!(L>=1.5&&L<=60))zle.push('długość '+pl(L)+' m');
+  if(!(W>=1.5&&W<=60))zle.push('szerokość '+pl(W)+' m');
+  if(!(H>=1.8&&H<=20))zle.push('wysokość '+pl(H)+' m');
+  if(zle.length){
+    S($('m2'),'err','Poza sensownym zakresem: '+zle.join(', ')+'. Dozwolone: długość i szerokość 1,5–60 m, wysokość 1,8–20 m. Sprawdź, czy przecinek trafił we właściwe miejsce.');return;}
   ST.L=L;ST.W=W;ST.H=H;ST.V=L*W*H;ST.type=$('fType').value;S($('m2'),'');
   ST.Test=Math.max(.35,Math.min(2.5,.35+ST.V/450));
   drawPlan();go(3);
