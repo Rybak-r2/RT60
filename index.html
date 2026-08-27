@@ -351,7 +351,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v6';
+const WERSJA='v7';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
 /*═════════════ STAN ═════════════*/
@@ -406,27 +406,16 @@ function record(ms){return new Promise(r=>{ST.chunks=[];ST.clip=false;ST.rec=tru
   setTimeout(()=>{ST.rec=false;let n=0;ST.chunks.forEach(c=>n+=c.length);
     const o=new Float64Array(n);let k=0;ST.chunks.forEach(c=>{o.set(c,k);k+=c.length;});
     ST.chunks=[];r(o);},ms);});}
-/* Sweep zaczyna się od 80 Hz ZAWSZE, niezależnie od deklarowanego źródła.
-   Wcześniej wybór "głośnik telefonu" obcinał go do 200 Hz, więc pomyłka w
-   tym wyborze bezpowrotnie kasowała pasmo 125 Hz i dół 250 Hz — a użytkownik
-   podłączony przez Bluetooth nie miał jak się o tym dowiedzieć. Pasma, których
-   źródło nie dowozi, i tak odrzuca bramka snrAc, a przy okazji zapas nad tłem
-   przy 125 Hz mówi nam, co naprawdę gra. */
-const F1=80, f2of=()=>Math.min(16000,ST.fs*.45);
-
-/* Rozpoznanie faktycznego źródła po tym, czy cokolwiek promieniuje przy 125 Hz.
-   Głośnik telefonu jest tam bezradny (pomiary terenowe: 12–18 dB nad tłem),
-   każdy głośnik zewnętrzny daje wyraźnie więcej. Strefa pośrednia zostaje
-   nierozstrzygnięta — lepiej milczeć niż zgadywać. */
-function wykryjZrodlo(snrAc){
-  const lo=snrAc[BANDS.indexOf(125)];
-  if(lo>=30)return 'ext';
-  if(lo<=22)return 'phone';
-  return null;
-}
+/* Dolna granica sweepu zależy od źródła — i musi zależeć.
+   Próba wysyłania 80 Hz przez głośnik telefonu okazała się szkodliwa: telefon
+   nie wypromieniuje tam dźwięku, ale obudowa drga, a mikrofon leżący na tej
+   samej obudowie odbiera to drganie drogą konstrukcyjną. Pasmo 125 Hz
+   przechodziło wtedy bramkę SNR i groziło podaniem czasu pogłosu policzonego
+   z wibracji telefonu zamiast z pomieszczenia. */
+const f1of=()=>ST.src==='ext'?80:200, f2of=()=>Math.min(16000,ST.fs*.45);
 
 async function runSweep(dur,tail,amp){
-  const sw=makeSweep(ST.fs,dur,F1,f2of());
+  const sw=makeSweep(ST.fs,dur,f1of(),f2of());
   const ab=ST.ctx.createBuffer(1,sw.N,ST.fs),ch=ab.getChannelData(0);
   for(let i=0;i<sw.N;i++)ch[i]=sw.sweep[i]*amp;
   const nd=ST.ctx.createBufferSource();nd.buffer=ab;nd.connect(ST.ctx.destination);
@@ -479,29 +468,12 @@ $('b3b').onclick=async()=>{
   gb.className='bar'+(r.clip?' bad':(sAc>=26?' good':''));
   $('gv').textContent='zapas '+sAc.toFixed(0)+' dB';
   b.disabled=false;b.textContent='Sprawdź ponownie';
-  /* Weryfikacja deklarowanego źródła. Przeglądarka nie wystawia listy urządzeń
-     wyjściowych ani na Androidzie, ani w Safari, więc jedyną wiarygodną drogą
-     jest sprawdzenie, co faktycznie zabrzmiało. */
+  /* Liczby diagnostyczne do rozpoznania źródła. NIE służą jeszcze do podejmowania
+     decyzji — pierwsza próba automatycznego rozpoznania po zapasie przy 125 Hz
+     dawała fałszywy alarm na samym telefonie, bo mikrofon odbiera drgania wspólnej
+     obudowy. Zbieramy je, pokazujemy w trybie technicznym i kalibrujemy na realnych
+     urządzeniach, zanim cokolwiek na ich podstawie orzekniemy. */
   ST.lat=r.lat;ST.srcLo=r.snrAc[BANDS.indexOf(125)];
-  const wykryte=wykryjZrodlo(r.snrAc);
-  ST.srcWykryte=wykryte;
-  if(wykryte&&wykryte!==ST.src){
-    const doExt=wykryte==='ext';
-    ST.src=wykryte;
-    document.querySelector('input[name=src][value="'+wykryte+'"]').checked=true;
-    $('oPhone').classList.toggle('sel',!doExt);$('oExt').classList.toggle('sel',doExt);
-    $('extHint').classList.toggle('hide',!doExt);
-    $('lvlHint').textContent=doExt
-      ? 'Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.'
-      : 'Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.';
-    drawPlan();
-    S($('m3b'),'info',doExt
-      ? '<b>Wykryłem głośnik zewnętrzny.</b> Zaznaczyłeś głośnik telefonu, ale dźwięk wychodzi przez urządzenie zewnętrzne — przy 125 Hz jest '+r.snrAc[BANDS.indexOf(125)].toFixed(0)+' dB zapasu nad tłem, czego głośnik telefonu nie osiąga'+(r.lat>.09?', a opóźnienie toru wynosi około '+Math.round(r.lat*1000)+' ms':'')+'. Przełączyłem podpowiedzi i rysunek. Postaw głośnik w rogu i sprawdź poziom ponownie.'
-      : '<b>Dźwięk wychodzi z głośnika telefonu.</b> Zaznaczyłeś głośnik zewnętrzny, ale przy 125 Hz jest tylko '+r.snrAc[BANDS.indexOf(125)].toFixed(0)+' dB zapasu nad tłem — urządzenie zewnętrzne dałoby znacznie więcej. Sprawdź połączenie Bluetooth albo zostaw tak jak jest. Naciśnij Sprawdź poziom ponownie.');
-    /* Poziom i przesterowanie trzeba zmierzyć przy właściwych ustawieniach,
-       więc przejście dalej odblokuje dopiero kolejny, zgodny przebieg. */
-    $('b3c').classList.add('hide');return;
-  }
   if(r.clip){S($('m3b'),'err','Przesterowanie. '+(ST.src==='phone'?'Odsuń telefon od twardych powierzchni.':'Przycisz głośnik o dwie kreski.'));
     $('b3c').classList.add('hide');return;}
   if(sAc<SNR_AC_MIN){
@@ -711,8 +683,7 @@ function diag(){
     '<span>AGC</span><span>'+yn(s.autoGainControl)+'</span>'+
     '<span>redukcja szumu</span><span>'+yn(s.noiseSuppression)+'</span>'+
     '<span>tło</span><span>'+(ST.bg?ST.bg.toFixed(1):'—')+' dBFS</span>'+
-    '<span>źródło</span><span>'+(ST.src==='ext'?'zewnętrzne':'telefon')+
-      (ST.srcWykryte?(ST.srcWykryte===ST.src?' <span class="g">(potwierdzone)</span>':' <span class="y">(rozpoznane)</span>'):' <span style="color:#5F6C76">(nierozstrzygnięte)</span>')+'</span>'+
+    '<span>źródło</span><span>'+(ST.src==='ext'?'zewnętrzne':'telefon')+' (deklarowane)</span>'+
     '<span>zapas przy 125 Hz</span><span>'+(ST.srcLo!=null?ST.srcLo.toFixed(1)+' dB':'—')+'</span>'+
     '<span>opóźnienie toru</span><span>'+(ST.lat!=null?'≈ '+Math.round(ST.lat*1000)+' ms':'—')+'</span>'+
     '<span>D50 średnie</span><span>'+(ST.D50!=null?ST.D50.toFixed(1)+' %':'—')+'</span>'+
@@ -731,10 +702,9 @@ $('bJson').onclick=()=>{
   const out={wersja:'silnik-'+WERSJA,czas:new Date().toISOString(),
     pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
     tor:{fs:ST.fs,zrodlo:ST.src,
-      zrodlo_rozpoznane:ST.srcWykryte||'nierozstrzygniete',
       zapas_125Hz_dB:r1(ST.srcLo),
       opoznienie_toru_ms:ST.lat!=null?Math.round(ST.lat*1000):null,
-      sweep_od_Hz:F1,tlo_dBFS:ST.bg,...ST.set},
+      sweep_od_Hz:f1of(),tlo_dBFS:ST.bg,...ST.set},
     Tmid:r3(ST.Tmid),
     Tmid_pasma:ST.midF||[],
     Tmid_jakosc:(ST.midQ&&ST.midQ.includes('orient.'))||((ST.midF||[]).length<2)?'orientacyjny':'dobry',
