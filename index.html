@@ -351,7 +351,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v4';
+const WERSJA='v5';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
 /*═════════════ STAN ═════════════*/
@@ -553,15 +553,20 @@ $('b4').onclick=async()=>{
   b.disabled=false;b.textContent='START';
 };
 function finish(){
-  const P=ST.pos.filter(Boolean),avg={},spread={},qual={};
+  const P=ST.pos.filter(Boolean),avg={},spread={},qual={},cnt={};
   BANDS.forEach(f=>{
     const v=P.map(p=>p.bands[f]&&p.bands[f].T).filter(x=>x);
+    cnt[f]=v.length;
     if(v.length){const m=v.reduce((a,x)=>a+x)/v.length;avg[f]=m;
-      spread[f]=v.length>1?(Math.max(...v)-Math.min(...v))/m:0;
+      /* Rozrzut istnieje tylko przy co najmniej dwóch punktach. Wcześniej
+         pojedynczy punkt dostawał 0%, czyli brak danych wyglądał w tabeli
+         na idealną zgodność. */
+      spread[f]=v.length>1?(Math.max(...v)-Math.min(...v))/m:null;
       qual[f]=P.map(p=>p.bands[f]&&p.bands[f].q).filter(Boolean).includes('orient.')?'orient.':'dobry';}
     else{avg[f]=null;spread[f]=null;
       qual[f]=(P[0]&&P[0].bands[f]&&P[0].bands[f].why)||'—';}
   });
+  ST.cnt=cnt;ST.nPos=P.length;
   ST.avg=avg;
   const midF=[500,1000].filter(f=>avg[f]);
   const mid=midF.map(f=>avg[f]);
@@ -577,7 +582,7 @@ function finish(){
         ? 'Głośnik telefonu nie wypromieniował dość energii w tym zakresie. Podłącz głośnik zewnętrzny i powtórz badanie — to rozwiązuje problem w praktycznie każdym pomieszczeniu.'
         : 'Podgłośnij głośnik, odsuń się od niego na co najmniej 2 metry i powtórz badanie w ciszy.')+
       '</div>';
-    buildTable(avg,spread,qual);$('rOk').classList.remove('hide');
+    buildTable(avg,spread,qual,cnt);$('rOk').classList.remove('hide');
     $('rT').innerHTML='—';$('rVerdict').innerHTML='';
     document.querySelector('#rOk .big').classList.add('hide');
     diag();go(5);return;
@@ -620,20 +625,34 @@ function finish(){
     }
     $('rSpeech').innerHTML=h;
   }
-  buildTable(avg,spread,qual);
-  const sp=[500,1000,2000].map(f=>spread[f]).filter(x=>x!=null);
-  if(sp.length){const m=Math.max(...sp);
-    $('rStab').innerHTML=m<.12?'<div class="msg good">Pomiar stabilny — trzy punkty dały zgodne wyniki.</div>'
-      :m<.25?'<div class="msg warn">Umiarkowany rozrzut między punktami. Akustyka zmienia się w zależności od miejsca.</div>'
-      :'<div class="msg err">Duży rozrzut między punktami. Wnętrze zachowuje się bardzo różnie w różnych miejscach — wynik traktuj jako zgrubny.</div>';}
+  buildTable(avg,spread,qual,cnt);
+  /* Werdykt stabilności może mówić tylko o pasmach, które faktycznie mają
+     z czym się porównać. Wcześniej pasmo z jednego punktu wchodziło tu jako
+     rozrzut 0% i podbijało ocenę do "trzy punkty dały zgodne wyniki". */
+  const cmp=[500,1000,2000].filter(f=>spread[f]!=null);
+  if(cmp.length){
+    const m=Math.max(...cmp.map(f=>spread[f]));
+    const nMin=Math.min(...cmp.map(f=>cnt[f]));
+    const ile=cmp.length===3?'Wszystkie trzy pasma mowy':(cmp.length===2?'Dwa pasma mowy':'Jedno pasmo mowy ('+lbl(cmp[0])+')');
+    $('rStab').innerHTML=(m<.12
+      ?'<div class="msg good">Pomiar powtarzalny. '+ile+' dało zgodne wyniki w '+nMin+' punktach (rozrzut do '+Math.round(m*100)+' %).</div>'
+      :m<.25?'<div class="msg warn">Umiarkowany rozrzut między punktami (do '+Math.round(m*100)+' %). Akustyka zmienia się w zależności od miejsca.</div>'
+      :'<div class="msg err">Duży rozrzut między punktami (do '+Math.round(m*100)+' %). Wnętrze zachowuje się bardzo różnie w różnych miejscach — wynik traktuj jako zgrubny.</div>');
+  }else{
+    $('rStab').innerHTML='<div class="msg warn">Nie da się ocenić powtarzalności — żadne pasmo mowy nie wyszło w co najmniej dwóch punktach.</div>';
+  }
   $('rOk').classList.remove('hide');diag();go(5);
 }
-function buildTable(avg,spread,qual){
-  let t='<table><thead><tr><th>pasmo</th><th>T [s]</th><th>rozrzut</th><th>jakość</th></tr></thead><tbody>';
+function buildTable(avg,spread,qual,cnt){
+  const n=ST.nPos||3;
+  let t='<table><thead><tr><th>pasmo</th><th>T [s]</th><th>punkty</th><th>rozrzut</th><th>jakość</th></tr></thead><tbody>';
   BANDS.forEach(f=>{
-    if(avg[f]==null){t+='<tr class="weak"><td>'+lbl(f)+'</td><td colspan="3" class="q">'+qual[f]+'</td></tr>';return;}
-    t+='<tr><td>'+lbl(f)+'</td><td>'+avg[f].toFixed(2).replace('.',',')+'</td><td>±'+
-      Math.round(spread[f]*100)+' %</td><td class="q" style="color:'+(qual[f]==='dobry'?'#7FC96B':'#FFB020')+'">'+qual[f]+'</td></tr>';});
+    if(avg[f]==null){t+='<tr class="weak"><td>'+lbl(f)+'</td><td colspan="4" class="q">'+qual[f]+'</td></tr>';return;}
+    /* Brak rozrzutu to brak danych, nie zgodność — stąd kreska zamiast ±0 %. */
+    const sp=spread[f]==null?'<span style="color:var(--dim)">—</span>':'±'+Math.round(spread[f]*100)+' %';
+    t+='<tr><td>'+lbl(f)+'</td><td>'+avg[f].toFixed(2).replace('.',',')+'</td><td'+
+      (cnt[f]<n?' style="color:var(--signal)"':'')+'>'+cnt[f]+'/'+n+'</td><td>'+sp+
+      '</td><td class="q" style="color:'+(qual[f]==='dobry'?'#7FC96B':'#FFB020')+'">'+qual[f]+'</td></tr>';});
   $('rTbl').innerHTML=t+'</tbody></table>';
 }
 function diag(){
