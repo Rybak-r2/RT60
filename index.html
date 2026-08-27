@@ -89,6 +89,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 .diag span:nth-child(odd){color:var(--muted)} .diag span:nth-child(even){text-align:right}
 .g{color:var(--ok)}.r{color:var(--bad)}.y{color:var(--signal)}
 .hide{display:none!important}
+.ver{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);text-align:center;margin:18px 0 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -108,6 +109,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
     <li data-n="04"><b>Powtórzysz pomiar w trzech miejscach</b><span>Jeden punkt to za mało — dźwięk rozkłada się w pomieszczeniu nierównomiernie.</span></li>
   </ul>
   <button onclick="go(2)">Dalej</button>
+  <p class="ver" id="ver"></p>
 </div>
 
 <div id="v2" class="hide">
@@ -346,6 +348,10 @@ function stiFrom(m){
   for(let k=0;k<6;k++)s-=B_M[k]*Math.sqrt(v[k]*v[k+1]);
   return Math.max(0,Math.min(1,s));
 }
+/* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
+   zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
+   która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
+const WERSJA='v4';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
 /*═════════════ STAN ═════════════*/
@@ -356,6 +362,7 @@ const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
 function go(n){for(let i=1;i<=5;i++){$('v'+i).classList.toggle('hide',i!==n);
   $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
 function lbl(f){return f>=1000?(f/1000)+' kHz':f+' Hz';}
+$('ver').textContent='silnik '+WERSJA;
 
 $('b2').onclick=()=>{
   const g=id=>parseFloat(($(id).value||'').replace(',','.'));
@@ -651,7 +658,7 @@ $('bJson').onclick=()=>{
   /* Bramka D50: przy dominacji pola bezpośredniego C50/STI są zawyżone i NIE
      wolno ich eksportować jako liczb — inaczej trafiają do projektu jako fakt. */
   const mowaOK=ST.D50!=null&&ST.D50<=D50_MAX;
-  const out={wersja:'silnik-v4',czas:new Date().toISOString(),
+  const out={wersja:'silnik-'+WERSJA,czas:new Date().toISOString(),
     pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
     tor:{fs:ST.fs,zrodlo:ST.src,tlo_dBFS:ST.bg,...ST.set},
     Tmid:r3(ST.Tmid),
