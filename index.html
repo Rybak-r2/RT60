@@ -299,7 +299,11 @@ function decay(h,fs){
   for(let i=M-1;i>=0;i--){s+=e[i];S[i]=s;}
   const S0=S[pi]>0?S[pi]:S[0],db=new Float64Array(M);
   for(let i=0;i<M;i++)db[i]=10*Math.log10(Math.max(S[i],1e-30)/S0);
-  let range=0;for(let i=pi;i<M;i++)range=Math.min(range,db[i]);
+  /* Zakres użyteczny = zapas szczytu obwiedni nad podłogą szumu (Lundeby).
+     min(db) się do tego NIE nadaje: ogon całki Schroedera zbiega do energii
+     pojedynczej próbki i zawyża zakres o kilkadziesiąt dB, przez co progi
+     ISO (35 dB dla T30, 25 dB dla T20) nigdy nie zadziałają. */
+  const range=10*Math.log10(Math.max(peak,1e-30)/Math.max(noise,1e-30));
   function fit(d1,d2){
     let i1=-1,i2=-1;
     for(let i=pi;i<M;i++){if(i1<0&&db[i]<=-d1)i1=i;if(db[i]<=-d2){i2=i;break;}}
@@ -315,8 +319,8 @@ function decay(h,fs){
   const i50=Math.min(M-1,pi+Math.round(.05*fs));
   let early=0,total=0;
   for(let i=pi;i<M;i++){if(i<=i50)early+=e[i];total+=e[i];}
-  return{T20:fit(5,25),T30:fit(5,35),range:-range,
-    snrDec:10*Math.log10(peak/noise),pi:pi,tr:tr,e:e,
+  return{T20:fit(5,25),T30:fit(5,35),range:range,
+    snrDec:range,pi:pi,tr:tr,e:e,
     C50:10*Math.log10(early/Math.max(total-early,1e-30)),
     D50:100*early/Math.max(total,1e-30)};
 }
@@ -421,11 +425,11 @@ async function runSweep(dur,tail,amp){
 /* ocena jednego pasma */
 function judge(d,snrAc){
   if(snrAc<SNR_AC_MIN)return{T:null,why:'brak pobudzenia'};
-  let pick=null,q='';
-  if(d.T30&&d.range>=35&&d.T30.xi<=XI_MAX){pick=d.T30;q=d.T30.xi<=XI_GOOD?'dobry':'orient.';}
-  else if(d.T20&&d.range>=25&&d.T20.xi<=XI_MAX){pick=d.T20;q=d.T20.xi<=XI_GOOD?'dobry':'orient.';}
-  if(!pick)return{T:null,why:d.range<25?'za mały zakres':'zanik nieliniowy'};
-  return{T:pick.T,xi:pick.xi,q:q};
+  let pick=null,q='',est=null;
+  if(d.T30&&d.range>=35&&d.T30.xi<=XI_MAX){pick=d.T30;est='T30';q=d.T30.xi<=XI_GOOD?'dobry':'orient.';}
+  else if(d.T20&&d.range>=25&&d.T20.xi<=XI_MAX){pick=d.T20;est='T20';q=d.T20.xi<=XI_GOOD?'dobry':'orient.';}
+  if(!pick)return{T:null,why:d.range<25?'za mały zakres':'zanik nieliniowy',range:d.range};
+  return{T:pick.T,xi:pick.xi,q:q,est:est,range:d.range};
 }
 $('b3b').onclick=async()=>{
   const b=$('b3b');b.disabled=true;b.textContent='Sprawdzam…';S($('m3b'),'');
@@ -451,7 +455,9 @@ $('b3b').onclick=async()=>{
       : 'Za cicho. Podgłośnij głośnik i sprawdź ponownie.');
     $('b3c').classList.add('hide');return;}
   if(d1.D50>D50_MAX){
-    S($('m3b'),'warn','Mikrofon jest za blisko źródła — rejestruje niemal wyłącznie dźwięk bezpośredni. Odsuń się od głośnika na co najmniej 2 metry'+(ST.src==='phone'?' albo wyciągnij rękę z telefonem przed siebie':'')+' i sprawdź ponownie.');
+    S($('m3b'),'warn',ST.src==='phone'
+      ? 'Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu. Czas pogłosu zmierzysz mimo to — ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte, bo na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik.'
+      : 'Mikrofon jest za blisko głośnika — rejestruje niemal wyłącznie dźwięk bezpośredni. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.');
     $('b3c').classList.remove('hide');return;}
   if(sAc<26){S($('m3b'),'warn','Zapas wystarcza na wynik orientacyjny. '+(ST.src==='phone'?'Głośnik zewnętrzny dałby pewniejszy pomiar.':'Podgłośnij o kreskę.'));}
   else{
@@ -550,9 +556,10 @@ function finish(){
       qual[f]=(P[0]&&P[0].bands[f]&&P[0].bands[f].why)||'—';}
   });
   ST.avg=avg;
-  const mid=[500,1000].map(f=>avg[f]).filter(x=>x);
+  const midF=[500,1000].filter(f=>avg[f]);
+  const mid=midF.map(f=>avg[f]);
   const Tmid=mid.length?mid.reduce((a,x)=>a+x)/mid.length:null;
-  ST.Tmid=Tmid;
+  ST.Tmid=Tmid;ST.midF=midF;ST.midQ=midF.map(f=>qual[f]);
   const D50m=P.map(p=>p.D50).filter(x=>x!=null);
   const D50=D50m.length?D50m.reduce((a,x)=>a+x)/D50m.length:null;
   ST.D50=D50;
@@ -574,6 +581,15 @@ function finish(){
   else if(Tmid<.8)v='<div class="msg info">Akustyka umiarkowana. Rozmowa jest zrozumiała, ale przy większej liczbie osób hałas będzie narastał.</div>';
   else if(Tmid<1.4)v='<div class="msg warn">Pogłos wyraźnie za długi. Mowa się zlewa, hałas kumuluje się przy większej liczbie osób. Wnętrze wymaga adaptacji.</div>';
   else v='<div class="msg err">Bardzo długi pogłos. Rozmowa na dystans jest utrudniona, wnętrze męczy. Adaptacja przyniesie odczuwalną poprawę.</div>';
+  /* Werdykt nie może brzmieć pewniej, niż pozwala na to jakość pomiaru. */
+  if(midF.length<2||ST.midQ.includes('orient.')){
+    v+='<div class="msg warn"><b>Wynik orientacyjny.</b> '+
+      (midF.length<2
+        ? 'Czas pogłosu opiera się na jednym paśmie mowy ('+lbl(midF[0])+') — drugie nie dało wiarygodnego zaniku. '
+        : 'Zanik w pasmach mowy był na granicy liniowości. ')+
+      'Traktuj tę liczbę jako rząd wielkości, nie jako pomiar.'+
+      (ST.src==='phone'?' Głośnik zewnętrzny zwykle to naprawia.':'')+'</div>';
+  }
   $('rVerdict').innerHTML=v;
   /* BRAMKA D50 — metryki mowy tylko przy realnym polu pogłosowym */
   if(D50!=null&&D50>D50_MAX){
@@ -631,18 +647,36 @@ function diag(){
 }
 $('bJson').onclick=()=>{
   const P=ST.pos.filter(Boolean);
-  const out={wersja:'silnik-v3',czas:new Date().toISOString(),
+  const r3=x=>x==null?null:+x.toFixed(3), r1=x=>x==null?null:+x.toFixed(1);
+  /* Bramka D50: przy dominacji pola bezpośredniego C50/STI są zawyżone i NIE
+     wolno ich eksportować jako liczb — inaczej trafiają do projektu jako fakt. */
+  const mowaOK=ST.D50!=null&&ST.D50<=D50_MAX;
+  const out={wersja:'silnik-v4',czas:new Date().toISOString(),
     pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
     tor:{fs:ST.fs,zrodlo:ST.src,tlo_dBFS:ST.bg,...ST.set},
-    Tmid:ST.Tmid?+ST.Tmid.toFixed(3):null,
+    Tmid:r3(ST.Tmid),
+    Tmid_pasma:ST.midF||[],
+    Tmid_jakosc:(ST.midQ&&ST.midQ.includes('orient.'))||((ST.midF||[]).length<2)?'orientacyjny':'dobry',
     A_sabine_m2:ST.Tmid?+(0.161*ST.V/ST.Tmid).toFixed(2):null,
-    D50_srednie:ST.D50!=null?+ST.D50.toFixed(1):null,
-    pasma:BANDS.map(f=>({fc:f,T:ST.avg&&ST.avg[f]?+ST.avg[f].toFixed(3):null,
-      snrAc_dB:P[0]&&P[0].snrAc?+P[0].snrAc[BANDS.indexOf(f)].toFixed(1):null,
-      xi:P[0]&&P[0].bands[f]&&P[0].bands[f].xi?+P[0].bands[f].xi.toFixed(1):null,
-      powod:P[0]&&P[0].bands[f]&&P[0].bands[f].why||null})),
-    pozycje:P.map((p,i)=>({punkt:i+1,C50:p.C50!=null?+p.C50.toFixed(2):null,
-      D50:p.D50!=null?+p.D50.toFixed(1):null,STI:stiFrom(p.mtis)?+stiFrom(p.mtis).toFixed(3):null}))};
+    D50_srednie:r1(ST.D50),
+    zrozumialosc_wiarygodna:mowaOK,
+    /* Każde pasmo: średnia ORAZ pełny rozkład na pozycje. Wcześniej T brało się
+       ze średniej, a xi/powód z pozycji 1 — plik potrafił podać T i jednocześnie
+       twierdzić, że pomiar się nie udał. */
+    pasma:BANDS.map((f,k)=>({fc:f,
+      T_srednie:ST.avg?r3(ST.avg[f]):null,
+      liczba_waznych_pozycji:P.filter(p=>p.bands[f]&&p.bands[f].T).length,
+      pozycje:P.map(p=>({T:r3(p.bands[f]&&p.bands[f].T),
+        estymator:(p.bands[f]&&p.bands[f].est)||null,
+        xi:r1(p.bands[f]&&p.bands[f].xi),
+        zakres_dB:r1(p.bands[f]&&p.bands[f].range),
+        snrAc_dB:r1(p.snrAc&&p.snrAc[k]),
+        powod:(p.bands[f]&&p.bands[f].why)||null}))})),
+    pozycje:P.map((p,i)=>({punkt:i+1,
+      D50:r1(p.D50),
+      C50:mowaOK&&p.C50!=null?+p.C50.toFixed(2):null,
+      STI:mowaOK&&stiFrom(p.mtis)?r3(stiFrom(p.mtis)):null,
+      uwaga:mowaOK?null:'D50 > '+D50_MAX+'% — dominuje pole bezpośrednie, C50/STI pominięte jako niewiarygodne'}))};
   dl(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),'badanie-akustyczne.json');
 };
 $('bWav').onclick=()=>{
