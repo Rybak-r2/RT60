@@ -127,6 +127,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
     <label class="fld">Szerokość [m]<input id="fW" type="text" inputmode="decimal" autocomplete="off" placeholder="4,2"></label>
     <label class="fld">Wysokość [m]<input id="fH" type="text" inputmode="decimal" autocomplete="off" placeholder="2,9"></label>
   </div>
+  <div class="lvlAbs" style="margin:-6px 0 13px"><span>kubatura — sprawdź, czy się zgadza</span><span id="dimV">—</span></div>
   <label class="fld" style="margin-bottom:14px">Przeznaczenie
     <select id="fType">
       <option value="biuro">Biuro</option><option value="openspace">Open space</option>
@@ -359,7 +360,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v11';
+const WERSJA='v12';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20;
 /* Kiedy metryki mowy (C50, D50, STI) są wiarygodne.
@@ -411,17 +412,47 @@ $('ver').textContent='silnik '+WERSJA;
   $('sl3').textContent='dobrze (od '+SNR_AC_GOOD+' dB)';
 })();
 
+/* Separator dziesiętny bierze się z klawiatury systemowej, nie ze strony.
+   iOS pokazuje na klawiaturze numerycznej kropkę ALBO przecinek, zależnie od
+   regionu ustawionego w telefonie — użytkownik nie ma jak tego wymusić i przy
+   regionie innym niż polski nie ma czym wpisać przecinka. Dlatego normalizujemy
+   w locie: cokolwiek zostanie wpisane, pole pokazuje przecinek, a znaki spoza
+   cyfr znikają natychmiast, zamiast dochodzić dopiero do walidacji.
+   Podgląd kubatury obok daje potwierdzenie, że liczba została zrozumiana. */
+['fL','fW','fH'].forEach(id=>{
+  const el=$(id);
+  el.addEventListener('input',()=>{
+    const przed=el.value,poz=el.selectionStart;
+    let s=przed.replace(/[.·˙٫․‧]/g,',').replace(/[^0-9,]/g,'');
+    const i=s.indexOf(',');
+    if(i>=0)s=s.slice(0,i+1)+s.slice(i+1).replace(/,/g,'');
+    if(s!==przed){
+      el.value=s;
+      const d=s.length-przed.length;
+      try{const c=Math.max(0,(poz||0)+d);el.setSelectionRange(c,c);}catch(e){}
+    }
+    pokazKubature();
+  });
+});
+function pokazKubature(){
+  const v=[wym('fL'),wym('fW'),wym('fH')];
+  $('dimV').innerHTML=v.every(x=>isFinite(x)&&x>0)
+    ? '<span class="g">'+(v[0]*v[1]*v[2]).toFixed(1).replace('.',',')+' m³</span>'
+    : '—';
+}
+/* Wspólny parser wymiaru: przecinek i kropka są równoważne, wszystko inne
+   odrzucamy jawnie zamiast pozwalać parseFloat zgadywać. */
+function wym(id){
+  const s=($(id).value||'').trim().replace(/\s/g,'').replace(',','.');
+  return /^\d*\.?\d+$/.test(s)?parseFloat(s):NaN;
+}
 $('b2').onclick=()=>{
   /* Pola wymiarów są type="text", nie type="number". Przy type="number"
      przeglądarka odrzuca przecinek jako niedozwolony znak i SKLEJA pozostałe
      cyfry: wpisane "5,2" wracało jako "52", czyli pomieszczenie dziesięć razy
      za długie, w dodatku bez żadnego sygnału dla użytkownika. Klawiatura
      numeryczna na telefonie bierze się teraz z inputmode="decimal". */
-  const g=id=>{
-    const s=($(id).value||'').trim().replace(/\s/g,'').replace(',','.');
-    return /^\d*\.?\d+$/.test(s)?parseFloat(s):NaN;
-  };
-  const L=g('fL'),W=g('fW'),H=g('fH');
+  const L=wym('fL'),W=wym('fW'),H=wym('fH');
   const puste=[['fL','długość'],['fW','szerokość'],['fH','wysokość']].filter(([id])=>!($(id).value||'').trim());
   if(puste.length){S($('m2'),'err','Uzupełnij '+(puste.length===3?'wszystkie trzy wymiary':puste.map(p=>p[1]).join(' i '))+'.');return;}
   if([L,W,H].some(v=>!isFinite(v))){
