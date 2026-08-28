@@ -359,9 +359,25 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v10';
+const WERSJA='v11';
 /*═════════════ PROGI WALIDACJI ═════════════*/
-const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20, D50_MAX=85;
+const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20;
+/* Kiedy metryki mowy (C50, D50, STI) są wiarygodne.
+   Wcześniej decydował stały próg D50 > 85%. Był błędny, bo dla czystego zaniku
+   wykładniczego udział energii z pierwszych 50 ms zależy WYŁĄCZNIE od czasu
+   pogłosu: D50 = 1 − 10^(−0,3/T). Próg 85% przecina tę krzywą przy T = 0,364 s,
+   więc w przebraniu był progiem na T — każde poprawnie zmierzone wnętrze o
+   krótszym pogłosie traciło metryki mowy bez powodu.
+   Liczymy więc, ile energii po 50 ms rzeczywiście zostało w stosunku do tego,
+   ile dałby sam zanik pogłosowy. To jest w istocie stosunek pola bezpośredniego
+   do pogłosowego. Kalibracja syntetyczna: czysty zanik daje 0,77–1,22, przewaga
+   bezpośredniego +6 dB → 0,47, +12 dB → 0,14, +20 dB → 0,04. */
+const POZNE_MIN=0.25;
+function d50Teoria(T){return 100*(1-Math.pow(10,-0.3/T));}
+function udzialPozny(D50,T){
+  if(D50==null||!(T>0))return null;
+  return (100-D50)/Math.max(100-d50Teoria(T),1e-6);
+}
 /* Progi wskaźnika poziomu. Rysunek paska liczy się z tych samych liczb, co
    decyzja — wcześniej zielone okno stało na 58–85% szerokości, a napisy pod
    spodem były rozłożone równomiernie, więc "dobrze" wypadało obok okna.
@@ -559,10 +575,11 @@ $('b3b').onclick=async()=>{
     S($('m3b'),'err','Zapas nad tłem wynosi '+sAc.toFixed(0)+' dB, ale sam sygnał jest skrajnie cichy ('+r.peakDb.toFixed(0)+' dBFS). Wychodzi na to wyłącznie dlatego, że w pomieszczeniu jest wyjątkowo cicho — pomiar przewróci się od pierwszego przypadkowego dźwięku. '+
       (ST.src==='phone'?'Podgłośnij telefon do maksimum':'Podgłośnij głośnik')+' i sprawdź ponownie.');
     $('b3c').classList.add('hide');return;}
-  if(d1.D50>D50_MAX){
-    S($('m3b'),'warn',ST.src==='phone'
-      ? 'Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu. Czas pogłosu zmierzysz mimo to — ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte, bo na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik.'
-      : 'Mikrofon jest za blisko głośnika — rejestruje niemal wyłącznie dźwięk bezpośredni. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.');
+  const poznyKontrolny=udzialPozny(d1.D50,j.T||ST.Test);
+  if(poznyKontrolny!=null&&poznyKontrolny<POZNE_MIN){
+    S($('m3b'),'warn',(ST.src==='phone'
+      ? 'Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu — do mikrofonu dociera '+Math.round(poznyKontrolny*100)+' % tego pola pogłosowego, które powinno tu być. Czas pogłosu zmierzysz mimo to, ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte: na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik.'
+      : 'Mikrofon jest za blisko głośnika — dociera do niego tylko '+Math.round(poznyKontrolny*100)+' % spodziewanego pola pogłosowego. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.'));
     $('b3c').classList.remove('hide');return;}
   const cicho=r.peakDb<PEAK_LOW_DBFS
     ? ' Sygnał jest przy tym nisko ('+r.peakDb.toFixed(0)+' dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar.' : '';
@@ -703,12 +720,19 @@ function finish(){
       (ST.src==='phone'?' Głośnik zewnętrzny zwykle to naprawia.':'')+'</div>';
   }
   $('rVerdict').innerHTML=v;
-  /* BRAMKA D50 — metryki mowy tylko przy realnym polu pogłosowym */
-  if(D50!=null&&D50>D50_MAX){
+  /* Metryki mowy tylko wtedy, gdy do mikrofonu dotarło realne pole pogłosowe —
+     mierzone względem tego, ile wynika z samego czasu pogłosu, a nie stałym
+     progiem na D50, który dla krótkiego pogłosu odcinał poprawne pomiary. */
+  const pozny=udzialPozny(D50,Tmid);
+  ST.pozny=pozny;
+  if(pozny!=null&&pozny<POZNE_MIN){
     $('rSpeech').innerHTML='<div class="msg warn"><b>Wskaźniki zrozumiałości pominięte.</b><br>'+
-      'Mikrofon rejestrował niemal wyłącznie dźwięk bezpośredni (D50 = '+Math.round(D50)+' %), '+
-      'więc C50, D50 i STI byłyby zawyżone. Odsuń się od źródła na co najmniej 2 metry i powtórz badanie, '+
-      'żeby otrzymać ocenę zrozumiałości mowy.</div>';
+      'Do mikrofonu dotarło zaledwie '+Math.round(pozny*100)+' % pola pogłosowego, którego należałoby się spodziewać przy czasie pogłosu '+
+      Tmid.toFixed(2).replace('.',',')+' s (D50 = '+Math.round(D50)+' % wobec '+Math.round(d50Teoria(Tmid))+' % z samego zaniku). '+
+      'Mikrofon rejestrował niemal wyłącznie dźwięk bezpośredni, więc C50, D50 i STI byłyby zawyżone. '+
+      (ST.src==='phone'
+        ? 'Głośnik zewnętrzny ustawiony w rogu, co najmniej 2 metry od telefonu, odblokowuje te wskaźniki.'
+        : 'Odsuń się od głośnika na co najmniej 2 metry i powtórz badanie.')+'</div>';
   }else{
     const C=P.map(p=>p.C50).filter(x=>x!=null);
     const sv=P.map(p=>stiFrom(p.mtis)).filter(x=>x!=null);
@@ -767,7 +791,10 @@ function diag(){
     '<span>źródło</span><span>'+(ST.src==='ext'?'zewnętrzne':'telefon')+' (deklarowane)</span>'+
     '<span>zapas przy 125 Hz</span><span>'+(ST.srcLo!=null?ST.srcLo.toFixed(1)+' dB':'—')+'</span>'+
     '<span>opóźnienie toru</span><span>'+(ST.lat!=null?'≈ '+Math.round(ST.lat*1000)+' ms':'—')+'</span>'+
-    '<span>D50 średnie</span><span>'+(ST.D50!=null?ST.D50.toFixed(1)+' %':'—')+'</span>'+
+    '<span>D50 średnie</span><span>'+(ST.D50!=null?ST.D50.toFixed(1)+' %':'—')+
+      (ST.Tmid?' <span style="color:#5F6C76">(z zaniku '+Math.round(d50Teoria(ST.Tmid))+' %)</span>':'')+'</span>'+
+    '<span>udział pola późnego</span><span>'+(ST.pozny!=null
+      ? '<span class="'+(ST.pozny<POZNE_MIN?'r':'g')+'">'+ST.pozny.toFixed(2)+'</span> (próg '+POZNE_MIN+')':'—')+'</span>'+
     '<span>kubatura</span><span>'+ST.V.toFixed(1)+' m³</span>'+
     '<span>A (Sabine)</span><span>'+(ST.Tmid?(0.161*ST.V/ST.Tmid).toFixed(1):'—')+' m² Sab</span>'+
     '<span>powtórki</span><span>'+ST.tries.join(' / ')+'</span>';
@@ -779,7 +806,7 @@ $('bJson').onclick=()=>{
   const r3=x=>x==null?null:+x.toFixed(3), r1=x=>x==null?null:+x.toFixed(1);
   /* Bramka D50: przy dominacji pola bezpośredniego C50/STI są zawyżone i NIE
      wolno ich eksportować jako liczb — inaczej trafiają do projektu jako fakt. */
-  const mowaOK=ST.D50!=null&&ST.D50<=D50_MAX;
+  const mowaOK=ST.pozny==null||ST.pozny>=POZNE_MIN;
   const out={wersja:'silnik-'+WERSJA,czas:new Date().toISOString(),
     pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
     tor:{fs:ST.fs,zrodlo:ST.src,
@@ -792,6 +819,9 @@ $('bJson').onclick=()=>{
     Tmid_jakosc:(ST.midQ&&ST.midQ.includes('orient.'))||((ST.midF||[]).length<2)?'orientacyjny':'dobry',
     A_sabine_m2:ST.Tmid?+(0.161*ST.V/ST.Tmid).toFixed(2):null,
     D50_srednie:r1(ST.D50),
+    D50_z_samego_zaniku:ST.Tmid?r1(d50Teoria(ST.Tmid)):null,
+    udzial_pola_poznego:ST.pozny!=null?+ST.pozny.toFixed(3):null,
+    udzial_pola_poznego_prog:POZNE_MIN,
     zrozumialosc_wiarygodna:mowaOK,
     /* Każde pasmo: średnia ORAZ pełny rozkład na pozycje. Wcześniej T brało się
        ze średniej, a xi/powód z pozycji 1 — plik potrafił podać T i jednocześnie
@@ -809,7 +839,7 @@ $('bJson').onclick=()=>{
       D50:r1(p.D50),
       C50:mowaOK&&p.C50!=null?+p.C50.toFixed(2):null,
       STI:mowaOK&&stiFrom(p.mtis)?r3(stiFrom(p.mtis)):null,
-      uwaga:mowaOK?null:'D50 > '+D50_MAX+'% — dominuje pole bezpośrednie, C50/STI pominięte jako niewiarygodne'}))};
+      uwaga:mowaOK?null:'do mikrofonu dotarło '+Math.round(ST.pozny*100)+'% spodziewanego pola pogłosowego — dominuje dźwięk bezpośredni, C50/STI pominięte jako niewiarygodne'}))};
   dl(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),'badanie-akustyczne.json');
 };
 $('bWav').onclick=()=>{
