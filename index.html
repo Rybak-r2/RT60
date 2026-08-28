@@ -110,7 +110,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <h2>Zanim zaczniesz</h2>
   <ul class="rules">
     <li data-n="01"><b>Zapewnij ciszę</b><span>Wyłącz wentylację i muzykę. Nikt nie powinien rozmawiać ani chodzić w trakcie badania.</span></li>
-    <li data-n="02"><b>Odsuń telefon od źródła dźwięku</b><span>Co najmniej 2 metry od głośnika. Jeśli mierzysz głośnikiem samego telefonu, trzymaj go w wyciągniętej ręce, dolną krawędzią do góry, na wysokości mniej więcej 1,2 m.</span></li>
+    <li data-n="02"><b>Przygotuj głośnik zewnętrzny</b><span>Wystarczy dowolny głośnik Bluetooth. Telefon potrafi zmierzyć sam, ale wtedy mikrofon leży na tej samej obudowie co źródło i wynik jest wyłącznie poglądowy — do projektu adaptacji się nie nadaje.</span></li>
     <li data-n="03"><b>Stań co najmniej metr od ścian i mebli</b><span>Aplikacja pokaże, gdzie dokładnie się ustawić.</span></li>
     <li data-n="04"><b>Powtórzysz pomiar w trzech miejscach</b><span>Jeden punkt to za mało — dźwięk rozkłada się w pomieszczeniu nierównomiernie.</span></li>
   </ul>
@@ -142,11 +142,12 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <p class="eyebrow">Krok 2 z 4</p>
   <h1>Źródło dźwięku</h1>
   <div id="srcPick">
-    <label class="opt sel" id="oPhone"><input type="radio" name="src" value="phone" checked>
-      <b>Głośnik telefonu</b><span>Szybciej. Węższy zakres — bez tonów niskich. Telefon musi być w wyciągniętej ręce.</span></label>
-    <label class="opt" id="oExt"><input type="radio" name="src" value="ext">
-      <b>Głośnik zewnętrzny · zalecane</b><span>Dowolny głośnik Bluetooth w rogu pomieszczenia, minimum 2 m od telefonu. Pełny zakres i wiarygodny wynik.</span></label>
-    <div id="extHint" class="msg info hide">Postaw głośnik w rogu, na wysokości około 1 m, zwrócony w głąb wnętrza. Odsuń się od niego na co najmniej 2 metry.</div>
+    <label class="opt sel" id="oExt"><input type="radio" name="src" value="ext" checked>
+      <b>Głośnik zewnętrzny · pomiar właściwy</b><span>Dowolny głośnik Bluetooth w rogu pomieszczenia, minimum 2 m od telefonu. Pełne pasmo, ocena zrozumiałości mowy i wynik nadający się pod dobór adaptacji.</span></label>
+    <label class="opt" id="oPhone"><input type="radio" name="src" value="phone">
+      <b>Głośnik telefonu · tylko poglądowo</b><span>Gdy nie masz pod ręką żadnego głośnika. Mikrofon leży na tej samej obudowie co źródło, więc dociera do niego znikoma część pogłosu: pasma 250 i 500 Hz zwykle nie wychodzą, a czas pogłosu bywa zaniżony o 20–30 %. Do zgrubnego rozeznania, nie do projektu.</span></label>
+    <div id="extHint" class="msg info">Postaw głośnik w rogu, na wysokości około 1 m, zwrócony w głąb wnętrza. Odsuń się od niego na co najmniej 2 metry.</div>
+    <div id="phoneHint" class="msg warn hide"><b>Wynik będzie wyłącznie poglądowy.</b> Ograniczenie jest konstrukcyjne — mikrofon i głośnik są w jednym urządzeniu, więc nie da się go obejść ustawieniem ani oprogramowaniem. Jeżeli wynik ma posłużyć do doboru adaptacji, wróć tu z dowolnym głośnikiem Bluetooth.</div>
     <button id="b3a" style="margin-top:14px">Włącz mikrofon</button><div id="m3a"></div>
   </div>
   <div id="lvlBox" class="hide">
@@ -174,6 +175,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 <div id="v5" class="hide">
   <p class="eyebrow">Krok 4 z 4 · wynik</p>
   <h1>Twoje pomieszczenie</h1>
+  <div id="rTryb"></div>
   <div id="rFail"></div>
   <div id="rOk" class="hide">
     <div class="big"><div class="num" id="rT">—<small>s</small></div><div class="cap">czas pogłosu T<sub>mid</sub></div></div>
@@ -360,7 +362,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v12';
+const WERSJA='v13';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20;
 /* Kiedy metryki mowy (C50, D50, STI) są wiarygodne.
@@ -389,7 +391,14 @@ function udzialPozny(D50,T){
    łagodne i czekają na kalibrację na realnych urządzeniach. */
 const SNR_AC_GOOD=26, SNR_SCALE=45, PEAK_LOW_DBFS=-40, PEAK_MIN_DBFS=-50;
 /*═════════════ STAN ═════════════*/
-const ST={fs:48000,set:{},src:'phone',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,
+/* Domyślnym źródłem jest głośnik zewnętrzny. Głośnik telefonu daje wynik
+   wyłącznie poglądowy — sześć pomiarów terenowych tego samego wnętrza dało
+   przez telefon 0,288 s wobec 0,376 s przez głośnik zewnętrzny, czyli chłonność
+   zawyżoną o jedną trzecią, a pasmo 500 Hz nie wyszło ani razu na dwanaście
+   prób. To ograniczenie konstrukcyjne wspólnej obudowy, nie wada tej aplikacji:
+   Akulap firmy Dr. Jordan na tym samym telefonie w tym samym pokoju podaje
+   T20 = 0,04 s przy T30 = 0,22 s oraz STI = 1, czyli wartości niemożliwe. */
+const ST={fs:48000,set:{},src:'ext',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,
   tries:[0,0,0],peak:0,clip:false,rec:false,chunks:[]};
 const $=id=>document.getElementById(id);
 const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
@@ -473,7 +482,8 @@ $('b2').onclick=()=>{
 document.querySelectorAll('input[name=src]').forEach(r=>r.onchange=()=>{
   ST.src=r.value;$('oPhone').classList.toggle('sel',ST.src==='phone');
   $('oExt').classList.toggle('sel',ST.src==='ext');
-  $('extHint').classList.toggle('hide',ST.src!=='ext');drawPlan();
+  $('extHint').classList.toggle('hide',ST.src!=='ext');
+  $('phoneHint').classList.toggle('hide',ST.src!=='phone');drawPlan();
   /* Zmiana źródła po włączeniu mikrofonu jest dozwolona — mikrofon od niej nie
      zależy, a dolna granica sweepu czytana jest dopiero przy generowaniu sygnału.
      Unieważniamy jednak sprawdzenie poziomu: zmierzono je dla innego źródła. */
@@ -701,6 +711,16 @@ $('b4').onclick=async()=>{
   b.disabled=false;b.textContent='START';
 };
 function finish(){
+  /* Charakter pomiaru stoi nad wynikiem, a nie pod nim — żeby liczba nigdy nie
+     została odczytana w oderwaniu od tego, czym została zmierzona. */
+  $('rTryb').innerHTML=ST.src==='phone'
+    ? '<div class="msg warn"><b>Pomiar poglądowy — głośnik telefonu.</b><br>'+
+      'Mikrofon i głośnik są w jednej obudowie, więc do mikrofonu dociera znikoma część pola pogłosowego. '+
+      'Czas pogłosu wychodzi zwykle o 20–30 % za krótki, chłonność o tyle samo za wysoka, a pasma 250 i 500 Hz '+
+      'najczęściej w ogóle nie dają wyniku. Liczba poniżej służy do zgrubnego rozeznania.<br>'+
+      '<b>Ten wynik nie nadaje się jako podstawa doboru adaptacji akustycznej.</b> '+
+      'Powtórz badanie z dowolnym głośnikiem Bluetooth ustawionym w rogu pomieszczenia.</div>'
+    : '';
   const P=ST.pos.filter(Boolean),avg={},spread={},qual={},cnt={};
   BANDS.forEach(f=>{
     const v=P.map(p=>p.bands[f]&&p.bands[f].T).filter(x=>x);
@@ -840,6 +860,10 @@ $('bJson').onclick=()=>{
   const mowaOK=ST.pozny==null||ST.pozny>=POZNE_MIN;
   const out={wersja:'silnik-'+WERSJA,czas:new Date().toISOString(),
     pomieszczenie:{L:ST.L,W:ST.W,H:ST.H,V:+ST.V.toFixed(2),typ:ST.type},
+    /* Charakter pomiaru jedzie w pliku, żeby po stronie ALACER-a nie dało się
+       przez pomyłkę wpuścić wyniku poglądowego do doboru paneli. */
+    charakter_pomiaru:ST.src==='phone'?'pogladowy':'pelny',
+    nadaje_sie_do_doboru_adaptacji:ST.src!=='phone',
     tor:{fs:ST.fs,zrodlo:ST.src,
       zapas_125Hz_dB:r1(ST.srcLo),
       szczyt_sygnalu_dBFS:r1(ST.peakDb),
