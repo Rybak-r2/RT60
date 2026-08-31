@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F1418">
+<title>Dobór adaptacji akustycznej · ALACER</title>
+<style>
+:root{
+  --ink:#0F1418; --panel:#171D22; --panel2:#1E262C; --line:#2A343D;
+  --text:#E8EBEC; --muted:#8B98A2; --dim:#5F6C76;
+  --signal:#FFB020; --cool:#58C0C8; --bad:#E5544B; --ok:#7FC96B;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:15.5px;line-height:1.5;
+  padding:0 0 40px;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.03) 1px,transparent 1.6px);
+  background-size:14px 14px}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px}
+.steps{display:flex;gap:4px;padding:16px 0 20px}
+.steps i{flex:1;height:2px;background:var(--line);border-radius:1px}
+.steps i.on{background:var(--signal)} .steps i.past{background:#4A5A48}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--signal);margin:0 0 8px}
+h1{font-size:25px;line-height:1.15;margin:0 0 10px;font-weight:650;letter-spacing:-.02em}
+h2{font-size:18px;margin:20px 0 8px;font-weight:600}
+p{margin:0 0 13px} p.note{color:var(--muted);font-size:13.5px}
+button{font-family:var(--sans);font-size:16px;font-weight:580;background:var(--signal);color:#101418;
+  border:0;border-radius:2px;padding:14px 22px;cursor:pointer;width:100%;transition:filter .12s}
+button:hover:not(:disabled){filter:brightness(1.09)}
+button:disabled{background:var(--panel2);color:#4E5A63;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--cool);border:1px solid var(--line);font-weight:480;font-size:14px;padding:11px 16px}
+button.ghost:hover:not(:disabled){background:var(--panel2);filter:none}
+.btnrow{display:flex;gap:9px;margin-top:6px}
+.opt{display:block;border:1px solid var(--line);border-radius:2px;padding:13px 14px;margin-bottom:9px;cursor:pointer;background:var(--panel)}
+.opt.sel{border-color:var(--signal);background:rgba(255,176,32,.06)}
+.opt b{display:block;font-size:15px;margin-bottom:2px} .opt span{color:var(--muted);font-size:13px}
+.opt input{display:none}
+label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);flex:1}
+input,select{font-family:var(--mono);font-size:16px;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:2px;padding:11px 10px;width:100%}
+input:focus,select:focus{outline:1px solid var(--cool);border-color:var(--cool)}
+.msg{font-family:var(--mono);font-size:13px;line-height:1.45;padding:11px 13px;border-radius:2px;margin:12px 0 0;border-left:2px solid}
+.msg.err{background:rgba(229,84,75,.09);border-color:var(--bad);color:#F0A9A3}
+.msg.warn{background:rgba(255,176,32,.08);border-color:var(--signal);color:#F2CE93}
+.msg.info{background:rgba(88,192,200,.07);border-color:var(--cool);color:#A9DDE1}
+.msg.good{background:rgba(127,201,107,.08);border-color:var(--ok);color:#B5DFA8}
+.drop{border:1px dashed var(--line);border-radius:3px;padding:26px 18px;text-align:center;background:var(--panel);cursor:pointer}
+.drop.over{border-color:var(--signal);background:rgba(255,176,32,.06)}
+.drop b{display:block;margin-bottom:5px}
+.drop span{color:var(--muted);font-size:13px}
+.big{text-align:center;padding:18px 0 6px}
+.big .num{font-family:var(--mono);font-size:52px;font-weight:300;letter-spacing:-.03em;line-height:1;color:var(--signal)}
+.big .num small{font-size:20px;color:var(--muted);margin-left:4px}
+.big .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:9px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:3px 14px;font-family:var(--mono);font-size:12.5px;margin:12px 0}
+.kv span:nth-child(odd){color:var(--muted)} .kv span:nth-child(even){text-align:right}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+th{text-align:right;font-weight:500;color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:0 0 8px;border-bottom:1px solid var(--line)}
+th:first-child{text-align:left}
+td{text-align:right;padding:8px 0;border-bottom:1px solid rgba(42,52,61,.5)}
+td:first-child{text-align:left;color:var(--muted)}
+details{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+.g{color:var(--ok)}.r{color:var(--bad)}.y{color:var(--signal)}
+.hide{display:none!important}
+.ver{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);text-align:center;margin:18px 0 0}
+.prov{font-family:var(--mono);font-size:10.5px;color:var(--dim);border-top:1px solid var(--line);margin-top:22px;padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="steps"><i id="p1" class="on"></i><i id="p2"></i><i id="p3"></i><i id="p4"></i></div>
+
+<!-- ── 1. wczytanie pomiaru ─────────────────────────────────────────── -->
+<div id="v1">
+  <p class="eyebrow">Krok 1 z 4</p>
+  <h1>Wczytaj wynik badania</h1>
+  <p class="note">Plik JSON pobrany na końcu badania czasu pogłosu. Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.</p>
+  <div class="drop" id="drop">
+    <b>Wybierz plik albo przeciągnij tutaj</b>
+    <span>badanie-akustyczne.json</span>
+  </div>
+  <input type="file" id="plik" accept="application/json,.json" class="hide">
+  <div id="m1"></div>
+  <div id="podglad" class="hide">
+    <h2>Wczytane pomieszczenie</h2>
+    <div class="kv" id="kvWej"></div>
+    <button id="b1">Dalej</button>
+  </div>
+  <p class="ver" id="ver"></p>
+</div>
+
+<!-- ── 2. cel ───────────────────────────────────────────────────────── -->
+<div id="v2" class="hide">
+  <p class="eyebrow">Krok 2 z 4</p>
+  <h1>Cel adaptacji</h1>
+  <p class="note">Docelowy czas pogłosu w pasmach mowy. Wartości poniżej to typowe zalecenia dla danego rodzaju wnętrza.</p>
+  <div id="cele"></div>
+  <label class="fld" style="margin:14px 0">Cel własny [s]
+    <input id="celWl" type="text" inputmode="decimal" autocomplete="off" placeholder="0,60"></label>
+  <div id="m2"></div>
+  <div class="btnrow"><button class="ghost" onclick="idz(1)">Wstecz</button><button id="b2">Dalej</button></div>
+</div>
+
+<!-- ── 3. montaż i rozmieszczenie ───────────────────────────────────── -->
+<div id="v3" class="hide">
+  <p class="eyebrow">Krok 3 z 4</p>
+  <h1>Montaż paneli</h1>
+  <h2>Sposób mocowania</h2>
+  <label class="opt sel" id="oDys"><input type="radio" name="mont" value="dys" checked>
+    <b>Na dystansach 50 mm · zalecane</b><span>Panel odsunięty od ściany na listwach. Znacznie lepiej pracuje w dole pasma — pochłanianie przy 250 Hz rośnie z 0,40 do 0,70, co chroni przed wytłumieniem samej góry.</span></label>
+  <label class="opt" id="oSci"><input type="radio" name="mont" value="sci">
+    <b>Bezpośrednio na powierzchni</b><span>Prostszy montaż, panel przylega. Skuteczny od około 860 Hz w górę; przy dole pasma wypada wyraźnie słabiej.</span></label>
+  <h2>Gdzie</h2>
+  <div id="gdzie"></div>
+  <p class="note" style="margin-top:10px">Rozmieszczenie nie zmienia wyliczonego czasu pogłosu — model Sabine'a nie rozróżnia, na której powierzchni leży chłonność. Wybór służy sprawdzeniu, czy panele się zmieszczą, i przygotowaniu rozrysowania.</p>
+  <div id="m3"></div>
+  <div class="btnrow"><button class="ghost" onclick="idz(2)">Wstecz</button><button id="b3">Policz</button></div>
+</div>
+
+<!-- ── 4. propozycja ────────────────────────────────────────────────── -->
+<div id="v4" class="hide">
+  <p class="eyebrow">Krok 4 z 4 · propozycja</p>
+  <h1>Ile paneli</h1>
+  <div id="wynTryb"></div>
+  <div class="big"><div class="num" id="wynSzt">—</div><div class="cap" id="wynCap">paneli 1000 × 610 mm</div></div>
+  <div id="wynGl"></div>
+  <h2>Czas pogłosu po adaptacji</h2>
+  <div id="wynTab"></div>
+  <div id="wynBil"></div>
+  <div id="wynMies"></div>
+  <div class="btnrow" style="margin-top:18px">
+    <button class="ghost" onclick="idz(3)">Zmień montaż</button>
+    <button class="ghost" id="bJson">Pobierz propozycję</button>
+  </div>
+  <details><summary>Podstawa rachunku</summary><div class="kv" id="wynDiag"></div></details>
+  <div class="prov" id="prov"></div>
+</div>
+</div>
+
+<script>
+"use strict";
+const WERSJA='dobór v1';
+
+/*═══════════════ DANE MATERIAŁOWE ═══════════════
+  UWAGA — WARTOŚCI TYMCZASOWE.
+  α poniżej pochodzą z modelu Mikiego dla oporności przepływu σ = 30 000 Pa·s/m²
+  (wartość zgodna z deklaracją AW 0,90 dla ROCKTON PREMIUM 50 mm), a nie z badania
+  gotowego panelu. Model jest systematycznie zaniżony o 0,10–0,15 w skali AW wobec
+  badań komorowych, bo nie liczy krawędzi próbki. Kierunek błędu jest bezpieczny —
+  obiecuje mniej, niż panel da — ale do rozmowy z klientem trzeba je podmienić na
+  tabelę α_p 250–4000 Hz od producenta. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.5. */
+const PASMA=[125,250,500,1000,2000,4000];
+const ALFA={
+  dys:{125:0.41, 250:0.70, 500:0.86, 1000:0.88, 2000:0.90, 4000:0.93},
+  sci:{125:0.16, 250:0.40, 500:0.71, 1000:0.90, 2000:0.92, 4000:0.92}
+};
+const PANEL={dl:1.000, sz:0.610, gr:0.050};
+const LICO=PANEL.dl*PANEL.sz;                       // 0,610 m² — liczymy tylko lico
+const KRAW=2*(PANEL.dl*PANEL.gr)+2*(PANEL.sz*PANEL.gr);   // krawędzie jako zapas
+
+/* Pomiar telefonem zawyża chłonność. Sześć pomiarów terenowych tego samego pokoju
+   dało stosunek 1,31 (A_telefon / A_głośnik). To jedno pomieszczenie, więc zamiast
+   pojedynczej korekty stosujemy widełki obejmujące obserwację z zapasem w obie
+   strony. Patrz docs/MODEL-AKUSTYCZNY.md, 1.5. */
+const KOR_MIN=1.15, KOR_MAX=1.45;
+
+/* Progi przełączenia Sabine → Eyring. Przy dużym średnim pochłanianiu założenie
+   pola rozproszonego przestaje obowiązywać i Sabine zawyża chłonność. */
+const ALFA_EYRING=0.25;
+
+const CELE=[
+  {id:'biuro',      n:'Biuro',                    t:0.60},
+  {id:'openspace',  n:'Open space',               t:0.55},
+  {id:'konferencja',n:'Sala konferencyjna',       t:0.60},
+  {id:'lekcyjna',   n:'Sala lekcyjna',            t:0.60},
+  {id:'gastro',     n:'Restauracja',              t:0.70},
+  {id:'odsluch',    n:'Pokój odsłuchowy',         t:0.35},
+  {id:'salon',      n:'Salon / mieszkanie',       t:0.45}
+];
+
+const $=id=>document.getElementById(id);
+const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
+const pl=(v,n)=>v==null?'—':v.toFixed(n==null?2:n).replace('.',',');
+const lbl=f=>f>=1000?(f/1000)+' kHz':f+' Hz';
+function idz(n){for(let i=1;i<=4;i++){$('v'+i).classList.toggle('hide',i!==n);
+  $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
+$('ver').textContent=WERSJA;
+$('prov').textContent='α paneli z modelu Mikiego (σ = 30 000 Pa·s/m²) — wartości '+
+  'tymczasowe do czasu otrzymania tabeli α_p od producenta wełny. Liczone z samego '+
+  'lica panelu; obszycie krawędzi dokłada '+Math.round(100*KRAW/LICO)+' % powierzchni jako zapas.';
+
+const ST={};
+
+/*═══════════════ 1. WCZYTANIE ═══════════════*/
+$('drop').onclick=()=>$('plik').click();
+['dragenter','dragover'].forEach(e=>$('drop').addEventListener(e,ev=>{
+  ev.preventDefault();$('drop').classList.add('over');}));
+['dragleave','drop'].forEach(e=>$('drop').addEventListener(e,ev=>{
+  ev.preventDefault();$('drop').classList.remove('over');}));
+$('drop').addEventListener('drop',ev=>{
+  const f=ev.dataTransfer.files&&ev.dataTransfer.files[0];if(f)czytaj(f);});
+$('plik').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)czytaj(f);};
+
+function czytaj(f){
+  const r=new FileReader();
+  r.onload=()=>{
+    let j;
+    try{j=JSON.parse(r.result);}
+    catch(e){S($('m1'),'err','Nie udało się odczytać pliku — to nie jest poprawny JSON.');return;}
+    przyjmij(j);
+  };
+  r.readAsText(f);
+}
+
+function przyjmij(j){
+  const p=j.pomieszczenie;
+  if(!p||!(p.L>0)||!(p.W>0)||!(p.H>0)){
+    S($('m1'),'err','W pliku brakuje wymiarów pomieszczenia. Czy to na pewno wynik badania czasu pogłosu?');return;}
+  if(!j.pasma||!j.pasma.length){
+    S($('m1'),'err','W pliku brakuje wyników pasmowych.');return;}
+
+  ST.L=p.L; ST.W=p.W; ST.H=p.H; ST.V=p.V||p.L*p.W*p.H; ST.typ=p.typ;
+  ST.S=2*(p.L*p.W)+2*(p.L*p.H)+2*(p.W*p.H);
+  ST.Ssufit=p.L*p.W;
+  ST.Sscian=2*(p.L*p.H)+2*(p.W*p.H);
+  /* Rozpoznanie charakteru pomiaru. Kolejność ma znaczenie: pliki sprzed silnika
+     v13 nie mają pola charakter_pomiaru, więc trzeba sięgnąć do tor.zrodlo. Gdy
+     nic nie da się ustalić, przyjmujemy POGLĄDOWY — brak informacji nie może
+     domyślnie znaczyć „wiarygodny", bo błąd idzie wtedy w stronę zaproponowania
+     zbyt małej liczby paneli. */
+  if(j.charakter_pomiaru==='pogladowy'||j.nadaje_sie_do_doboru_adaptacji===false){
+    ST.pogladowy=true; ST.skad='pole charakter_pomiaru';
+  }else if(j.charakter_pomiaru==='pelny'||j.nadaje_sie_do_doboru_adaptacji===true){
+    ST.pogladowy=false; ST.skad='pole charakter_pomiaru';
+  }else if(j.tor&&j.tor.zrodlo==='phone'){
+    ST.pogladowy=true; ST.skad='tor.zrodlo = phone (plik ze starszego silnika)';
+  }else if(j.tor&&j.tor.zrodlo==='ext'){
+    ST.pogladowy=false; ST.skad='tor.zrodlo = ext (plik ze starszego silnika)';
+  }else{
+    ST.pogladowy=true; ST.skad='nie ustalono — przyjęto poglądowy';
+  }
+
+  /* T(f) — bierzemy tylko pasma z realnym wynikiem. Braki uzupełniamy Tmid,
+     zaznaczając to w tabeli, żeby nie udawać danych, których nie ma. */
+  ST.T={}; ST.zmierzone={};
+  j.pasma.forEach(b=>{const t=b.T_srednie!=null?b.T_srednie:b.T;
+    if(t>0){ST.T[b.fc]=t;ST.zmierzone[b.fc]=true;}});
+  ST.Tmid=j.Tmid;
+  if(!(ST.Tmid>0)){
+    const m=[500,1000].map(f=>ST.T[f]).filter(x=>x>0);
+    ST.Tmid=m.length?m.reduce((a,x)=>a+x)/m.length:null;}
+  if(!(ST.Tmid>0)){
+    S($('m1'),'err','Plik nie zawiera wiarygodnego czasu pogłosu w pasmach mowy — nie ma na czym oprzeć doboru.');return;}
+  PASMA.forEach(f=>{if(!(ST.T[f]>0)){ST.T[f]=ST.Tmid;ST.zmierzone[f]=false;}});
+
+  /* Przy pomiarze poglądowym rzeczywisty czas pogłosu jest DŁUŻSZY od zmierzonego
+     (telefon zawyża chłonność). Przedział niesiemy od razu, bo używa go zarówno
+     sprawdzenie „cel już spełniony", jak i widełki w propozycji. */
+  ST.Tlo = ST.pogladowy ? ST.Tmid*KOR_MIN : ST.Tmid;
+  ST.Thi = ST.pogladowy ? ST.Tmid*KOR_MAX : ST.Tmid;
+
+  const kv=[
+    ['wymiary', pl(p.L,1)+' × '+pl(p.W,1)+' × '+pl(p.H,1)+' m'],
+    ['kubatura', pl(ST.V,1)+' m³'],
+    ['pole granic', pl(ST.S,1)+' m²'],
+    ['czas pogłosu Tmid', ST.pogladowy
+      ? pl(ST.Tmid)+' s <span style="color:var(--dim)">zmierzone</span>'
+      : pl(ST.Tmid)+' s'],
+    ST.pogladowy ? ['rzeczywisty, szacunek', '<span class="y">'+pl(ST.Tlo)+'–'+pl(ST.Thi)+' s</span>'] : null,
+    ['chłonność własna', ST.pogladowy
+      ? pl(0.161*ST.V/ST.Thi,1)+'–'+pl(0.161*ST.V/ST.Tlo,1)+' m² Sab'
+      : pl(0.161*ST.V/ST.Tmid,1)+' m² Sab'],
+    ['charakter pomiaru', ST.pogladowy
+      ? '<span class="y">poglądowy</span>' : '<span class="g">pełny</span>'],
+    ['rozpoznano z', '<span style="color:var(--dim)">'+ST.skad+'</span>']
+  ].filter(Boolean);
+  $('kvWej').innerHTML=kv.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
+
+  S($('m1'), ST.pogladowy?'warn':'good', ST.pogladowy
+    ? '<b>Pomiar wykonany głośnikiem telefonu.</b> Chłonność wychodzi z niego zawyżona mniej więcej o jedną trzecią, więc dokładnej liczby paneli nie da się podać. Dostaniesz <b>widełki od–do</b> oraz zalecenie, od ilu zacząć.'
+    : 'Pomiar pełny — wynik nadaje się jako podstawa doboru.');
+
+  $('podglad').classList.remove('hide');
+  rysujCele();
+}
+
+$('b1').onclick=()=>idz(2);
+
+/*═══════════════ 2. CEL ═══════════════*/
+function rysujCele(){
+  ST.cel = (CELE.find(c=>c.id===ST.typ)||{t:0.60}).t;
+  $('cele').innerHTML=CELE.map(c=>
+    '<label class="opt'+(c.id===ST.typ?' sel':'')+'" data-t="'+c.t+'" data-id="'+c.id+'">'+
+    '<b>'+c.n+'</b><span>zalecany czas pogłosu do '+pl(c.t)+' s</span></label>').join('');
+  $('cele').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+    $('cele').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+    o.classList.add('sel'); ST.cel=parseFloat(o.dataset.t); $('celWl').value='';
+    S($('m2'),'');});
+}
+$('celWl').addEventListener('input',()=>{
+  const s=$('celWl').value.replace(/[.]/g,',').replace(/[^0-9,]/g,'');
+  $('celWl').value=s;
+  const v=parseFloat(s.replace(',','.'));
+  if(v>0){ST.cel=v;$('cele').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));}
+});
+$('b2').onclick=()=>{
+  if(!(ST.cel>0.1&&ST.cel<3)){S($('m2'),'err','Cel poza sensownym zakresem (0,1–3 s).');return;}
+  /* „Cel już spełniony" trzeba rozstrzygać na wartości SKORYGOWANEJ, nie na
+     surowym odczycie. Przy pomiarze telefonem surowe 0,28 s wygląda na spełnienie
+     celu 0,30 s, podczas gdy rzeczywisty pogłos wynosi ok. 0,39 s i panele są
+     potrzebne. Ten błąd zaproponowałby klientowi zero paneli. */
+  if(ST.cel>=ST.Thi){
+    S($('m2'),'warn','Cel '+pl(ST.cel)+' s jest wyższy niż '+
+      (ST.pogladowy?'górna granica szacunku ('+pl(ST.Thi)+' s)':'zmierzone '+pl(ST.Tmid)+' s')+
+      ' — to pomieszczenie już go spełnia. Adaptacja nie jest potrzebna; wybierz niższy cel, jeśli chcesz wyciszyć je bardziej.');return;}
+  if(ST.pogladowy&&ST.cel>=ST.Tlo){
+    S($('m2'),'warn','<b>Nie da się rozstrzygnąć na tym pomiarze.</b> Rzeczywisty czas pogłosu leży między '+
+      pl(ST.Tlo)+' a '+pl(ST.Thi)+' s, a cel '+pl(ST.cel)+' s wypada w środku tego przedziału — pomieszczenie może już go spełniać albo nie. '+
+      'Powtórz badanie z głośnikiem zewnętrznym; przy tym celu widełki nie dałyby sensownej odpowiedzi.');return;}
+  S($('m2'),''); rysujGdzie(); idz(3);
+};
+
+/*═══════════════ 3. MONTAŻ ═══════════════*/
+document.querySelectorAll('input[name=mont]').forEach(r=>r.onchange=()=>{
+  $('oDys').classList.toggle('sel',r.value==='dys');
+  $('oSci').classList.toggle('sel',r.value==='sci');
+  ST.mont=r.value;});
+ST.mont='dys';
+
+function rysujGdzie(){
+  const opcje=[
+    ['sciany','Ściany', ST.Sscian, 'dostępne około '+pl(ST.Sscian*0.6,1)+' m² po odjęciu okien, drzwi i mebli'],
+    ['sufit','Sufit', ST.Ssufit, 'dostępne około '+pl(ST.Ssufit*0.8,1)+' m² po odjęciu opraw i instalacji'],
+    ['oba','Ściany i sufit', ST.Sscian+ST.Ssufit, 'najbardziej równomierny rozkład chłonności']
+  ];
+  ST.gdzie='oba';
+  $('gdzie').innerHTML=opcje.map(([id,n,s,o])=>
+    '<label class="opt'+(id==='oba'?' sel':'')+'" data-id="'+id+'"><b>'+n+'</b><span>'+o+'</span></label>').join('');
+  $('gdzie').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+    $('gdzie').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+    o.classList.add('sel'); ST.gdzie=o.dataset.id; S($('m3'),'');});
+}
+function dostepne(){
+  if(ST.gdzie==='sciany')return ST.Sscian*0.6;
+  if(ST.gdzie==='sufit') return ST.Ssufit*0.8;
+  return ST.Sscian*0.6+ST.Ssufit*0.8;
+}
+
+/*═══════════════ RACHUNEK ═══════════════*/
+/* Chłonność własna wyprowadzona z pomiaru. Przy dużym średnim pochłanianiu
+   Sabine przestaje obowiązywać, więc oba modele muszą być stosowane spójnie:
+   tym samym wzorem wyliczamy A z pomiaru i przewidujemy T po adaptacji. */
+function A_z_T(T,eyring){
+  if(!eyring) return 0.161*ST.V/T;
+  const am=1-Math.exp(-0.161*ST.V/(T*ST.S));
+  return ST.S*am;
+}
+function T_z_A(A,eyring){
+  if(!eyring) return 0.161*ST.V/A;
+  const am=Math.min(0.99,A/ST.S);
+  return 0.161*ST.V/(-ST.S*Math.log(1-am));
+}
+function policzDla(korekta){
+  const a=ALFA[ST.mont];
+  let eyring=false, pow=0, T_po={}, A0={};
+  for(let it=0;it<3;it++){
+    PASMA.forEach(f=>A0[f]=A_z_T(ST.T[f],eyring)/korekta);
+    /* powierzchnia z celu na Tmid (500 i 1000 Hz) */
+    let lo=0, hi=400;
+    for(let i=0;i<60;i++){
+      const m=(lo+hi)/2;
+      const t=(T_z_A(A0[500]+m*a[500],eyring)+T_z_A(A0[1000]+m*a[1000],eyring))/2;
+      if(t>ST.cel) lo=m; else hi=m;
+    }
+    pow=hi;
+    PASMA.forEach(f=>T_po[f]=T_z_A(A0[f]+pow*a[f],eyring));
+    const amNowe=(A0[1000]+pow*a[1000])/ST.S;
+    const trzeba = amNowe>ALFA_EYRING;
+    if(trzeba===eyring) break;
+    eyring=trzeba;
+  }
+  return {pow:pow, szt:Math.ceil(pow/LICO), T_po:T_po, A0:A0, eyring:eyring, kor:korekta};
+}
+
+/* Widełki mają sens tylko wtedy, gdy nie są absurdalnie szerokie. Gdy cel wypada
+   blisko dolnej granicy szacunku, górny koniec potrafi być kilkakrotnością
+   dolnego — taka „propozycja" nie pomaga ani klientowi, ani sprzedaży. */
+const WIDELKI_MAX_KROTNOSC=2.5;
+
+$('b3').onclick=()=>{
+  const dolny = ST.pogladowy ? policzDla(KOR_MIN) : policzDla(1.0);
+  const gorny = ST.pogladowy ? policzDla(KOR_MAX) : dolny;
+
+  if(ST.pogladowy && dolny.szt>0 && gorny.szt/dolny.szt>WIDELKI_MAX_KROTNOSC){
+    S($('m3'),'err','<b>Widełki wyszłyby zbyt szerokie, żeby były do czegoś przydatne.</b><br>'+
+      'Przy tym celu wychodzi od '+dolny.szt+' do '+gorny.szt+' paneli — '+
+      (gorny.szt/dolny.szt).toFixed(1).replace('.',',')+'-krotna różnica. Powodem jest to, że cel '+
+      pl(ST.cel)+' s leży blisko granicy szacunku dla pomiaru telefonem. '+
+      'Powtórz badanie z głośnikiem zewnętrznym albo wybierz mniej ambitny cel.');
+    return;
+  }
+
+  const pods = ST.pogladowy ? gorny : dolny;   // tabela i sprawdzenie miejsca na wariancie pełnym
+  if(pods.pow>dostepne()){
+    S($('m3'),'warn','Potrzeba około '+pl(pods.pow,1)+' m² paneli, a na wybranych powierzchniach mieści się około '+
+      pl(dostepne(),1)+' m². Wybierz ściany i sufit razem albo przyjmij mniej ambitny cel. Możesz też policzyć dalej — propozycja pokaże, ile brakuje.');
+  } else S($('m3'),'');
+  pokazWynik(dolny,gorny,pods);
+  idz(4);
+};
+
+function pokazWynik(dolny,gorny,bazowy){
+  const a=ALFA[ST.mont];
+
+  /* nagłówek: widełki albo liczba */
+  if(ST.pogladowy){
+    $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
+    $('wynCap').textContent='paneli 1000 × 610 mm';
+    $('wynTryb').innerHTML='<div class="msg warn"><b>Widełki, nie liczba — pomiar był poglądowy.</b><br>'+
+      'Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. '+
+      'Dokładną liczbę da pomiar z głośnikiem zewnętrznym.</div>';
+    $('wynGl').innerHTML='<div class="msg info"><b>Zacznij od '+dolny.szt+' paneli.</b><br>'+
+      'Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — '+
+      'panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, '+
+      'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' sztuk.</div>';
+  } else {
+    $('wynSzt').innerHTML=bazowy.szt+'<small> szt.</small>';
+    $('wynCap').textContent='paneli 1000 × 610 mm  ·  '+pl(bazowy.szt*LICO,1)+' m²';
+    $('wynTryb').innerHTML='';
+    $('wynGl').innerHTML='<div class="msg good">Pomiar pełny, więc liczba jest konkretna. '+
+      'Obszycie krawędzi tkaniną dokłada około '+Math.round(100*KRAW/LICO)+' % powierzchni pochłaniającej ponad samo lico — '+
+      'to zapas, którego nie wliczono do rachunku.</div>';
+  }
+
+  /* tabela T po adaptacji */
+  /* Kolumna „teraz" musi stać na tej samej podstawie co „po". Przy pomiarze
+     poglądowym „po" liczy się z chłonności skorygowanej, więc stan wyjściowy też
+     trzeba pokazać skorygowany — inaczej wychodzą bzdury w rodzaju wzrostu
+     czasu pogłosu po dodaniu pochłaniania. */
+  let t='<table><thead><tr><th>pasmo</th><th>'+(bazowy.kor!==1?'teraz *':'teraz')+
+        '</th><th>po</th><th>zmiana</th></tr></thead><tbody>';
+  PASMA.forEach(f=>{
+    const przed=ST.T[f]*bazowy.kor, po=bazowy.T_po[f], d=100*(po-przed)/przed;
+    const sz=ST.zmierzone[f]?'':' style="opacity:.45"';
+    t+='<tr'+sz+'><td>'+lbl(f)+(ST.zmierzone[f]?'':' †')+'</td><td>'+pl(przed)+'</td><td>'+pl(po)+
+       '</td><td class="'+(d<-5?'g':'')+'">'+(d>0?'+':'')+Math.round(d)+' %</td></tr>';});
+  const uwagi=[];
+  if(bazowy.kor!==1) uwagi.push('* kolumna „teraz" pokazuje czas pogłosu po korekcie pomiaru telefonem (×'+
+    pl(bazowy.kor)+'), żeby obie kolumny stały na tej samej podstawie');
+  if(PASMA.some(f=>!ST.zmierzone[f])) uwagi.push('† pasmo bez wiarygodnego pomiaru — przyjęto Tmid, wiersz jest szacunkiem');
+  $('wynTab').innerHTML=t+'</tbody></table>'+
+    (uwagi.length?'<p class="note" style="font-size:12px;margin-top:8px">'+uwagi.join('<br>')+'</p>':'');
+
+  /* Bilans tonalny ma sens tylko wtedy, gdy oba pasma zostały FAKTYCZNIE zmierzone.
+     Przy brakach obydwa przyjmują Tmid, stosunek wychodzi 1,00 i werdykt
+     „równowaga zachowana" byłby wnioskiem z niczego. */
+  const rPrzed=ST.T[250]/ST.T[1000], rPo=bazowy.T_po[250]/bazowy.T_po[1000];
+  const pog=rPo-rPrzed;
+  $('wynBil').innerHTML= !(ST.zmierzone[250]&&ST.zmierzone[1000])
+    ? '<div class="msg warn"><b>Równowagi tonalnej nie da się ocenić.</b> Pasmo '+
+      (!ST.zmierzone[250]?'250 Hz':'1 kHz')+' nie dało wiarygodnego wyniku, a bez niego porównanie dołu z górą jest bezpodstawne. '+
+      'Głośnik zewnętrzny zwykle dowozi oba pasma.</div>'
+    : pog<0.05
+      ? '<div class="msg good"><b>Równowaga tonalna zachowana.</b> Stosunek T(250 Hz) do T(1 kHz) zmienia się z '+
+        pl(rPrzed)+' na '+pl(rPo)+'. Wnętrze wyciszy się równomiernie.</div>'
+      : '<div class="msg warn"><b>Uwaga na równowagę tonalną.</b> Stosunek T(250 Hz) do T(1 kHz) rośnie z '+
+        pl(rPrzed)+' na '+pl(rPo)+' — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego.'+
+        (ST.mont==='sci'?' <b>Montaż na dystansach 50 mm rozwiązuje to bez dokładania paneli.</b>':'')+'</div>';
+
+  /* mieszczenie się */
+  const potrz=(ST.pogladowy?gorny:bazowy).pow;
+  $('wynMies').innerHTML = potrz>dostepne()
+    ? '<div class="msg err"><b>Nie mieści się na wybranych powierzchniach.</b> Potrzeba '+pl(potrz,1)+
+      ' m², dostępne około '+pl(dostepne(),1)+' m². Rozłóż panele na ściany i sufit albo przyjmij łagodniejszy cel.</div>'
+    : '';
+
+  const d=[
+    ['kubatura', pl(ST.V,1)+' m³'],
+    ['pole granic', pl(ST.S,1)+' m²'],
+    ['cel Tmid', pl(ST.cel)+' s'],
+    ['montaż', ST.mont==='dys'?'na dystansach 50 mm':'bezpośrednio'],
+    ['model', bazowy.eyring?'Eyring (α średnie > '+ALFA_EYRING+')':'Sabine'],
+    ['powierzchnia lica', pl(bazowy.pow,1)+' m²'],
+    ['powierzchnia z krawędziami', pl(bazowy.pow*(1+KRAW/LICO),1)+' m²'],
+    ['dostępne miejsce', pl(dostepne(),1)+' m²']
+  ];
+  if(ST.pogladowy) d.push(['widełki korekty','×'+pl(KOR_MIN)+' … ×'+pl(KOR_MAX)]);
+  $('wynDiag').innerHTML=d.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
+  ST.wynik={bazowy:bazowy,dolny:dolny,gorny:gorny};
+}
+
+/*═══════════════ EKSPORT ═══════════════*/
+$('bJson').onclick=()=>{
+  const w=ST.wynik; if(!w)return;
+  const r3=x=>x==null?null:+x.toFixed(3);
+  const out={
+    wersja:'dobor-v1', czas:new Date().toISOString(),
+    zrodlo_pomiaru:{charakter:ST.pogladowy?'pogladowy':'pelny', Tmid:r3(ST.Tmid),
+      V:+ST.V.toFixed(2), pole_granic_m2:+ST.S.toFixed(2)},
+    cel_Tmid_s:ST.cel,
+    panel:{dlugosc_mm:1000, szerokosc_mm:610, grubosc_welny_mm:50,
+      lico_m2:+LICO.toFixed(3), krawedzie_m2:+KRAW.toFixed(3),
+      montaz:ST.mont==='dys'?'na dystansach 50 mm':'bezposrednio',
+      rozmieszczenie:ST.gdzie},
+    propozycja: ST.pogladowy
+      ? {typ:'widelki', sztuk_od:w.dolny.szt, sztuk_do:w.gorny.szt,
+         zalecenie:'zaczac od '+w.dolny.szt+' szt., powtorzyc badanie, w razie potrzeby dolozyc',
+         powierzchnia_od_m2:+w.dolny.pow.toFixed(2), powierzchnia_do_m2:+w.gorny.pow.toFixed(2)}
+      : {typ:'liczba', sztuk:w.bazowy.szt, powierzchnia_m2:+w.bazowy.pow.toFixed(2)},
+    T_po_adaptacji:Object.fromEntries(PASMA.map(f=>[f,r3(w.bazowy.T_po[f])])),
+    model:w.bazowy.eyring?'Eyring':'Sabine',
+    alfa_panelu:ALFA[ST.mont],
+    alfa_zrodlo:'model Mikiego, sigma 30000 Pa*s/m2 — WARTOSCI TYMCZASOWE, '+
+      'do podmiany na tabele alfa_p od producenta welny'
+  };
+  const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download='propozycja-adaptacji.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+};
+</script>
+</body>
+</html>
