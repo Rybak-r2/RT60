@@ -142,7 +142,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 
 <script>
 "use strict";
-const WERSJA='dobór v1';
+const WERSJA='dobór v2';
 
 /*═══════════════ DANE MATERIAŁOWE ═══════════════
   UWAGA — WARTOŚCI TYMCZASOWE.
@@ -166,6 +166,21 @@ const KRAW=2*(PANEL.dl*PANEL.gr)+2*(PANEL.sz*PANEL.gr);   // krawędzie jako zap
    pojedynczej korekty stosujemy widełki obejmujące obserwację z zapasem w obie
    strony. Patrz docs/MODEL-AKUSTYCZNY.md, 1.5. */
 const KOR_MIN=1.15, KOR_MAX=1.45;
+
+/*═══════════════ BRAMKA WIARYGODNOŚCI WEJŚCIA ═══════════════
+  Moduł liczył dotąd z każdego pliku, który dało się sparsować. Plik z silnika
+  v2 — sprzed naprawy zakresu dynamiki — podawał 0,224 s przy 250 Hz i 2,001 s
+  przy 1 kHz. Dziewięciokrotny skok, w jednym pomieszczeniu fizycznie
+  niemożliwy. Tmid wyszło 1,251 s, kalkulator policzył z tego 38 paneli i nie
+  zgłosił niczego. Rachunek był poprawny; wejście nie.
+  Progi i ich uzasadnienie: docs/MODEL-AKUSTYCZNY.md, 5.3. */
+const WERSJE_NIEUFNE=['silnik-v1','silnik-v2','silnik-v3'];  // brak działających progów ISO
+const MAX_ROZRZUT_PASM=3;    // krotność między najdłuższym a najkrótszym pasmem 250–4000 Hz
+const MAX_ROZJAZD_MOWY=2;    // krotność między 500 Hz a 1 kHz, z których liczy się Tmid
+/* 125 Hz świadomie poza kontrolą: w małym pomieszczeniu dół pasma rządzi się
+   modami i potrafi odstawać od reszty bez żadnego błędu pomiaru. Wciąganie go
+   do rozrzutu dawałoby fałszywe alarmy na poprawnych plikach. */
+const PASMA_KONTROLI=[250,500,1000,2000,4000];
 
 /* Progi przełączenia Sabine → Eyring. Przy dużym średnim pochłanianiu założenie
    pola rozproszonego przestaje obowiązywać i Sabine zawyża chłonność. */
@@ -215,7 +230,79 @@ function czytaj(f){
   r.readAsText(f);
 }
 
+/* Zwraca listę zastrzeżeń do wczytanego pliku. `blok:true` oznacza, że z tego
+   pomiaru nie wolno liczyć paneli — nie dlatego, że rachunek by się nie udał,
+   tylko dlatego, że udałby się na danych, którym nie można ufać.
+   Wywoływana po zebraniu T(f), a przed uzupełnieniem braków wartością Tmid —
+   sprawdzać wolno wyłącznie pasma FAKTYCZNIE zmierzone, bo pasma uzupełnione
+   mają z definicji rozrzut zerowy i przykryłyby każdy rozjazd. */
+function kontrolaWejscia(j){
+  const uw=[];
+
+  /* 1. Wersja silnika pomiarowego. Do v3 zakres dynamiki liczył się z minimum
+     krzywej Schroedera, przez co progi ISO 3382 nie odrzucały niczego —
+     patrz 1.3. Plik z takiego silnika może zawierać czasy pogłosu, których
+     w rzeczywistości nikt nie zmierzył. */
+  const w=typeof j.wersja==='string'?j.wersja:null;
+  const nr=w&&/^silnik-v(\d+)$/.test(w)?parseInt(w.replace(/^silnik-v/,''),10):null;
+  ST.wersjaSilnika=w;
+  if(w&&(WERSJE_NIEUFNE.indexOf(w)>=0||(nr!=null&&nr<=3))){
+    uw.push({blok:true, tyt:'Plik pochodzi ze starej wersji silnika pomiarowego ('+w+').',
+      tresc:'Do wersji <b>silnik-v3</b> zakres dynamiki zaniku liczył się błędnie, więc progi ISO 3382 '+
+        'nie odrzucały złych pomiarów — plik może podawać czasy pogłosu, których w rzeczywistości nikt nie zmierzył. '+
+        'Powtórz badanie w bieżącej wersji; sam plik nie da się naprawić.'});
+  }else if(!w){
+    uw.push({blok:false, tyt:'Plik nie podaje wersji silnika pomiarowego.',
+      tresc:'Nie da się sprawdzić, czy powstał po naprawie zakresu dynamiki. Kontrole liczbowe poniżej '+
+        'przeszedł, ale jeśli to plik sprzed sierpnia 2026, wynik lepiej potwierdzić nowym badaniem.'});
+  }
+
+  /* 2. Rozrzut międzypasmowy. W jednym pomieszczeniu chłonność zmienia się z
+     częstotliwością łagodnie — na dobrych plikach krotność wynosi 1,2–1,4.
+     Próg 3 zostawia ponad dwukrotny zapas i nie generuje fałszywych alarmów. */
+  const mier=PASMA_KONTROLI.filter(f=>ST.zmierzone[f]);
+  if(mier.length>=2){
+    let fLo=mier[0], fHi=mier[0];
+    mier.forEach(f=>{if(ST.T[f]<ST.T[fLo])fLo=f; if(ST.T[f]>ST.T[fHi])fHi=f;});
+    const k=ST.T[fHi]/ST.T[fLo];
+    ST.rozrzutPasm=k;
+    if(k>MAX_ROZRZUT_PASM){
+      uw.push({blok:true, tyt:'Wyniki pasmowe rozjeżdżają się '+pl(k,1)+'-krotnie.',
+        tresc:'Najdłuższy zanik ('+lbl(fHi)+': '+pl(ST.T[fHi])+' s) jest '+pl(k,1)+' razy dłuższy od najkrótszego ('+
+          lbl(fLo)+': '+pl(ST.T[fLo])+' s). Na poprawnych pomiarach krotność mieści się w 1,2–1,4, tolerancja to '+
+          MAX_ROZRZUT_PASM+'. Taki rozjazd nie opisuje pomieszczenia — oznacza, że co najmniej jedno pasmo '+
+          'zostało wyliczone z szumu, a nie zmierzone.'});
+    }
+  }else{
+    uw.push({blok:false, tyt:'Za mało pasm do sprawdzenia spójności pomiaru.',
+      tresc:'W zakresie 250–4000 Hz wiarygodny wynik dało '+(mier.length?'tylko jedno pasmo':'żadne pasmo')+
+        ', więc rozjazdu między pasmami nie ma z czym porównać. Brak sprzeczności w danych, których nie ma, '+
+        'nie jest dowodem poprawności — propozycja stoi wtedy w istocie na jednym odczycie.'});
+  }
+
+  /* 3. Rozjazd pasm mowy. 500 Hz i 1 kHz wchodzą wprost do Tmid, czyli do
+     powierzchni paneli. Rozjazd między nimi trafia do wyniku bez tłumienia,
+     więc próg jest ostrzejszy niż na całym paśmie. */
+  if(ST.zmierzone[500]&&ST.zmierzone[1000]){
+    const k=Math.max(ST.T[500],ST.T[1000])/Math.min(ST.T[500],ST.T[1000]);
+    ST.rozjazdMowy=k;
+    if(k>MAX_ROZJAZD_MOWY){
+      uw.push({blok:true, tyt:'Pasma mowy rozjeżdżają się '+pl(k,1)+'-krotnie.',
+        tresc:'500 Hz daje '+pl(ST.T[500])+' s, a 1 kHz '+pl(ST.T[1000])+' s. Z tych dwóch pasm liczy się Tmid, '+
+          'czyli cała powierzchnia paneli — przy rozjeździe powyżej '+MAX_ROZJAZD_MOWY+
+          '-krotnego ich średnia nie opisuje niczego rzeczywistego.'});
+    }
+  }
+  return uw;
+}
+
 function przyjmij(j){
+  /* Każdy nowy plik zaczyna od zera. Bez tego odrzucenie drugiego pliku
+     zostawiało na ekranie podgląd i przycisk „Dalej" z pierwszego, a w ST
+     mieszankę obu. */
+  $('podglad').classList.add('hide');
+  ST.kontrola=null; ST.wynik=null;
+  ST.wersjaSilnika=null; ST.rozrzutPasm=null; ST.rozjazdMowy=null;
   const p=j.pomieszczenie;
   if(!p||!(p.L>0)||!(p.W>0)||!(p.H>0)){
     S($('m1'),'err','W pliku brakuje wymiarów pomieszczenia. Czy to na pewno wynik badania czasu pogłosu?');return;}
@@ -254,6 +341,17 @@ function przyjmij(j){
     ST.Tmid=m.length?m.reduce((a,x)=>a+x)/m.length:null;}
   if(!(ST.Tmid>0)){
     S($('m1'),'err','Plik nie zawiera wiarygodnego czasu pogłosu w pasmach mowy — nie ma na czym oprzeć doboru.');return;}
+  /* Bramka wiarygodności — przed uzupełnieniem braków, patrz kontrolaWejscia(). */
+  const kont=kontrolaWejscia(j);
+  const blok=kont.filter(u=>u.blok);
+  ST.kontrola={przeszla:!blok.length, uwagi:kont.map(u=>u.tyt)};
+  if(blok.length){
+    $('m1').innerHTML=blok.map(u=>'<div class="msg err"><b>'+u.tyt+'</b><br>'+u.tresc+'</div>').join('')+
+      '<div class="msg info">Z tego pliku nie policzymy paneli. Liczba by się policzyła — i byłaby '+
+      'poprawnie wyliczona z danych, którym nie można ufać. Potrzebne jest nowe badanie.</div>';
+    return;
+  }
+
   PASMA.forEach(f=>{if(!(ST.T[f]>0)){ST.T[f]=ST.Tmid;ST.zmierzone[f]=false;}});
 
   /* Przy pomiarze poglądowym rzeczywisty czas pogłosu jest DŁUŻSZY od zmierzonego
@@ -275,13 +373,16 @@ function przyjmij(j){
       : pl(0.161*ST.V/ST.Tmid,1)+' m² Sab'],
     ['charakter pomiaru', ST.pogladowy
       ? '<span class="y">poglądowy</span>' : '<span class="g">pełny</span>'],
-    ['rozpoznano z', '<span style="color:var(--dim)">'+ST.skad+'</span>']
+    ['rozpoznano z', '<span style="color:var(--dim)">'+ST.skad+'</span>'],
+    ['wersja silnika', '<span style="color:var(--dim)">'+(ST.wersjaSilnika||'nie podano')+'</span>']
   ].filter(Boolean);
   $('kvWej').innerHTML=kv.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
 
-  S($('m1'), ST.pogladowy?'warn':'good', ST.pogladowy
+  const glowny='<div class="msg '+(ST.pogladowy?'warn':'good')+'">'+(ST.pogladowy
     ? '<b>Pomiar wykonany głośnikiem telefonu.</b> Chłonność wychodzi z niego zawyżona mniej więcej o jedną trzecią, więc dokładnej liczby paneli nie da się podać. Dostaniesz <b>widełki od–do</b> oraz zalecenie, od ilu zacząć.'
-    : 'Pomiar pełny — wynik nadaje się jako podstawa doboru.');
+    : 'Pomiar pełny — wynik nadaje się jako podstawa doboru.')+'</div>';
+  $('m1').innerHTML=glowny+kont.map(u=>
+    '<div class="msg warn"><b>'+u.tyt+'</b><br>'+u.tresc+'</div>').join('');
 
   $('podglad').classList.remove('hide');
   rysujCele();
@@ -485,7 +586,12 @@ function pokazWynik(dolny,gorny,bazowy){
     ['model', bazowy.eyring?'Eyring (α średnie > '+ALFA_EYRING+')':'Sabine'],
     ['powierzchnia lica', pl(bazowy.pow,1)+' m²'],
     ['powierzchnia z krawędziami', pl(bazowy.pow*(1+KRAW/LICO),1)+' m²'],
-    ['dostępne miejsce', pl(dostepne(),1)+' m²']
+    ['dostępne miejsce', pl(dostepne(),1)+' m²'],
+    ['wersja silnika', ST.wersjaSilnika||'nie podano'],
+    ['rozrzut pasm 250–4 k', ST.rozrzutPasm!=null?pl(ST.rozrzutPasm)+'× (próg '+pl(MAX_ROZRZUT_PASM,1)+')':'nie sprawdzono'],
+    ['kontrola wejścia', ST.kontrola&&ST.kontrola.uwagi.length
+      ? '<span class="y">przeszła z uwagami ('+ST.kontrola.uwagi.length+')</span>'
+      : '<span class="g">przeszła</span>']
   ];
   if(ST.pogladowy) d.push(['widełki korekty','×'+pl(KOR_MIN)+' … ×'+pl(KOR_MAX)]);
   $('wynDiag').innerHTML=d.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
@@ -497,9 +603,18 @@ $('bJson').onclick=()=>{
   const w=ST.wynik; if(!w)return;
   const r3=x=>x==null?null:+x.toFixed(3);
   const out={
-    wersja:'dobor-v1', czas:new Date().toISOString(),
+    wersja:'dobor-v2', czas:new Date().toISOString(),
     zrodlo_pomiaru:{charakter:ST.pogladowy?'pogladowy':'pelny', Tmid:r3(ST.Tmid),
-      V:+ST.V.toFixed(2), pole_granic_m2:+ST.S.toFixed(2)},
+      V:+ST.V.toFixed(2), pole_granic_m2:+ST.S.toFixed(2),
+      wersja_silnika:ST.wersjaSilnika||null},
+    /* Ślad po bramce wiarygodności. Propozycja bez tego pola pochodzi z wersji
+       sprzed kontroli wejścia i nie wiadomo, na czym stała. */
+    kontrola_wejscia:{przeszla:true,
+      progi:{wersje_nieufne:WERSJE_NIEUFNE, max_rozrzut_pasm:MAX_ROZRZUT_PASM,
+             max_rozjazd_mowy:MAX_ROZJAZD_MOWY},
+      rozrzut_pasm:ST.rozrzutPasm!=null?+ST.rozrzutPasm.toFixed(2):null,
+      rozjazd_mowy:ST.rozjazdMowy!=null?+ST.rozjazdMowy.toFixed(2):null,
+      uwagi:(ST.kontrola&&ST.kontrola.uwagi)||[]},
     cel_Tmid_s:ST.cel,
     panel:{dlugosc_mm:1000, szerokosc_mm:610, grubosc_welny_mm:50,
       lico_m2:+LICO.toFixed(3), krawedzie_m2:+KRAW.toFixed(3),

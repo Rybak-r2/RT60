@@ -321,18 +321,18 @@ równowaga tonalna — patrz 3.3.
 
 ## Część 5. Stan prac — przekazanie
 
-Stan na 31 sierpnia 2026, koniec pierwszej serii rozmów.
+Stan na 31 sierpnia 2026, po wdrożeniu bramki wiarygodności wejścia.
 
 ### 5.1 Co stoi gdzie
 
-| gałąź | commit | zawartość |
-|---|---|---|
-| `main` | `75b0daa` | **produkcja** — `index.html`, silnik pomiarowy `v13` |
-| `claude/repository-changes-dir4kw` | `16160d1` | main + ta dokumentacja + `dobor.html` |
+| gałąź | zawartość |
+|---|---|
+| `main` | **produkcja** — `index.html`, silnik pomiarowy `v13` |
+| `claude/repository-changes-dir4kw` | main + dokumentacja + `dobor.html` (`dobór v1`) |
+| `claude/rt60-model-akustyczny-5-4-xgg0qk` | powyższe + bramka wiarygodności wejścia (`dobór v2`) |
 
-`rt-60.vercel.app` serwuje `main`. Podgląd gałęzi testowej:
-`rt-60-git-claude-repository-changes-dir4kw-rutra-fisher.vercel.app`, moduł
-doboru pod `/dobor.html`.
+`rt-60.vercel.app` serwuje `main`. Moduł doboru pod `/dobor.html` na podglądzie
+gałęzi.
 
 **Zasada obowiązująca:** `dobor.html` powstał jako **osobny plik**, żeby
 rozbudowa nie mogła zepsuć działającego pomiaru. `index.html` nie był ruszany
@@ -344,38 +344,69 @@ Silnik pomiarowy `v13` — zweryfikowany na dziewięciu pomiarach terenowych,
 w tym `silnik-v13` z 31.08 (salon 39,75 m³, głośnik zewnętrzny, Tmid 0,353 s,
 udział pola późnego 0,513, wszystkie siedem pasm z wynikiem).
 
-Moduł doboru `dobór v1` — wczytuje JSON, liczy powierzchnię i liczbę paneli
-1000 × 610, przełącza Sabine/Eyring, sprawdza równowagę tonalną, podaje widełki
-przy pomiarze poglądowym wraz z zaleceniem „zacznij od X, dołóż w razie
-potrzeby". Cztery błędy wykryte testami na realnych plikach zostały naprawione
-przed commitem — opis w treści commita `16160d1`.
+Moduł doboru `dobór v2` — wczytuje JSON, **sprawdza wiarygodność wejścia**
+(5.3), liczy powierzchnię i liczbę paneli 1000 × 610, przełącza Sabine/Eyring,
+sprawdza równowagę tonalną, podaje widełki przy pomiarze poglądowym wraz
+z zaleceniem „zacznij od X, dołóż w razie potrzeby".
 
-### 5.3 Znana luka, nienaprawiona
+### 5.3 Bramka wiarygodności wejścia — wdrożona
 
-**Moduł doboru nie sprawdza wiarygodności wejścia.** Plik z `silnik-v2`
-(sprzed naprawy zakresu dynamiki) zawierał `T` = 0,224 s przy 250 Hz i 2,001 s
-przy 1 kHz — dziewięciokrotny skok, fizycznie niemożliwy. `Tmid` wyszło 1,251 s,
-a kalkulator policzył z tego 38 paneli. Wynik był poprawny; wejście nie.
+Luka, którą zamyka: moduł liczył z każdego pliku, który dało się sparsować.
+Plik z `silnik-v2` (sprzed naprawy zakresu dynamiki, 1.3) zawierał `T` = 0,224 s
+przy 250 Hz i 2,001 s przy 1 kHz — dziewięciokrotny skok, w jednym
+pomieszczeniu fizycznie niemożliwy. `Tmid` wyszło 1,251 s, a kalkulator
+policzył z tego **38 paneli i nie zgłosił niczego**. Rachunek był poprawny;
+wejście nie.
 
-Projektowana bramka, do wdrożenia:
+Trzy kontrole, w `dobor.html`, funkcja `kontrolaWejscia()`:
 
-```
-WERSJE_NIEUFNE   = ['silnik-v1','silnik-v2','silnik-v3']   // brak działających progów ISO
-MAX_ROZRZUT_PASM = 3    // krotność między najdłuższym a najkrótszym pasmem 250–4000 Hz
-MAX_ROZJAZD_MOWY = 2    // krotność między 500 Hz a 1 kHz, z których liczy się Tmid
-```
+| kontrola | próg | skutek |
+|---|---|---|
+| wersja silnika | `silnik-v1…v3` | **blokada** — brak działających progów ISO, plik może podawać czasy, których nikt nie zmierzył |
+| rozrzut międzypasmowy 250–4000 Hz | krotność > **3** | **blokada** |
+| rozjazd pasm mowy 500 Hz / 1 kHz | krotność > **2** | **blokada** |
 
-Sprawdzone na dobrych plikach: rozrzut pasmowy wynosi tam 1,2–1,4, więc próg 3
-nie generuje fałszywych alarmów.
+Blokada jest **twarda i bez obejścia**: podgląd wejścia i przycisk „Dalej" się
+nie pokazują. Narzędzie sprzedażowe, które przepuszcza taki plik „z
+ostrzeżeniem", i tak pokaże klientowi liczbę — a liczba zostaje w głowie
+dłużej niż ostrzeżenie.
+
+**Decyzje przy wdrożeniu, warte zapamiętania:**
+
+1. **125 Hz jest poza kontrolą rozrzutu.** W małym pomieszczeniu dół pasma
+   rządzi się modami i potrafi odstawać kilkakrotnie bez żadnego błędu
+   pomiaru. Wciągnięty do rozrzutu dawał fałszywe alarmy na poprawnych
+   plikach.
+2. **Kontrola idzie przed uzupełnieniem braków wartością `Tmid`.** Pasma
+   uzupełnione mają z definicji rozrzut zerowy i przykryłyby każdy rozjazd.
+   Sprawdzane są wyłącznie pasma faktycznie zmierzone.
+3. **Rozjazd pasm mowy ma ostrzejszy próg niż całe pasmo**, bo 500 Hz i 1 kHz
+   wchodzą wprost do `Tmid`, czyli do powierzchni paneli — bez uśrednienia
+   z resztą.
+4. **Za mało pasm to nie to samo co zgodność.** Gdy w 250–4000 Hz wiarygodny
+   wynik dało jedno pasmo albo żadne, rozrzutu nie ma z czym porównać —
+   moduł przepuszcza plik, ale mówi wprost, że propozycja stoi na jednym
+   odczycie. To ta sama zasada co reguła 3 kontraktu danych: brak danych nie
+   jest dowodem jakości.
+5. **Brak pola `wersja` nie blokuje**, tylko ostrzega — kontrole liczbowe
+   działają niezależnie od tego, czym plik został zrobiony.
+6. Ślad kontroli idzie do eksportu (`kontrola_wejscia`: progi, zmierzone
+   krotności, uwagi). Propozycja bez tego pola pochodzi z `dobór v1` i nie
+   wiadomo, na czym stała.
+
+**Sprawdzone** (harness na atrapie DOM, uruchamia kod strony, nie kopię):
+plik z 31.08 przechodzi z rozrzutem **1,27**; rozrzut 1,4 i 2,9 przechodzą;
+125 Hz odstające 4× nie wywołuje alarmu; wszystkie trzy złe wersje silnika
+blokują, `silnik-v4` nie; realny plik z v2 zostaje odrzucony z krotnością
+**8,9**; odrzucenie po wcześniejszym pliku poprawnym chowa podgląd i „Dalej".
 
 ### 5.4 Kolejność dalszych prac
 
-1. **Bramka wiarygodności wejścia** — 5.3, blokuje przed pokazaniem komukolwiek.
-2. **Tabela α_p od Rockwoola** — bez niej liczby są oszacowaniem z modelu.
-3. **Wpięcie `dobor.html` w `index.html`** — żeby klient nie przerzucał pliku ręcznie.
-4. **Kolorystyka i formularz kontaktowy** — wymaga funkcji serwerowej, dziś projekt
+1. **Tabela α_p od Rockwoola** — bez niej liczby są oszacowaniem z modelu.
+2. **Wpięcie `dobor.html` w `index.html`** — żeby klient nie przerzucał pliku ręcznie.
+3. **Kolorystyka i formularz kontaktowy** — wymaga funkcji serwerowej, dziś projekt
    jest statyczny.
-5. **Rozrysowanie rozmieszczenia** paneli na ścianach i suficie.
+4. **Rozrysowanie rozmieszczenia** paneli na ścianach i suficie.
 
 Decyzja podjęta i obowiązująca: przy pomiarze poglądowym **widełki od–do**,
 nie pojedyncza liczba i nie blokada.

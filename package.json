@@ -4,6 +4,7 @@
   "description": "RT60 – Badanie akustyki pomieszczeń w przeglądarce",
   "private": true,
   "scripts": {
-    "build": "echo 'Static site'"
+    "build": "echo 'Static site'",
+    "test": "node docs/test-bramka.js"
   }
 }
