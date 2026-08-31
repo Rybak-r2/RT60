@@ -232,6 +232,16 @@ function zip(pliki){                       // [{nazwa, dane:Uint8Array}]
   return new Blob([...lok,...cen,new Uint8Array(eo.buffer)],{type:'application/zip'});
 }
 
+/* Data i godzina w nazwie paczki. Bez tego kilka badań ląduje w pobranych jako
+   badanie-akustyczne(1).zip, (2), (3) — a po stronie ALACER przychodzi kilka
+   plików o tej samej nazwie i nie wiadomo, który dotyczy którego pomieszczenia.
+   Czas lokalny, bo to on zgadza się z tym, co użytkownik pamięta. */
+function stempel(){
+  const d=new Date(), z=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+
+         '-'+z(d.getHours())+z(d.getMinutes());
+}
+
 /* Odpowiedź impulsowa jako WAV 32-bit float — format, który wczytają REW, ARTA,
    Audacity i biblioteki pythonowe bez konwersji. */
 function wav(ir,fs){
@@ -415,7 +425,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v14';
+const WERSJA='v15';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20;
 /* Kiedy metryki mowy (C50, D50, STI) są wiarygodne.
@@ -987,9 +997,11 @@ $('bZapisz').onclick=()=>{
       '                          narzedziem (REW, ARTA, Audacity, Python)\r\n'+
       '                          bez wracania do pomieszczenia.\r\n\r\n'+
       'Plik przeznaczony do przeslania do ALACER.\r\n')});
-    dl(zip(pliki),'badanie-akustyczne.zip');
-    $('zapisOpis').innerHTML='<span class="g">Zapisano '+pliki.length+' plików w jednej paczce — '+
-      'wyniki, '+ST.irs.filter(Boolean).length+' odpowiedzi impulsowe i opis zawartości.</span>';
+    const nazwa='badanie-akustyczne-'+stempel()+'.zip';
+    dl(zip(pliki),nazwa);
+    $('zapisOpis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+
+      pliki.length+' plików: wyniki, '+ST.irs.filter(Boolean).length+
+      ' odpowiedzi impulsowe i opis zawartości.';
   }catch(e){
     $('zapisOpis').innerHTML='<span class="r">Nie udało się spakować ('+e.message+').</span>';
   }
