@@ -316,3 +316,66 @@ równowaga tonalna — patrz 3.3.
    dowodu, że jest prawdziwe.
 5. **Drugie pomieszczenie** — różnica 32 % pochodzi z jednego salonu o krótkim
    pogłosie. Kierunek pewny, skala niekoniecznie.
+
+---
+
+## Część 5. Stan prac — przekazanie
+
+Stan na 31 sierpnia 2026, koniec pierwszej serii rozmów.
+
+### 5.1 Co stoi gdzie
+
+| gałąź | commit | zawartość |
+|---|---|---|
+| `main` | `75b0daa` | **produkcja** — `index.html`, silnik pomiarowy `v13` |
+| `claude/repository-changes-dir4kw` | `16160d1` | main + ta dokumentacja + `dobor.html` |
+
+`rt-60.vercel.app` serwuje `main`. Podgląd gałęzi testowej:
+`rt-60-git-claude-repository-changes-dir4kw-rutra-fisher.vercel.app`, moduł
+doboru pod `/dobor.html`.
+
+**Zasada obowiązująca:** `dobor.html` powstał jako **osobny plik**, żeby
+rozbudowa nie mogła zepsuć działającego pomiaru. `index.html` nie był ruszany
+od `v13`. Wpięcie jednego w drugie jest świadomie odłożone.
+
+### 5.2 Co działa
+
+Silnik pomiarowy `v13` — zweryfikowany na dziewięciu pomiarach terenowych,
+w tym `silnik-v13` z 31.08 (salon 39,75 m³, głośnik zewnętrzny, Tmid 0,353 s,
+udział pola późnego 0,513, wszystkie siedem pasm z wynikiem).
+
+Moduł doboru `dobór v1` — wczytuje JSON, liczy powierzchnię i liczbę paneli
+1000 × 610, przełącza Sabine/Eyring, sprawdza równowagę tonalną, podaje widełki
+przy pomiarze poglądowym wraz z zaleceniem „zacznij od X, dołóż w razie
+potrzeby". Cztery błędy wykryte testami na realnych plikach zostały naprawione
+przed commitem — opis w treści commita `16160d1`.
+
+### 5.3 Znana luka, nienaprawiona
+
+**Moduł doboru nie sprawdza wiarygodności wejścia.** Plik z `silnik-v2`
+(sprzed naprawy zakresu dynamiki) zawierał `T` = 0,224 s przy 250 Hz i 2,001 s
+przy 1 kHz — dziewięciokrotny skok, fizycznie niemożliwy. `Tmid` wyszło 1,251 s,
+a kalkulator policzył z tego 38 paneli. Wynik był poprawny; wejście nie.
+
+Projektowana bramka, do wdrożenia:
+
+```
+WERSJE_NIEUFNE   = ['silnik-v1','silnik-v2','silnik-v3']   // brak działających progów ISO
+MAX_ROZRZUT_PASM = 3    // krotność między najdłuższym a najkrótszym pasmem 250–4000 Hz
+MAX_ROZJAZD_MOWY = 2    // krotność między 500 Hz a 1 kHz, z których liczy się Tmid
+```
+
+Sprawdzone na dobrych plikach: rozrzut pasmowy wynosi tam 1,2–1,4, więc próg 3
+nie generuje fałszywych alarmów.
+
+### 5.4 Kolejność dalszych prac
+
+1. **Bramka wiarygodności wejścia** — 5.3, blokuje przed pokazaniem komukolwiek.
+2. **Tabela α_p od Rockwoola** — bez niej liczby są oszacowaniem z modelu.
+3. **Wpięcie `dobor.html` w `index.html`** — żeby klient nie przerzucał pliku ręcznie.
+4. **Kolorystyka i formularz kontaktowy** — wymaga funkcji serwerowej, dziś projekt
+   jest statyczny.
+5. **Rozrysowanie rozmieszczenia** paneli na ścianach i suficie.
+
+Decyzja podjęta i obowiązująca: przy pomiarze poglądowym **widełki od–do**,
+nie pojedyncza liczba i nie blokada.
