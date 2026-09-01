@@ -33,8 +33,17 @@ button:disabled{background:var(--panel2);color:#4E5A63;cursor:not-allowed}
 button.ghost{background:transparent;color:var(--cool);border:1px solid var(--line);font-weight:480;font-size:14px;padding:11px 16px}
 button.ghost:hover:not(:disabled){background:var(--panel2);filter:none}
 .btnrow{display:flex;gap:9px;margin-top:6px}
-.opt{display:block;border:1px solid var(--line);border-radius:2px;padding:13px 14px;margin-bottom:9px;cursor:pointer;background:var(--panel)}
+/* Pole wyboru ma WIDOCZNY znacznik. Sama podświetlona ramka nie mówiła, że
+   lista jest w ogóle wyborem, i nie odróżniała pola zaznaczonego od najechanego. */
+.opt{display:grid;grid-template-columns:19px 1fr;gap:11px;align-items:start;
+  border:1px solid var(--line);border-radius:2px;padding:13px 14px;margin-bottom:9px;cursor:pointer;background:var(--panel)}
+.opt::before{content:"";width:18px;height:18px;box-sizing:border-box;margin-top:2px;
+  border:1.5px solid var(--dim);border-radius:50%;transition:border-color .12s,box-shadow .12s}
+.opt:hover:not(.sel){border-color:#3B4854}
+.opt:hover:not(.sel)::before{border-color:var(--muted)}
 .opt.sel{border-color:var(--signal);background:rgba(255,176,32,.06)}
+.opt.sel::before{border-color:var(--signal);box-shadow:inset 0 0 0 4px var(--signal)}
+.opt b,.opt span{grid-column:2}
 .opt b{display:block;font-size:15px;margin-bottom:2px} .opt span{color:var(--muted);font-size:13px}
 .opt input{display:none}
 label.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);flex:1}
@@ -214,10 +223,18 @@ const WYK={
       {id:'t1', n:'Panel 1030 × 640 mm',
        o:'Jeden panel w kartonie. Wełna czynna 1000 × 610 mm.',
        panele:[{n:'1030 × 640', dl:1.030, sz:0.640, wdl:1.000, wsz:0.610}]},
-      {id:'t2', n:'Zestaw 640 × 640 i 640 × 410 mm',
+      {id:'t2', n:'Zestaw 640 × 640 i 640 × 420 mm',
        o:'Dwa panele w jednym kartonie, z tej samej płyty wełny przeciętej wzdłuż na 610 i 390 mm. Do układania mozaiki na ścianie i suficie.',
        panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
-               {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]}],
+               {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]},
+      /* Zestaw mieszany: kartony po połowie jednego i drugiego rodzaju. Skoro
+         oba mają identyczne pole czynne, przeplatanka NIE ZMIENIA liczby
+         kartonów ani powierzchni pochłaniającej — daje wyłącznie trzy formaty
+         paneli do układania zamiast jednego lub dwóch. Różni się jedynie
+         miejscem na ścianie, i to o promile. */
+      {id:'t3', n:'Zestaw mieszany — po połowie',
+       o:'Połowa kartonów z panelem dużym, połowa z parą mozaikową. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania dokładnie tyle samo.',
+       mieszany:['t1','t2']}],
     montaze:[
       {id:'w100', premium:true, n:'Premium · wełna 100 mm, mocniej w dole pasma',
        o:'Sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36, a przy 125 Hz 0,47 wobec 0,14. To ta grubość chroni przed wytłumieniem samej góry pasma. Potrzeba jej też nieco mniej.',
@@ -262,11 +279,25 @@ const format=()=>wyk().formaty.find(f=>f.id===ST.format)||wyk().formaty[0];
 
    POLE ZEWNĘTRZNE — tyle miejsca panel faktycznie zajmuje na ścianie. Sprawdzenie
    „czy się zmieści" musi iść z niego, nie z pola czynnego: panel 1030 × 640
-   zajmuje o 8 % więcej niż jego wełna, a 640 × 410 aż o 13 %. Liczenie miejsca
+   zajmuje o 8 % więcej niż jego wełna, a 640 × 420 aż o 13 %. Liczenie miejsca
    polem czynnym zaniżało zapotrzebowanie na powierzchnię. */
-const poleCzynne=()=>format().panele.reduce((a,p)=>a+p.wdl*p.wsz,0);
-const poleZewn =()=>format().panele.reduce((a,p)=>a+p.dl*p.sz,0);
-const paneleWKartonie=()=>format().panele.length;
+/* Zestaw mieszany opisuje przeplatankę dwóch rodzajów kartonu po połowie, więc
+   jego pola to średnia z obu. Pole czynne wychodzi identyczne — oba kartony to
+   jedna płyta wełny — a zewnętrzne różni się o promile, bo karton mozaikowy ma
+   dwie ramki zamiast jednej. Przy nieparzystej liczbie kartonów średnia myli
+   się o ułamek jednej ramki; to mniej niż dokładność samego sprawdzenia
+   miejsca, które i tak szacuje dostępną ścianę współczynnikiem. */
+function polaFormatu(f){
+  if(f.mieszany){
+    const skl=f.mieszany.map(id=>wyk().formaty.find(x=>x.id===id));
+    return {czynne:skl.reduce((a,x)=>a+polaFormatu(x).czynne,0)/skl.length,
+            zewn:  skl.reduce((a,x)=>a+polaFormatu(x).zewn,0)/skl.length};
+  }
+  return {czynne:f.panele.reduce((a,p)=>a+p.wdl*p.wsz,0),
+          zewn:  f.panele.reduce((a,p)=>a+p.dl*p.sz,0)};
+}
+const poleCzynne=()=>polaFormatu(format()).czynne;
+const poleZewn =()=>polaFormatu(format()).zewn;
 
 /* Pomiar telefonem zawyża chłonność. Sześć pomiarów terenowych tego samego pokoju
    dało stosunek 1,31 (A_telefon / A_głośnik). To jedno pomieszczenie, więc zamiast
@@ -322,6 +353,12 @@ const $=id=>document.getElementById(id);
 const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
 const pl=(v,n)=>v==null?'—':v.toFixed(n==null?2:n).replace('.',',');
 const lbl=f=>f>=1000?(f/1000)+' kHz':f+' Hz';
+/* Odmiana rzeczownika przez liczbę: 1 panel, 2–4 panele, 5+ paneli — z wyjątkiem
+   nastek (12–14 paneli). Bez tego w podpisach wychodziło „4 paneli". */
+function ilu(n,poj,mno,dop){
+  const d=n%10, s=n%100;
+  return n===1?poj:(d>=2&&d<=4&&!(s>=12&&s<=14)?mno:dop);
+}
 function idz(n){for(let i=1;i<=4;i++){$('v'+i).classList.toggle('hide',i!==n);
   $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
 $('ver').textContent=WERSJA;
@@ -573,9 +610,8 @@ function domyslneWykonczenia(){
   ST.format=wyk().formaty[0].id;
 }
 function opisFormatu(f){
-  const czynne=f.panele.reduce((a,p)=>a+p.wdl*p.wsz,0);
-  const zewn=f.panele.reduce((a,p)=>a+p.dl*p.sz,0);
-  return (f.o?f.o+' ':'')+'Pochłania '+pl(czynne)+' m², zajmuje '+pl(zewn)+' m² ściany.';
+  const q=polaFormatu(f);
+  return (f.o?f.o+' ':'')+'Pochłania '+pl(q.czynne)+' m² na karton, zajmuje '+pl(q.zewn)+' m² ściany.';
 }
 /*═══════════════ REKOMENDACJA WERSJI ═══════════════
   Wersję wskazuje POMIAR, nie cennik. Program liczy równowagę tonalną po
@@ -677,11 +713,21 @@ function rysujGdzie(){
 /* Kartony czy sztuki: panele tekstylne sprzedajemy w kartonach, a karton
    mozaikowy zawiera dwa panele. Klient musi widzieć, ile paneli faktycznie
    dostanie, bo od tego zależy, co da się ułożyć na ścianie. */
-const jednostka=()=>ST.wyk==='tex'?'kartonów':'paneli';
-function skladKartonow(n){
-  const p=format().panele;
+const jednostka=n=>ST.wyk==='tex'
+  ? ilu(n,'karton','kartony','kartonów')
+  : ilu(n,'panel','panele','paneli');
+function skladKartonow(n){ return skladFormatu(format(),n); }
+function skladFormatu(f,n){
+  if(f.mieszany){
+    /* Kartony rozkładają się po połowie; przy nieparzystej liczbie nadwyżka
+       idzie na karton z panelem dużym. */
+    const skl=f.mieszany.map(id=>wyk().formaty.find(x=>x.id===id));
+    const ile=[Math.ceil(n/2), Math.floor(n/2)];
+    return skl.map((x,i)=>skladFormatu(x,ile[i])).filter((t,i)=>ile[i]>0).join('  +  ');
+  }
+  const p=f.panele;
   if(p.length===1) return n+' × panel '+p[0].n+' mm';
-  return p.map(x=>n+' × '+x.n).join(' + ')+' mm, razem '+(n*p.length)+' paneli';
+  return p.map(x=>n+' × '+x.n).join(' + ')+' mm ('+(n*p.length)+' '+ilu(n*p.length,'panel','panele','paneli')+')';
 }
 
 /* Ile ściany zajmie propozycja — polem zewnętrznym paneli razy liczba kartonów. */
@@ -761,7 +807,7 @@ function pokazWynik(dolny,gorny,bazowy){
   /* nagłówek: widełki albo liczba */
   if(ST.pogladowy){
     $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
-    $('wynCap').textContent=jednostka()+'  ·  '+format().n;
+    $('wynCap').textContent=jednostka(gorny.szt)+'  ·  '+format().n;
     $('wynTryb').innerHTML='<div class="msg warn"><b>Widełki, nie liczba — pomiar był poglądowy.</b><br>'+
       'Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. '+
       'Dokładną liczbę da pomiar z głośnikiem zewnętrznym.</div>';
@@ -771,7 +817,7 @@ function pokazWynik(dolny,gorny,bazowy){
       'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' sztuk.</div>';
   } else {
     $('wynSzt').innerHTML=bazowy.szt+'<small> '+(ST.wyk==='tex'?'kart.':'szt.')+'</small>';
-    $('wynCap').textContent=jednostka()+'  ·  '+format().n+'  ·  '+skladKartonow(bazowy.szt);
+    $('wynCap').textContent=jednostka(bazowy.szt)+'  ·  '+format().n+'  ·  '+skladKartonow(bazowy.szt);
     $('wynTryb').innerHTML='';
     $('wynGl').innerHTML='<div class="msg good">Pomiar pełny, więc liczba jest konkretna. '+
       'Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.</div>';
@@ -912,9 +958,14 @@ $('bJson').onclick=()=>{
       wariant:montaz().id, wariant_nazwa:montaz().n.replace(' · zalecane',''),
       format:format().n,
 
-      panele_w_kartonie:format().panele.map(x=>({wymiar_mm:x.n,
-        pole_czynne_m2:+(x.wdl*x.wsz).toFixed(3),
-        pole_zewnetrzne_m2:+(x.dl*x.sz).toFixed(3)})),
+      zestaw_mieszany:!!format().mieszany,
+      sklad:skladKartonow(w.bazowy.szt),
+      panele_w_kartonie:(format().mieszany
+        ? format().mieszany.reduce((a,id)=>a.concat(
+            (wyk().formaty.find(x=>x.id===id)||{panele:[]}).panele),[])
+        : format().panele).map(x=>({wymiar_mm:x.n,
+          pole_czynne_m2:+(x.wdl*x.wsz).toFixed(3),
+          pole_zewnetrzne_m2:+(x.dl*x.sz).toFixed(3)})),
       pole_czynne_kartonu_m2:+poleCzynne().toFixed(3),
       pole_zewnetrzne_kartonu_m2:+poleZewn().toFixed(3),
       /* Boki i tyl lite; u tekstylnych ramka MDF 15 mm tez nie pochlania,

@@ -361,6 +361,15 @@ Karton B powstaje z przecięcia płyty wzdłuż na 610 i 390 mm, a służy
 **architekturze**: dwa formaty pozwalają układać na ścianie i suficie mozaikę,
 zamiast rytmu opartego na jednym prostokącie.
 
+Do wyboru jest jeszcze **zestaw mieszany** — kartony po połowie jednego
+i drugiego rodzaju, przy nieparzystej liczbie z nadwyżką po stronie panelu
+dużego. Skoro oba kartony mają identyczne pole czynne, przeplatanka **nie
+zmienia ani liczby kartonów, ani powierzchni pochłaniającej**: daje wyłącznie
+trzy formaty paneli na ścianie zamiast jednego lub dwóch. Zajmuje ściany
+pomiędzy jednym a drugim kartonem, co przy sprawdzeniu miejsca liczymy średnią
+— nieparzystość myli ją o ułamek jednej ramki, czyli mniej niż wynosi
+dokładność samego szacunku dostępnej powierzchni.
+
 **Akustycznie oba kartony są identyczne — 0,610 m² co do metra.** Jedna płyta
 wełny, jeden karton, to samo pochłanianie. Wybór kartonu jest więc wyłącznie
 decyzją o wyglądzie i tak trzeba go klientowi przedstawiać.

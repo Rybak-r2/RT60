@@ -157,11 +157,12 @@ function policz(wyk,mont,format){
   const o=JSON.parse(pobrane);
   return {szt:o.propozycja.sztuk, pow:o.propozycja.powierzchnia_m2,
           czynne:o.panel.pole_czynne_kartonu_m2, zewn:o.panel.pole_zewnetrzne_kartonu_m2,
-          panele:o.panel.panele_w_kartonie, alfa:o.alfa_panelu,
+          panele:o.panel.panele_w_kartonie, alfa:o.alfa_panelu, sklad:o.panel.sklad,
           wariant:o.panel.wariant, zrodlo:o.alfa_zrodlo};
 }
 const w100=policz('tex','w100','t1');
 const mozaika=policz('tex','w100','t2');
+const mieszany2=policz('tex','w100','t3');
 const w50 =policz('tex','w50','t1');
 const nuo =policz('nuo','n100','n1');
 const nuo50=policz('nuo','n50','n1');
@@ -185,6 +186,14 @@ sprawdz(mozaika.panele.length===2&&mozaika.czynne===w100.czynne&&mozaika.szt===w
   'karton mozaikowy pochłania dokładnie tyle samo co karton z jednym panelem');
 sprawdz(mozaika.zewn>w100.zewn,
   'karton mozaikowy zajmuje więcej ściany — dwie ramki zamiast jednej');
+/* Zestaw mieszany to kartony po połowie jednego i drugiego rodzaju. Skoro oba
+   mają identyczne pole czynne, przeplatanka nie może zmienić liczby kartonów. */
+sprawdz(mieszany2.czynne===w100.czynne&&mieszany2.szt===w100.szt,
+  'zestaw mieszany pochłania tyle samo i daje tę samą liczbę kartonów');
+sprawdz(mieszany2.zewn>w100.zewn&&mieszany2.zewn<mozaika.zewn,
+  'zestaw mieszany zajmuje ściany pomiędzy jednym a drugim kartonem');
+sprawdz(mieszany2.sklad.indexOf('1030 × 640')>=0&&mieszany2.sklad.indexOf('640 × 420')>=0,
+  'skład zestawu mieszanego wymienia panele obu rodzajów');
 sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
   'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
 /* Wełna kupowana na spec 40–60 kg/m³: α musi być najgorsza z przedziału,
