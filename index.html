@@ -183,15 +183,78 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
     <div id="rSpeech"></div>
     <h2>Pasma</h2><div id="rTbl"></div><div id="rStab"></div>
   </div>
-  <div class="btnrow" style="margin-top:18px">
-    <button class="ghost" id="bJson">Pobierz dane (JSON)</button>
-    <button class="ghost" id="bWav">Pobierz IR (WAV)</button>
-  </div>
+  <button id="bZapisz" style="margin-top:18px">Zapisz dane badania</button>
+  <p class="note" style="font-size:12.5px;margin-top:8px" id="zapisOpis"></p>
   <details><summary>Tryb techniczny</summary><div class="diag" id="rDiag"></div><div id="rDiagMsg"></div></details>
 </div>
 </div>
 <script>
 "use strict";
+/*═════════════ PAKOWANIE WYNIKU ═════════════
+  Jeden przycisk musi oddać komplet: wyniki i surowiec, z którego je policzono.
+  Rozdzielenie na dwa pobrania oznaczało, że klient przyśle połowę — a bez
+  odpowiedzi impulsowych nie da się niczego przeliczyć ani zweryfikować.
+  ZIP zapisujemy sami, metodą "store" (bez kompresji): kilkadziesiąt linii
+  zamiast biblioteki z CDN, dzięki czemu aplikacja zostaje jednym plikiem
+  działającym bez sieci. */
+const CRC_TAB=(()=>{const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}
+  return t;})();
+function crc32(u8){let c=0xFFFFFFFF;
+  for(let i=0;i<u8.length;i++)c=CRC_TAB[(c^u8[i])&0xFF]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0;}
+
+function zip(pliki){                       // [{nazwa, dane:Uint8Array}]
+  const enc=new TextEncoder(), lok=[], cen=[];
+  let offset=0;
+  pliki.forEach(p=>{
+    const nm=enc.encode(p.nazwa), cr=crc32(p.dane), n=p.dane.length;
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0,true);
+    lh.setUint16(8,0,true); lh.setUint16(10,0,true); lh.setUint16(12,0x21,true);
+    lh.setUint32(14,cr,true); lh.setUint32(18,n,true); lh.setUint32(22,n,true);
+    lh.setUint16(26,nm.length,true); lh.setUint16(28,0,true);
+    lok.push(new Uint8Array(lh.buffer),nm,p.dane);
+
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true);
+    ch.setUint16(8,0,true); ch.setUint16(10,0,true); ch.setUint16(12,0,true); ch.setUint16(14,0x21,true);
+    ch.setUint32(16,cr,true); ch.setUint32(20,n,true); ch.setUint32(24,n,true);
+    ch.setUint16(28,nm.length,true); ch.setUint32(42,offset,true);
+    cen.push(new Uint8Array(ch.buffer),nm);
+    offset+=30+nm.length+n;
+  });
+  const cenDl=cen.reduce((a,x)=>a+x.length,0);
+  const eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true);
+  eo.setUint16(8,pliki.length,true); eo.setUint16(10,pliki.length,true);
+  eo.setUint32(12,cenDl,true); eo.setUint32(16,offset,true);
+  return new Blob([...lok,...cen,new Uint8Array(eo.buffer)],{type:'application/zip'});
+}
+
+/* Data i godzina w nazwie paczki. Bez tego kilka badań ląduje w pobranych jako
+   badanie-akustyczne(1).zip, (2), (3) — a po stronie ALACER przychodzi kilka
+   plików o tej samej nazwie i nie wiadomo, który dotyczy którego pomieszczenia.
+   Czas lokalny, bo to on zgadza się z tym, co użytkownik pamięta. */
+function stempel(){
+  const d=new Date(), z=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+
+         '-'+z(d.getHours())+z(d.getMinutes());
+}
+
+/* Odpowiedź impulsowa jako WAV 32-bit float — format, który wczytają REW, ARTA,
+   Audacity i biblioteki pythonowe bez konwersji. */
+function wav(ir,fs){
+  const n=ir.length, b=new ArrayBuffer(44+n*4), v=new DataView(b);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');
+  v.setUint32(16,16,true);v.setUint16(20,3,true);v.setUint16(22,1,true);
+  v.setUint32(24,fs,true);v.setUint32(28,fs*4,true);v.setUint16(32,4,true);v.setUint16(34,32,true);
+  w(36,'data');v.setUint32(40,n*4,true);
+  for(let i=0;i<n;i++)v.setFloat32(44+i*4,ir[i],true);
+  return new Uint8Array(b);
+}
+
 /*═════════════ FFT ═════════════*/
 function nextPow2(n){let p=1;while(p<n)p<<=1;return p;}
 function fft(re,im,inv){
@@ -362,7 +425,7 @@ function stiFrom(m){
 /* Wersja silnika. Jedno źródło prawdy: widoczna na ekranie startowym i
    zapisywana w eksporcie JSON — żeby dało się jednoznacznie stwierdzić,
    która wersja stoi pod danym adresem (produkcja czy podgląd gałęzi). */
-const WERSJA='v13';
+const WERSJA='v15';
 /*═════════════ PROGI WALIDACJI ═════════════*/
 const XI_GOOD=10, XI_MAX=25, SNR_AC_MIN=20;
 /* Kiedy metryki mowy (C50, D50, STI) są wiarygodne.
@@ -398,7 +461,7 @@ const SNR_AC_GOOD=26, SNR_SCALE=45, PEAK_LOW_DBFS=-40, PEAK_MIN_DBFS=-50;
    prób. To ograniczenie konstrukcyjne wspólnej obudowy, nie wada tej aplikacji:
    Akulap firmy Dr. Jordan na tym samym telefonie w tym samym pokoju podaje
    T20 = 0,04 s przy T30 = 0,22 s oraz STI = 1, czyli wartości niemożliwe. */
-const ST={fs:48000,set:{},src:'ext',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,
+const ST={fs:48000,set:{},src:'ext',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,irs:[],
   tries:[0,0,0],peak:0,clip:false,rec:false,chunks:[]};
 const $=id=>document.getElementById(id);
 const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
@@ -695,6 +758,12 @@ $('b4').onclick=async()=>{
   if(ok){
     ST.pos[i]={bands:bands,mtis:mtis,snrAc:r.snrAc,
       C50:C.length?C.reduce((a,x)=>a+x)/C.length:null,D50:D50m};
+    /* Odpowiedź impulsowa z KAŻDEGO punktu. Wcześniej zapisywana była tylko
+       pierwsza, a pozostałe dwie — policzone i wykorzystane do uśrednienia —
+       przepadały. Jako materiał archiwalny to było niepełne, bo właśnie
+       możliwość przeliczenia wszystkiego na nowo jest jedynym sensem trzymania
+       IR: z niej wynikają T20, T30, C50, D50, STI i krzywa Schroedera. */
+    ST.irs[i]=r.ir;
     if(!ST.ir)ST.ir=r.ir;
     /* PĘTLA ZERWANA: Test tylko z pasm, które przeszły walidację, i z ograniczeniem */
     const ref=bands[1000].T||bands[500].T||bands[2000].T;
@@ -852,7 +921,7 @@ function diag(){
   if(s.autoGainControl===true||s.echoCancellation===true)
     S($('rDiagMsg'),'warn','Przeglądarka nie oddała surowego sygnału — automatyka mikrofonu pozostała aktywna.');
 }
-$('bJson').onclick=()=>{
+function budujJSON(){
   const P=ST.pos.filter(Boolean);
   const r3=x=>x==null?null:+x.toFixed(3), r1=x=>x==null?null:+x.toFixed(1);
   /* Bramka D50: przy dominacji pola bezpośredniego C50/STI są zawyżone i NIE
@@ -895,18 +964,48 @@ $('bJson').onclick=()=>{
       C50:mowaOK&&p.C50!=null?+p.C50.toFixed(2):null,
       STI:mowaOK&&stiFrom(p.mtis)?r3(stiFrom(p.mtis)):null,
       uwaga:mowaOK?null:'do mikrofonu dotarło '+Math.round(ST.pozny*100)+'% spodziewanego pola pogłosowego — dominuje dźwięk bezpośredni, C50/STI pominięte jako niewiarygodne'}))};
-  dl(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),'badanie-akustyczne.json');
-};
-$('bWav').onclick=()=>{
-  if(!ST.ir)return;const n=ST.ir.length,fs=ST.fs;
-  const b=new ArrayBuffer(44+n*4),v=new DataView(b);
-  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
-  w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');
-  v.setUint32(16,16,true);v.setUint16(20,3,true);v.setUint16(22,1,true);
-  v.setUint32(24,fs,true);v.setUint32(28,fs*4,true);v.setUint16(32,4,true);v.setUint16(34,32,true);
-  w(36,'data');v.setUint32(40,n*4,true);
-  for(let i=0;i<n;i++)v.setFloat32(44+i*4,ST.ir[i],true);
-  dl(new Blob([b],{type:'audio/wav'}),'odpowiedz-impulsowa.wav');
+  return out;
+}
+
+/* Jedno pobranie = komplet. Wyniki i surowiec razem, bo osobno przychodziłaby
+   połowa. Czytnik w środku, żeby osoba otwierająca paczkę wiedziała, co ma. */
+$('bZapisz').onclick=()=>{
+  const b=$('bZapisz'); b.disabled=true; b.textContent='Pakuję…';
+  try{
+    const out=budujJSON();
+    const enc=new TextEncoder();
+    const pliki=[{nazwa:'badanie-akustyczne.json',
+                  dane:enc.encode(JSON.stringify(out,null,2))}];
+    ST.irs.forEach((ir,i)=>{ if(ir&&ir.length)
+      pliki.push({nazwa:'ir-punkt-'+(i+1)+'.wav', dane:wav(ir,ST.fs)}); });
+    pliki.push({nazwa:'czytaj-to.txt', dane:enc.encode(
+      'BADANIE AKUSTYCZNE POMIESZCZENIA — komplet danych\r\n'+
+      '='.repeat(52)+'\r\n\r\n'+
+      'Data pomiaru: '+out.czas+'\r\n'+
+      'Silnik: '+out.wersja+'\r\n'+
+      'Pomieszczenie: '+ST.L+' x '+ST.W+' x '+ST.H+' m, '+out.pomieszczenie.V+' m3\r\n'+
+      'Charakter pomiaru: '+out.charakter_pomiaru+'\r\n'+
+      'Czas poglosu Tmid: '+(out.Tmid!=null?out.Tmid+' s':'nie wyznaczono')+'\r\n\r\n'+
+      'ZAWARTOSC\r\n\r\n'+
+      'badanie-akustyczne.json   wyniki: czas poglosu w pasmach, chlonnosc,\r\n'+
+      '                          wskazniki mowy, dane toru pomiarowego\r\n\r\n'+
+      'ir-punkt-N.wav            odpowiedzi impulsowe z kazdego z punktow\r\n'+
+      '                          pomiarowych, 32-bit float, '+ST.fs+' Hz.\r\n'+
+      '                          To jest surowiec: wynikaja z niego T20, T30,\r\n'+
+      '                          C50, D50 i STI. Pozwalaja przeliczyc wszystko\r\n'+
+      '                          na nowo albo sprawdzic wynik niezaleznym\r\n'+
+      '                          narzedziem (REW, ARTA, Audacity, Python)\r\n'+
+      '                          bez wracania do pomieszczenia.\r\n\r\n'+
+      'Plik przeznaczony do przeslania do ALACER.\r\n')});
+    const nazwa='badanie-akustyczne-'+stempel()+'.zip';
+    dl(zip(pliki),nazwa);
+    $('zapisOpis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+
+      pliki.length+' plików: wyniki, '+ST.irs.filter(Boolean).length+
+      ' odpowiedzi impulsowe i opis zawartości.';
+  }catch(e){
+    $('zapisOpis').innerHTML='<span class="r">Nie udało się spakować ('+e.message+').</span>';
+  }
+  b.disabled=false; b.textContent='Zapisz dane badania';
 };
 function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
