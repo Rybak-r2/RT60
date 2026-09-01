@@ -24,8 +24,23 @@ let pobrane=null;
 global.Blob=class{constructor(cz){pobrane=cz[0];}};
 global.URL={createObjectURL:()=>'blob:test',revokeObjectURL(){}};
 
-const api=new Function(src+'\n;return {przyjmij:przyjmij,ST:ST};')();
 const E=id=>document.getElementById(id);
+
+/* Każde uruchomienie to świeża instancja skryptu strony na czystej atrapie DOM.
+   Bez tego handlery przycisków zostawały przy poprzednim egzemplarzu stanu ST,
+   a test ustawiał pola na obiekcie, którego nikt już nie czytał — i przechodził
+   albo padał z powodu, który nie miał nic wspólnego ze stroną. */
+let api;
+function uruchom(pomiar){
+  const mem={};
+  global.sessionStorage={getItem:k=>k in mem?mem[k]:null,
+    setItem:(k,v)=>{mem[k]=String(v);}, removeItem:k=>{delete mem[k];}};
+  if(pomiar) mem['rt60-pomiar']=JSON.stringify(pomiar);
+  for(const k in cache) delete cache[k];
+  api=new Function(src+'\n;return {przyjmij:przyjmij,ST:ST};')();
+  return api;
+}
+uruchom(null);
 const tekst=()=>E('m1').innerHTML.replace(/<[^>]+>/g,'');
 const odrzucony=()=>E('podglad').classList.has('hide');
 
@@ -106,12 +121,7 @@ console.log('\nPrzejęcie pomiaru wprost z badania');
 /* Przekazanie z pomiaru nie może być wejściem bocznym omijającym bramkę.
    Uruchamiamy skrypt strony jeszcze raz, z pomiarem czekającym w pamięci. */
 function zPamieci(j){
-  const mem={};
-  global.sessionStorage={getItem:k=>k in mem?mem[k]:null,
-    setItem:(k,v)=>{mem[k]=String(v);}, removeItem:k=>{delete mem[k];}};
-  mem['rt60-pomiar']=JSON.stringify(j);
-  for(const k in cache) delete cache[k];
-  new Function(src)();
+  uruchom(j);
   return {odrzucony:E('podglad').classList.has('hide'),
           tekst:E('m1').innerHTML.replace(/<[^>]+>/g,''),
           skad:E('skad').innerHTML.replace(/<[^>]+>/g,'')};
@@ -133,6 +143,43 @@ r=zPamieci(plik({Tmid:1.251,
 if(r.odrzucony&&r.tekst.indexOf('rozjeżdżają się')>=0)
   console.log('  ok    rozjazd pasm wykrywany także na drodze przejęcia');
 else {zle++;console.log('  BŁĄD  rozjazd pasm przepuszczony przy przejęciu');}
+
+console.log('\nWykończenia — wybór musi wchodzić do rachunku');
+/* Ten sam pomiar, ten sam cel, trzy warianty paneli. Liczby muszą się różnić
+   zgodnie z alfa i polem modulu, a nie byc przepisane z jednego wzorca. */
+function policz(wyk,mont,format){
+  uruchom(null);
+  api.przyjmij(plik({Tmid:0.353,
+    T:{125:0.42,250:0.38,500:0.353,1000:0.345,2000:0.32,4000:0.30}}));
+  api.ST.cel=0.30; E('b2').onclick();
+  api.ST.wyk=wyk; api.ST.mont=mont; api.ST.format=format;
+  E('b3').onclick(); E('bJson').onclick();
+  const o=JSON.parse(pobrane);
+  return {szt:o.propozycja.sztuk, pow:o.propozycja.powierzchnia_m2,
+          lico:o.panel.lico_m2, alfa:o.alfa_panelu, wykN:o.panel.wykonczenie,
+          wariant:o.panel.wariant, zrodlo:o.alfa_zrodlo};
+}
+const w100=policz('tex','w100','t1');
+const w50 =policz('tex','w50','t1');
+const nuo =policz('nuo','rama','n1');
+console.log('        tekstylny 100 mm, 1000×610 : '+w100.szt+' szt., '+w100.pow+' m²');
+console.log('        tekstylny  50 mm, 1000×610 : '+w50.szt +' szt., '+w50.pow +' m²');
+console.log('        NUO_WALL 950×950           : '+nuo.szt +' szt., '+nuo.pow +' m²');
+
+function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
+  else {zle++;console.log('  BŁĄD  '+opis);} }
+sprawdz(w100.lico===0.61&&nuo.lico===0.902,'pole modułu bierze się z wybranego formatu');
+sprawdz(w100.alfa[250]===0.72&&w50.alfa[250]===0.39&&nuo.alfa[250]===0.6,
+  'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
+sprawdz(w50.pow>w100.pow,'wełna 50 mm wymaga większej powierzchni niż 100 mm');
+sprawdz(nuo.pow<w100.pow,'NUO wymaga mniejszej powierzchni — α 1,00 w pasmach mowy');
+sprawdz(nuo.zrodlo.indexOf('NUO_WALL')>=0&&w100.zrodlo.indexOf('Mikiego')>=0,
+  'eksport podaje właściwe źródło α dla każdego wykończenia');
+/* Format z poprzedniego wykończenia nie może wywrócić rachunku — wybór cofa
+   się wtedy do pierwszego formatu wykończenia właśnie wybranego. */
+const mieszany=policz('nuo','rama','t1');
+sprawdz(mieszany.lico===0.902&&mieszany.szt>0,
+  'format spoza wykończenia cofa się do formatu tego wykończenia');
 
 console.log(zle?'\n'+zle+' testów nie przeszło\n':'\nWszystkie testy przeszły\n');
 process.exit(zle?1:0);

@@ -104,15 +104,16 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <div class="btnrow"><button class="ghost" onclick="idz(1)">Wstecz</button><button id="b2">Dalej</button></div>
 </div>
 
-<!-- ── 3. montaż i rozmieszczenie ───────────────────────────────────── -->
+<!-- ── 3. panele i rozmieszczenie ───────────────────────────────────── -->
 <div id="v3" class="hide">
   <p class="eyebrow">Krok 3 z 4</p>
-  <h1>Montaż paneli</h1>
-  <h2>Sposób mocowania</h2>
-  <label class="opt sel" id="oDys"><input type="radio" name="mont" value="dys" checked>
-    <b>Na dystansach 50 mm · zalecane</b><span>Panel odsunięty od ściany na listwach. Znacznie lepiej pracuje w dole pasma — pochłanianie przy 250 Hz rośnie z 0,40 do 0,70, co chroni przed wytłumieniem samej góry.</span></label>
-  <label class="opt" id="oSci"><input type="radio" name="mont" value="sci">
-    <b>Bezpośrednio na powierzchni</b><span>Prostszy montaż, panel przylega. Skuteczny od około 860 Hz w górę; przy dole pasma wypada wyraźnie słabiej.</span></label>
+  <h1>Panele</h1>
+  <h2>Wykończenie</h2>
+  <div id="wyk"></div>
+  <h2 id="hMont">Sposób mocowania</h2>
+  <div id="mont"></div>
+  <h2>Format</h2>
+  <div id="format"></div>
   <h2>Gdzie</h2>
   <div id="gdzie"></div>
   <p class="note" style="margin-top:10px">Rozmieszczenie nie zmienia wyliczonego czasu pogłosu — model Sabine'a nie rozróżnia, na której powierzchni leży chłonność. Wybór służy sprawdzeniu, czy panele się zmieszczą, i przygotowaniu rozrysowania.</p>
@@ -142,7 +143,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 
 <script>
 "use strict";
-const WERSJA='dobór v2';
+const WERSJA='dobór v3';
 
 /*═══════════════ DANE MATERIAŁOWE ═══════════════
   UWAGA — WARTOŚCI TYMCZASOWE.
@@ -153,13 +154,79 @@ const WERSJA='dobór v2';
   obiecuje mniej, niż panel da — ale do rozmowy z klientem trzeba je podmienić na
   tabelę α_p 250–4000 Hz od producenta. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.5. */
 const PASMA=[125,250,500,1000,2000,4000];
-const ALFA={
-  dys:{125:0.41, 250:0.70, 500:0.86, 1000:0.88, 2000:0.90, 4000:0.93},
-  sci:{125:0.16, 250:0.40, 500:0.71, 1000:0.90, 2000:0.92, 4000:0.92}
+
+/*═══════════════ WYKOŃCZENIA ═══════════════
+  Dwa wykończenia tego samego zadania akustycznego. Różnią się nie tylko
+  wyglądem — mają inne α i inny moduł, więc wybór wykończenia musi wejść do
+  rachunku, a nie zostać przy opisie oferty.
+
+  TEKSTYLNE — wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte
+  tkaniną akustycznie transparentną. Boki i tył są lite, więc pochłania
+  WYŁĄCZNIE LICO. Panel idzie bezpośrednio na ścianę albo sufit; wariantu na
+  dystansach nie ma, bo montaż jest przylegający z założenia.
+
+  Grubość wełny zastąpiła dawny wybór „na ścianie / na dystansach" i robi tę
+  samą robotę lepiej: 100 mm przylegające do ściany daje przy 250 Hz α 0,72,
+  czyli tyle samo co dawne 50 mm odsunięte o 50 mm pustki (0,70), a przy
+  125 Hz nawet więcej (0,48 wobec 0,40). Ten sam efekt bez listew.
+
+  DREWNIANE NUO_WALL (muto' GmbH) — fornir perforowany laserowo w ramie
+  aluminiowej, z absorberem na odwrocie. Układ rezonansowy: pochłania wąsko,
+  ze szczytem 500–1000 Hz, i wyraźnie odpuszcza oba krańce pasma. Ulotka mówi
+  wprost „particularly in frequencies between 400 Hz and 1250 Hz". Wniosek
+  praktyczny: przy dudniącym dole NUO nie zastąpi wełny, a przy 4 kHz zostawia
+  górę żywą — co bywa zaletą, bo wełna potrafi wygłuszyć wnętrze na głucho.
+  Sprawdzenie równowagi tonalnej (3.3) wyłapuje jedno i drugie samo.
+
+  ŹRÓDŁO LICZB — WARTOŚCI TYMCZASOWE:
+  · tekstylne — model Mikiego, σ = 28 000 Pa·s/m² (wełna ok. 45 kg/m³),
+    padanie rozproszone, tył sztywny. Implementacja: docs/welna.py.
+    Model jest systematycznie zaniżony o 0,10–0,15 w skali AW wobec badań
+    komorowych, bo nie liczy krawędzi próbki. Kierunek błędu jest bezpieczny.
+  · drewniane — odczytane z wykresu α_p w ulotce NUO_WALL (muto', 10.2021),
+    z dokładnością do kroku 0,05 wymaganego przez ISO 11654. To odczyt
+    z obrazka, nie tabela producenta.
+  Obie tabele do podmiany na α_p od producentów przed rozmową z klientem.
+  Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.4 i 3.5. */
+const WYK={
+  tex:{
+    nazwa:'Panele tekstylne',
+    opis:'Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny.',
+    etykieta:'Grubość wełny',
+    formaty:[{id:'t1', n:'1000 × 610 mm', dl:1.000, sz:0.610},
+             {id:'t2', n:'500 × 610 mm',  dl:0.500, sz:0.610}],
+    montaze:[
+      {id:'w100', n:'Wełna 100 mm · zalecane',
+       o:'Pracuje w całym paśmie mowy i sięga niżej: przy 250 Hz pochłania 0,72 wobec 0,39 przy wełnie 50 mm. To ta grubość chroni przed wytłumieniem samej góry pasma.',
+       alfa:{125:0.48, 250:0.72, 500:0.84, 1000:0.88, 2000:0.91, 4000:0.92}},
+      {id:'w50', n:'Wełna 50 mm',
+       o:'Panel płytszy i tańszy, skuteczny od około 800 Hz w górę. Poniżej 500 Hz wypada wyraźnie słabiej — przy dudniącym dole nie wystarczy.',
+       alfa:{125:0.16, 250:0.39, 500:0.70, 1000:0.90, 2000:0.92, 4000:0.92}}]
+  },
+  nuo:{
+    nazwa:'Panele drewniane NUO_WALL',
+    opis:'Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na odwrocie. System muto\' GmbH — wybór gatunku drewna i grawerunku.',
+    etykieta:'Konstrukcja',
+    formaty:[{id:'n1', n:'950 × 950 mm',   dl:0.950, sz:0.950},
+             {id:'n2', n:'2480 × 950 mm',  dl:2.480, sz:0.950},
+             {id:'n3', n:'2440 × 1220 mm', dl:2.440, sz:1.220}],
+    montaze:[
+      {id:'rama', n:'Rama aluminiowa 40 lub 80 mm',
+       o:'Absorber za fornirem, w ramie. Głębokość profilu nie wchodzi do rachunku: producent podaje jedną krzywą pochłaniania, bez rozbicia na głębokości i rodzaj wypełnienia (pianka melaminowa albo filc akustyczny).',
+       alfa:{125:0.10, 250:0.60, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}}]
+  }
 };
-const PANEL={dl:1.000, sz:0.610, gr:0.050};
-const LICO=PANEL.dl*PANEL.sz;                       // 0,610 m² — liczymy tylko lico
-const KRAW=2*(PANEL.dl*PANEL.gr)+2*(PANEL.sz*PANEL.gr);   // krawędzie jako zapas
+
+/* Wybrane elementy — czytane wszędzie zamiast stałych globalnych, bo od
+   wykończenia zależy i α, i pole modułu. */
+const wyk=()=>WYK[ST.wyk]||WYK.tex;
+const montaz=()=>wyk().montaze.find(m=>m.id===ST.mont)||wyk().montaze[0];
+const format=()=>wyk().formaty.find(f=>f.id===ST.format)||wyk().formaty[0];
+/* Pochłania wyłącznie lico. Oba wykończenia mają boki i tył lite — tekstylne
+   z płyty drewnopochodnej, drewniane w profilu aluminiowym — więc nie ma
+   powierzchni bocznych do doliczenia. Wcześniejszy zapas z obszycia krawędzi
+   tkaniną (+26 %) odpadł razem ze zmianą konstrukcji na ramową. */
+const lico=()=>{const f=format();return f.dl*f.sz;};
 
 /* Pomiar telefonem zawyża chłonność. Sześć pomiarów terenowych tego samego pokoju
    dało stosunek 1,31 (A_telefon / A_głośnik). To jedno pomieszczenie, więc zamiast
@@ -203,9 +270,13 @@ const lbl=f=>f>=1000?(f/1000)+' kHz':f+' Hz';
 function idz(n){for(let i=1;i<=4;i++){$('v'+i).classList.toggle('hide',i!==n);
   $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
 $('ver').textContent=WERSJA;
-$('prov').textContent='α paneli z modelu Mikiego (σ = 30 000 Pa·s/m²) — wartości '+
-  'tymczasowe do czasu otrzymania tabeli α_p od producenta wełny. Liczone z samego '+
-  'lica panelu; obszycie krawędzi dokłada '+Math.round(100*KRAW/LICO)+' % powierzchni jako zapas.';
+/* Podstawa rachunku zależy od wykończenia, więc opis powstaje razem z wynikiem. */
+function opisPodstawy(){
+  return (ST.wyk==='nuo'
+    ? 'α odczytane z wykresu α_p w ulotce NUO_WALL (muto\', 10.2021) — odczyt z obrazka, nie tabela producenta.'
+    : 'α z modelu Mikiego (σ = 28 000 Pa·s/m², wełna ok. 45 kg/m³) — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.')+
+    ' Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają.';
+}
 
 const ST={};
 
@@ -421,28 +492,52 @@ $('b2').onclick=()=>{
     S($('m2'),'warn','<b>Nie da się rozstrzygnąć na tym pomiarze.</b> Rzeczywisty czas pogłosu leży między '+
       pl(ST.Tlo)+' a '+pl(ST.Thi)+' s, a cel '+pl(ST.cel)+' s wypada w środku tego przedziału — pomieszczenie może już go spełniać albo nie. '+
       'Powtórz badanie z głośnikiem zewnętrznym; przy tym celu widełki nie dałyby sensownej odpowiedzi.');return;}
-  S($('m2'),''); rysujGdzie(); idz(3);
+  S($('m2'),''); rysujPanele(); rysujGdzie(); idz(3);
 };
 
-/*═══════════════ 3. MONTAŻ ═══════════════*/
-document.querySelectorAll('input[name=mont]').forEach(r=>r.onchange=()=>{
-  $('oDys').classList.toggle('sel',r.value==='dys');
-  $('oSci').classList.toggle('sel',r.value==='sci');
-  ST.mont=r.value;});
-ST.mont='dys';
+/*═══════════════ 3. PANELE I ROZMIESZCZENIE ═══════════════*/
+/* Jeden wzór listy wyboru dla wykończenia, wariantu, formatu i rozmieszczenia.
+   Wcześniej każda z nich miała własną kopię tego samego kodu. */
+function wybor(gdzie, opcje, wybrane, przy){
+  const box=$(gdzie);
+  box.innerHTML=opcje.map(o=>
+    '<label class="opt'+(o.id===wybrane?' sel':'')+'" data-id="'+o.id+'"><b>'+o.n+'</b>'+
+    (o.o?'<span>'+o.o+'</span>':'')+'</label>').join('');
+  box.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+    box.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+    el.classList.add('sel'); S($('m3'),''); przy(el.dataset.id);});
+}
+
+/* Zmiana wykończenia unieważnia wariant i format — należą do wykończenia,
+   nie do wyboru użytkownika w oderwaniu od niego. */
+function domyslneWykonczenia(){
+  ST.mont=wyk().montaze[0].id;
+  ST.format=wyk().formaty[0].id;
+}
+function opisFormatu(f){
+  const pole=f.dl*f.sz;
+  return pl(pole)+' m² powierzchni czynnej na sztukę';
+}
+function rysujWariantIFormat(){
+  $('hMont').textContent=wyk().etykieta;
+  wybor('mont', wyk().montaze, ST.mont, id=>{ST.mont=id;});
+  wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format, id=>{ST.format=id;});
+}
+function rysujPanele(){
+  if(!ST.wyk){ST.wyk='tex';domyslneWykonczenia();}
+  wybor('wyk', Object.keys(WYK).map(k=>({id:k,n:WYK[k].nazwa,o:WYK[k].opis})), ST.wyk,
+    id=>{ST.wyk=id; domyslneWykonczenia(); rysujWariantIFormat();});
+  rysujWariantIFormat();
+}
 
 function rysujGdzie(){
   const opcje=[
-    ['sciany','Ściany', ST.Sscian, 'dostępne około '+pl(ST.Sscian*0.6,1)+' m² po odjęciu okien, drzwi i mebli'],
-    ['sufit','Sufit', ST.Ssufit, 'dostępne około '+pl(ST.Ssufit*0.8,1)+' m² po odjęciu opraw i instalacji'],
-    ['oba','Ściany i sufit', ST.Sscian+ST.Ssufit, 'najbardziej równomierny rozkład chłonności']
+    {id:'sciany', n:'Ściany', o:'dostępne około '+pl(ST.Sscian*0.6,1)+' m² po odjęciu okien, drzwi i mebli'},
+    {id:'sufit',  n:'Sufit',  o:'dostępne około '+pl(ST.Ssufit*0.8,1)+' m² po odjęciu opraw i instalacji'},
+    {id:'oba',    n:'Ściany i sufit', o:'najbardziej równomierny rozkład chłonności'}
   ];
   ST.gdzie='oba';
-  $('gdzie').innerHTML=opcje.map(([id,n,s,o])=>
-    '<label class="opt'+(id==='oba'?' sel':'')+'" data-id="'+id+'"><b>'+n+'</b><span>'+o+'</span></label>').join('');
-  $('gdzie').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
-    $('gdzie').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
-    o.classList.add('sel'); ST.gdzie=o.dataset.id; S($('m3'),'');});
+  wybor('gdzie', opcje, ST.gdzie, id=>{ST.gdzie=id;});
 }
 function dostepne(){
   if(ST.gdzie==='sciany')return ST.Sscian*0.6;
@@ -465,7 +560,7 @@ function T_z_A(A,eyring){
   return 0.161*ST.V/(-ST.S*Math.log(1-am));
 }
 function policzDla(korekta){
-  const a=ALFA[ST.mont];
+  const a=montaz().alfa;
   let eyring=false, pow=0, T_po={}, A0={};
   for(let it=0;it<3;it++){
     PASMA.forEach(f=>A0[f]=A_z_T(ST.T[f],eyring)/korekta);
@@ -483,7 +578,7 @@ function policzDla(korekta){
     if(trzeba===eyring) break;
     eyring=trzeba;
   }
-  return {pow:pow, szt:Math.ceil(pow/LICO), T_po:T_po, A0:A0, eyring:eyring, kor:korekta};
+  return {pow:pow, szt:Math.ceil(pow/lico()), T_po:T_po, A0:A0, eyring:eyring, kor:korekta};
 }
 
 /* Widełki mają sens tylko wtedy, gdy nie są absurdalnie szerokie. Gdy cel wypada
@@ -514,12 +609,12 @@ $('b3').onclick=()=>{
 };
 
 function pokazWynik(dolny,gorny,bazowy){
-  const a=ALFA[ST.mont];
+  $('prov').textContent=opisPodstawy();
 
   /* nagłówek: widełki albo liczba */
   if(ST.pogladowy){
     $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
-    $('wynCap').textContent='paneli 1000 × 610 mm';
+    $('wynCap').textContent=wyk().nazwa.toLowerCase()+' '+format().n;
     $('wynTryb').innerHTML='<div class="msg warn"><b>Widełki, nie liczba — pomiar był poglądowy.</b><br>'+
       'Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. '+
       'Dokładną liczbę da pomiar z głośnikiem zewnętrznym.</div>';
@@ -529,11 +624,10 @@ function pokazWynik(dolny,gorny,bazowy){
       'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' sztuk.</div>';
   } else {
     $('wynSzt').innerHTML=bazowy.szt+'<small> szt.</small>';
-    $('wynCap').textContent='paneli 1000 × 610 mm  ·  '+pl(bazowy.szt*LICO,1)+' m²';
+    $('wynCap').textContent=wyk().nazwa.toLowerCase()+' '+format().n+'  ·  '+pl(bazowy.szt*lico(),1)+' m²';
     $('wynTryb').innerHTML='';
     $('wynGl').innerHTML='<div class="msg good">Pomiar pełny, więc liczba jest konkretna. '+
-      'Obszycie krawędzi tkaniną dokłada około '+Math.round(100*KRAW/LICO)+' % powierzchni pochłaniającej ponad samo lico — '+
-      'to zapas, którego nie wliczono do rachunku.</div>';
+      'Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.</div>';
   }
 
   /* tabela T po adaptacji */
@@ -569,7 +663,11 @@ function pokazWynik(dolny,gorny,bazowy){
         pl(rPrzed)+' na '+pl(rPo)+'. Wnętrze wyciszy się równomiernie.</div>'
       : '<div class="msg warn"><b>Uwaga na równowagę tonalną.</b> Stosunek T(250 Hz) do T(1 kHz) rośnie z '+
         pl(rPrzed)+' na '+pl(rPo)+' — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego.'+
-        (ST.mont==='sci'?' <b>Montaż na dystansach 50 mm rozwiązuje to bez dokładania paneli.</b>':'')+'</div>';
+        (ST.wyk==='tex'&&ST.mont==='w50'
+          ? ' <b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej.'
+          : ST.wyk==='nuo'
+            ? ' NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>W dole pasma zastąpią je tylko panele tekstylne z wełną 100 mm.</b>'
+            : '')+'</div>';
 
   /* mieszczenie się */
   const potrz=(ST.pogladowy?gorny:bazowy).pow;
@@ -582,10 +680,11 @@ function pokazWynik(dolny,gorny,bazowy){
     ['kubatura', pl(ST.V,1)+' m³'],
     ['pole granic', pl(ST.S,1)+' m²'],
     ['cel Tmid', pl(ST.cel)+' s'],
-    ['montaż', ST.mont==='dys'?'na dystansach 50 mm':'bezpośrednio'],
+    ['wykończenie', wyk().nazwa],
+    ['wariant', montaz().n.replace(' · zalecane','')],
+    ['format', format().n+' ('+pl(lico())+' m²)'],
     ['model', bazowy.eyring?'Eyring (α średnie > '+ALFA_EYRING+')':'Sabine'],
     ['powierzchnia lica', pl(bazowy.pow,1)+' m²'],
-    ['powierzchnia z krawędziami', pl(bazowy.pow*(1+KRAW/LICO),1)+' m²'],
     ['dostępne miejsce', pl(dostepne(),1)+' m²'],
     ['wersja silnika', ST.wersjaSilnika||'nie podano'],
     ['rozrzut pasm 250–4 k', ST.rozrzutPasm!=null?pl(ST.rozrzutPasm)+'× (próg '+pl(MAX_ROZRZUT_PASM,1)+')':'nie sprawdzono'],
@@ -631,7 +730,7 @@ $('bJson').onclick=()=>{
   const w=ST.wynik; if(!w)return;
   const r3=x=>x==null?null:+x.toFixed(3);
   const out={
-    wersja:'dobor-v2', czas:new Date().toISOString(),
+    wersja:'dobor-v3', czas:new Date().toISOString(),
     zrodlo_pomiaru:{charakter:ST.pogladowy?'pogladowy':'pelny', Tmid:r3(ST.Tmid),
       V:+ST.V.toFixed(2), pole_granic_m2:+ST.S.toFixed(2),
       wersja_silnika:ST.wersjaSilnika||null},
@@ -644,9 +743,13 @@ $('bJson').onclick=()=>{
       rozjazd_mowy:ST.rozjazdMowy!=null?+ST.rozjazdMowy.toFixed(2):null,
       uwagi:(ST.kontrola&&ST.kontrola.uwagi)||[]},
     cel_Tmid_s:ST.cel,
-    panel:{dlugosc_mm:1000, szerokosc_mm:610, grubosc_welny_mm:50,
-      lico_m2:+LICO.toFixed(3), krawedzie_m2:+KRAW.toFixed(3),
-      montaz:ST.mont==='dys'?'na dystansach 50 mm':'bezposrednio',
+    panel:{wykonczenie:ST.wyk, wykonczenie_nazwa:wyk().nazwa,
+      wariant:montaz().id, wariant_nazwa:montaz().n.replace(' · zalecane',''),
+      format:format().n,
+      dlugosc_mm:Math.round(format().dl*1000), szerokosc_mm:Math.round(format().sz*1000),
+      lico_m2:+lico().toFixed(3),
+      /* Boki i tyl lite — powierzchnia czynna to samo lico. */
+      montaz:'bezposrednio do sciany lub sufitu',
       rozmieszczenie:ST.gdzie},
     propozycja: ST.pogladowy
       ? {typ:'widelki', sztuk_od:w.dolny.szt, sztuk_do:w.gorny.szt,
@@ -655,9 +758,12 @@ $('bJson').onclick=()=>{
       : {typ:'liczba', sztuk:w.bazowy.szt, powierzchnia_m2:+w.bazowy.pow.toFixed(2)},
     T_po_adaptacji:Object.fromEntries(PASMA.map(f=>[f,r3(w.bazowy.T_po[f])])),
     model:w.bazowy.eyring?'Eyring':'Sabine',
-    alfa_panelu:ALFA[ST.mont],
-    alfa_zrodlo:'model Mikiego, sigma 30000 Pa*s/m2 — WARTOSCI TYMCZASOWE, '+
-      'do podmiany na tabele alfa_p od producenta welny'
+    alfa_panelu:montaz().alfa,
+    alfa_zrodlo:ST.wyk==='nuo'
+      ? 'odczyt z wykresu alfa_p w ulotce NUO_WALL (muto, 10.2021) — WARTOSCI TYMCZASOWE, '+
+        'do podmiany na tabele alfa_p od producenta'
+      : 'model Mikiego, sigma 28000 Pa*s/m2 (welna ok. 45 kg/m3) — WARTOSCI TYMCZASOWE, '+
+        'do podmiany na tabele alfa_p od producenta welny'
   };
   const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);
