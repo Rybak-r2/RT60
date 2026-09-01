@@ -70,3 +70,51 @@ for dw, dp, nazwa in [(.050, 0, "50 mm na scianie"), (.050, .050, "50 mm + pustk
     w = [krzywa(s, dw, dp)[500] for _, s in GESTOSCI]
     print(f"  {nazwa:<20} alfa(500) od {min(w):.2f} do {max(w):.2f}  "
           f"(rozrzut {100*(max(w)-min(w))/max(w):.0f} % w calym zakresie gestosci)")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AW wg ISO 11654 — zeby model dalo sie porownac z tym, co producent DEKLARUJE.
+# Karta ROCKTON PREMIUM podaje wylacznie AW (0,90 dla 50-80 mm, 1,00 dla
+# 100-200 mm) i ani jednej wartosci pasmowej, wiec to jedyny punkt styku
+# miedzy modelem a deklaracja.
+# ─────────────────────────────────────────────────────────────────────────────
+PASMA_AW = [250, 500, 1000, 2000, 4000]
+KRZYWA_ODN = {250: 0.80, 500: 1.00, 1000: 1.00, 2000: 1.00, 4000: 0.90}
+
+def alfa_p(a):
+    """alfa_p: alfa_s zaokraglone do kroku 0,05 (ISO 11654 p. 4.1)."""
+    return {f: round(min(1.0, a[f]) * 20) / 20 for f in PASMA_AW}
+
+def aw(a):
+    """AW i wskazniki ksztaltu. Krzywa odniesienia przesuwana co 0,05 ku
+    zmierzonej, az suma odchylek niekorzystnych spadnie do 0,10 lub nizej."""
+    ap = alfa_p(a)
+    przes = 0.0
+    while przes < 1.0:
+        odn = {f: KRZYWA_ODN[f] - przes for f in PASMA_AW}
+        nieko = sum(max(0.0, odn[f] - ap[f]) for f in PASMA_AW)
+        if nieko <= 0.10 + 1e-9:
+            break
+        przes += 0.05
+    odn = {f: KRZYWA_ODN[f] - przes for f in PASMA_AW}
+    ksztalt = ''
+    if ap[250] >= odn[250] + 0.25: ksztalt += 'L'
+    if any(ap[f] >= odn[f] + 0.25 for f in (500, 1000)): ksztalt += 'M'
+    if any(ap[f] >= odn[f] + 0.25 for f in (2000, 4000)): ksztalt += 'H'
+    return round(odn[500], 2), ksztalt
+
+if __name__ == '__main__':
+    print("\n=== AW z modelu wobec deklaracji ROCKTON PREMIUM ===")
+    print("    (DWU RW-CEE-DoP-0205/M/20/w1: AW 0,90 dla 50-80 mm, 1,00 dla 100-200 mm)\n")
+    print(f"  {'wariant':<26}{'rho':>5}  " + "  ".join(f"{f:>4}" for f in PASMA_AW) +
+          f"   {'AW model':>9}  {'karta':>6}")
+    for nazwa, dw, dp, karta in [("50 mm na scianie", .050, 0, "0,90"),
+                                 ("50 mm + 50 mm pustki", .050, .050, "0,90"),
+                                 ("100 mm na scianie", .100, 0, "1,00")]:
+        for gest, sig in [(30, 15000), (45, 28000), (60, 42000)]:
+            a = krzywa(sig, dw, dp)
+            ap = alfa_p(a)
+            w, k = aw(a)
+            print(f"  {nazwa:<26}{gest:>5}  " + "  ".join(f"{ap[f]:4.2f}" for f in PASMA_AW) +
+                  f"   {w:>6.2f}{k:<3}  {karta:>6}")
+        print()

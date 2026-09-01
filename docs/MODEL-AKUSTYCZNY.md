@@ -256,6 +256,10 @@ listew.
 150/200 mm, `AW 0,90` (50–99 mm) i `AW 1,00` (100–200 mm), `CS(10)0,5`,
 λD = 0,033 W/mK, klasa A1.
 
+Deklaracja `RW-CEE-DoP-0205/M/20/w1` potwierdza: **100 mm jest grubością
+katalogową** (R_D 3,00 m²K/W, AW 1,00), więc wariant domyślny da się kupić
+wprost z oferty.
+
 > **Brak w karcie:** `AFr` (oporność przepływu) zadeklarowana jako **NPD**, oraz
 > gęstość (EN 13162 jej nie wymaga). To są dwie liczby do zdobycia — i dopiero
 > one pozwolą sprawdzić, czy ROCKTON w ogóle trafia w 40–45 kg/m³.
@@ -272,21 +276,45 @@ Implementacja: `docs/welna.py`.
 250 Hz. Przyczyna: komora pogłosowa mierzy próbkę 10–12 m², której krawędzie
 podnoszą wynik (dlatego α_s bywa > 1), a model liczy powierzchnię nieskończoną.
 
-Sprawdzenie wobec deklaracji ROCKTON PREMIUM:
+#### Sprawdzenie wobec deklaracji ROCKTON PREMIUM
 
-| | model | karta |
-|---|---|---|
-| 50 mm na ścianie | AW 0,75 | — |
-| 50 mm + pustka 50 mm | AW 0,90 | **0,90** ✓ |
-| 100 mm, dowolny montaż | max AW 0,90 | **1,00** ✗ |
+Deklaracja właściwości użytkowych `RW-CEE-DoP-0205/M/20/w1` (10.02.2021) podaje
+**wyłącznie AW** — 0,90 dla grubości 50–80 mm i **1,00 dla 100–200 mm** — i ani
+jednej wartości pasmowej. To jedyny punkt styku między modelem a deklaracją,
+więc `docs/welna.py` liczy AW wg ISO 11654 (przesuwana krzywa odniesienia),
+żeby porównanie było wprost, a nie „na oko":
 
-Model trafia w `0,90` tylko z pustką, a `1,00` nie osiąga w żadnej konfiguracji.
+| wariant | ρ | AW z modelu | karta |
+|---|---|---|---|
+| 50 mm na ścianie | 30 / 45 / 60 | 0,60 / 0,70 / 0,75 | 0,90 |
+| 50 mm + pustka 50 mm | 30 / 45 / 60 | 0,85 / **0,90** / 0,85 | 0,90 |
+| 100 mm na ścianie | 30 / 45 / 60 | 0,90 / 0,90 / 0,85 | 1,00 |
 
-**Wniosek: kalkulatora nie wolno budować na modelu.** Potrzebna jest
-**tabela α_p w pasmach oktawowych 250–4000 Hz** od Rockwoola wraz z podaniem
-montażu. Rockwool ją ma — `AW` jest z niej wyliczone wg ISO 11654. Wtedy α dla
-montaży zbadanych bierzemy wprost, a model służy tylko do reszty,
+Wnioski, oba istotne handlowo:
+
+1. **Deklarowane `AW 0,90` dla 50 mm jest odtwarzalne tylko z pustką za wełną.**
+   Przy montażu przylegającym model daje 0,60–0,75, czyli o 0,15–0,30 mniej.
+   Karta niemal na pewno opisuje montaż z pustką (ISO 354 dopuszcza kilka),
+   a nasz panel przylega do litego tyłu.
+   **Nie wolno przypisywać wariantowi tekstylnemu 50 mm wartości `AW 0,90`
+   z karty** — to nie jest ten sam układ.
+2. **Dla 100 mm różnica wynosi 0,10** i mieści się dokładnie w znanym zaniżeniu
+   modelu przez pominięcie krawędzi próbki. Tu karta i model są zgodne co do
+   kierunku, a rachunek pozostaje ostrożny.
+
+To jest kolejny, niezależny argument za tym, żeby **100 mm było wariantem
+domyślnym** — i jedyny wariant, w którym deklaracja producenta wspiera nasze
+liczby zamiast im przeczyć.
+
+**Wniosek niezmieniony: kalkulatora nie wolno budować na modelu.** Potrzebna
+jest **tabela α_p w pasmach oktawowych 250–4000 Hz** od Rockwoola wraz
+z podaniem montażu. Rockwool ją ma — `AW` jest z niej wyliczone wg ISO 11654.
+Wtedy α dla montaży zbadanych bierzemy wprost, a model służy tylko do reszty,
 **skalibrowany na punktach zbadanych**.
+
+> Czego deklaracja **nie** rozstrzyga: `AFr` (oporność przepływu) to `NPD`,
+> gęstości EN 13162 nie wymaga i jej nie ma. Oba pytania z Części 4 zostają
+> otwarte, a wybór gęstości z 3.4 nie ma się o co oprzeć poza modelem.
 
 ### 3.6 Panel — konstrukcja ramowa, pochłania samo lico
 
@@ -394,7 +422,9 @@ handlowe, które trzeba umieć powiedzieć klientowi:
 ## Część 4. Otwarte
 
 1. **Tabela α_p od Rockwoola** — blokuje wiarygodność kalkulatora. Bez niej
-   liczby są ostrożnym oszacowaniem, nie deklaracją.
+   liczby są ostrożnym oszacowaniem, nie deklaracją. Deklaracja właściwości
+   użytkowych tego nie zastępuje: podaje samo AW, bez pasm i bez montażu
+   (3.5). **Prosić trzeba o raport z badania ISO 354 wraz z opisem montażu.**
 2. **Tabela α_p i dane techniczne NUO_WALL od muto'** — 3.9. Dziś α tego
    wykończenia pochodzi z odczytu wykresu w ulotce.
 3. **Gęstość wełny do rozstrzygnięcia na nowo** — 3.4. Konstrukcja ramowa
