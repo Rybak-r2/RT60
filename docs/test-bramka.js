@@ -12,10 +12,22 @@ const PLIK=path.join(__dirname,'..','dobor.html');
 const src=fs.readFileSync(PLIK,'utf8').split('<script>\n')[1].split('</script>')[0];
 
 /*── atrapa DOM: tylko to, czego strona faktycznie dotyka ──*/
+function klasy(){return{_h:new Set(),add(c){this._h.add(c);},remove(c){this._h.delete(c);},
+  toggle(c,v){v?this._h.add(c):this._h.delete(c);},has(c){return this._h.has(c);}};}
 function el(){return{innerHTML:'',textContent:'',value:'',className:'',dataset:{},style:{},
-  classList:{_h:new Set(),add(c){this._h.add(c);},remove(c){this._h.delete(c);},
-    toggle(c,v){v?this._h.add(c):this._h.delete(c);},has(c){return this._h.has(c);}},
-  addEventListener(){},querySelectorAll(){return[];},click(){}};}
+  classList:klasy(),addEventListener(){},click(){},
+  /* Listy wyboru rysują się przez innerHTML, a potem strona przypina onclick do
+     zwróconych elementów. Atrapa odtwarza je z data-id i TRZYMA te same obiekty,
+     dopóki treść się nie zmieni — inaczej test klikałby w co innego niż strona. */
+  querySelectorAll(sel){
+    if(sel!=='.opt')return[];
+    if(this._html!==this.innerHTML){
+      this._html=this.innerHTML;
+      const ids=String(this.innerHTML).match(/data-id="[^"]+"/g)||[];
+      this._opt=ids.map(a=>({dataset:{id:a.slice(9,-1)},classList:klasy(),onclick:null}));
+    }
+    return this._opt;
+  }};}
 const cache={};
 global.document={getElementById:id=>cache[id]||(cache[id]=el()),
   querySelectorAll:()=>[],createElement:()=>el()};
@@ -25,6 +37,12 @@ global.Blob=class{constructor(cz){pobrane=cz[0];}};
 global.URL={createObjectURL:()=>'blob:test',revokeObjectURL(){}};
 
 const E=id=>document.getElementById(id);
+/* Kliknięcie w pozycję listy — przez tę samą drogę, którą idzie użytkownik. */
+function klik(pojemnik,id){
+  const o=E(pojemnik).querySelectorAll('.opt').filter(x=>x.dataset.id===id)[0];
+  if(!o||!o.onclick) throw new Error('brak pozycji '+id+' w liście '+pojemnik);
+  o.onclick();
+}
 
 /* Każde uruchomienie to świeża instancja skryptu strony na czystej atrapie DOM.
    Bez tego handlery przycisków zostawały przy poprzednim egzemplarzu stanu ST,
@@ -158,16 +176,16 @@ function policz(wyk,mont,format){
   E('b3').onclick(); E('bJson').onclick();
   const o=JSON.parse(pobrane);
   return {szt:o.propozycja.sztuk, pow:o.propozycja.powierzchnia_m2,
-          czynne:o.panel.pole_czynne_kartonu_m2, zewn:o.panel.pole_zewnetrzne_kartonu_m2,
-          panele:o.panel.panele_w_kartonie, alfa:o.alfa_panelu, sklad:o.panel.sklad,
+          czynne:o.panel.pole_czynne_sztuki_m2, zewn:o.panel.pole_zewnetrzne_sztuki_m2,
+          panele:o.panel.panele_w_sztuce, alfa:o.alfa_panelu, sklad:o.panel.sklad,
           wariant:o.panel.wariant, zrodlo:o.alfa_zrodlo};
 }
-const w100=policz('tex','w100','t1');
-const mozaika=policz('tex','w100','t2');
-const mieszany2=policz('tex','w100','t3');
-const w50 =policz('tex','w50','t1');
-const nuo =policz('nuo','n100','n1');
-const nuo50=policz('nuo','n50','n1');
+const w100=policz('tex','w100','k1');
+const mozaika=policz('tex','w100','k2');
+const mieszany2=policz('tex','w100','k3');
+const w50 =policz('tex','w50','k1');
+const nuo =policz('nuo','n100','k1');
+const nuo50=policz('nuo','n50','k1');
 console.log('        tekstylny 100 mm, 1000×610 : '+w100.szt+' szt., '+w100.pow+' m²');
 console.log('        tekstylny  50 mm, 1000×610 : '+w50.szt +' szt., '+w50.pow +' m²');
 console.log('        NUO_WALL 100 mm, 950×950   : '+nuo.szt +' szt., '+nuo.pow +' m²');
@@ -175,25 +193,29 @@ console.log('        NUO_WALL  50 mm, 950×950   : '+nuo50.szt+' szt., '+nuo50.p
 
 function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
   else {zle++;console.log('  BŁĄD  '+opis);} }
-sprawdz(w100.czynne===0.61&&nuo.czynne===0.902,'pole czynne bierze się z wybranego kartonu');
+sprawdz(w100.czynne===0.61&&nuo.czynne===0.61,
+  'formaty są wspólne dla obu wykończeń — to samo pole czynne');
 /* Ramka MDF nie pochłania, ale zajmuje ścianę. Mylenie tych dwóch pól
    zaniżało zapotrzebowanie na miejsce o 8–13 %. */
 sprawdz(w100.zewn===0.659&&w100.czynne===0.61,
   'panel tekstylny zajmuje więcej ściany, niż pochłania');
-sprawdz(nuo.zewn===nuo.czynne,
-  'u NUO pole czynne równa się zewnętrznemu — α z badania gotowego panelu');
+/* NUO liczy się teraz z lica tak samo jak tekstylne. Przy formacie 1030 × 640
+   rama zajmuje około 8 % powierzchni panelu, więc przypisanie jej α zmierzonego
+   na próbce 2440 × 1220 obiecywałoby więcej, niż panel da. */
+sprawdz(nuo.zewn===0.659&&nuo.czynne===0.61,
+  'NUO liczy się z lica tak samo jak tekstylne — rama nie pochłania');
 /* Oba kartony to jedna płyta wełny pocięta bez odpadu, więc akustycznie
    są niemal równoważne — wybór kartonu jest decyzją o wyglądzie. */
 sprawdz(mozaika.panele.length===2&&mozaika.czynne===w100.czynne&&mozaika.szt===w100.szt,
-  'karton mozaikowy pochłania dokładnie tyle samo co karton z jednym panelem');
+  'komplet dzielony pochłania dokładnie tyle samo co panel pojedynczy');
 sprawdz(mozaika.zewn>w100.zewn,
-  'karton mozaikowy zajmuje więcej ściany — dwie ramki zamiast jednej');
+  'komplet dzielony zajmuje więcej ściany — dwie ramki zamiast jednej');
 /* Zestaw mieszany to kartony po połowie jednego i drugiego rodzaju. Skoro oba
    mają identyczne pole czynne, przeplatanka nie może zmienić liczby kartonów. */
 sprawdz(mieszany2.czynne===w100.czynne&&mieszany2.szt===w100.szt,
-  'zestaw mieszany pochłania tyle samo i daje tę samą liczbę kartonów');
+  'zestaw mieszany pochłania tyle samo i daje tę samą liczbę sztuk');
 sprawdz(mieszany2.zewn>w100.zewn&&mieszany2.zewn<mozaika.zewn,
-  'zestaw mieszany zajmuje ściany pomiędzy jednym a drugim kartonem');
+  'zestaw mieszany zajmuje ściany pomiędzy jednym a drugim formatem');
 sprawdz(mieszany2.sklad.indexOf('1030 × 640')>=0&&mieszany2.sklad.indexOf('640 × 420')>=0,
   'skład zestawu mieszanego wymienia panele obu rodzajów');
 sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
@@ -213,9 +235,9 @@ sprawdz(nuo50.zrodlo.indexOf('NUO_WALL')>=0&&nuo.zrodlo.indexOf('SZACUNEK')>=0&&
   'eksport podaje właściwe źródło α — także to, że 100 mm NUO jest szacunkiem');
 /* Format z poprzedniego wykończenia nie może wywrócić rachunku — wybór cofa
    się wtedy do pierwszego formatu wykończenia właśnie wybranego. */
-const mieszany=policz('nuo','n100','t1');
-sprawdz(mieszany.czynne===0.902&&mieszany.szt>0,
-  'format spoza wykończenia cofa się do formatu tego wykończenia');
+const mieszany=policz('nuo','n100','k1');
+sprawdz(mieszany.czynne===0.61&&mieszany.szt>0,
+  'format wspólny dla obu wykończeń liczy się tak samo');
 
 console.log('\nRekomendacja wersji — ma wskazywać pomiar, nie cennik');
 /* Wersję wybiera równowaga tonalna po adaptacji, liczona osobno dla obu
@@ -254,6 +276,52 @@ const zr=JSON.parse(pobrane).rekomendacja;
 sprawdz(zr&&zr.zalecana==='w100'&&zr.wybrana==='w50'&&zr.zgodna===false&&
   zr.uzasadnienie.length>0,
   'rozbieżność wyboru z rekomendacją idzie do zapytania wraz z uzasadnieniem');
+
+console.log('\nCel adaptacji — wybór zamiast pola z podpowiedzią');
+/* Pole „cel własny" stało zawsze obok listy z podpowiedzią 0,60 i wyglądało
+   na wypełnione. Przy przeznaczeniu spoza listy program liczył z 0,60, nie
+   pytając nikogo o zdanie. Teraz cel własny jest pozycją listy. */
+uruchom(null);
+api.przyjmij(plik({T:{125:0.45,250:0.40,500:0.38,1000:0.37,2000:0.35,4000:0.33}}));
+sprawdz(api.ST.celId==='salon'&&api.ST.cel===0.45,
+  'przeznaczenie z pliku wybiera pozycję listy i jej wartość');
+sprawdz(E('celWlBox').classList.has('hide'),
+  'pole celu własnego jest schowane, dopóki nie zostanie wybrane');
+
+klik('cele','wlasny');
+sprawdz(!E('celWlBox').classList.has('hide')&&api.ST.cel==null,
+  'wybór celu własnego odsłania pole i nie podstawia żadnej wartości');
+E('m2').innerHTML=''; E('b2').onclick();
+sprawdz(E('m2').innerHTML.indexOf('Wpisz docelowy czas')>=0,
+  'pusty cel własny zatrzymuje przejście dalej z jasnym komunikatem');
+
+E('celWl').value='0,45';
+/* Odczyt pola idzie przez zdarzenie input, którego atrapa nie wywołuje —
+   liczy się tu sama walidacja przy komplecie danych. */
+api.ST.cel=0.45; E('m2').innerHTML=''; E('b2').onclick();
+sprawdz(E('m2').innerHTML.indexOf('Wpisz')<0,'cel własny z wartością przepuszcza dalej');
+
+klik('cele','biuro');
+sprawdz(api.ST.cel===0.60&&E('celWlBox').classList.has('hide'),
+  'powrót do pozycji z listy chowa pole i przywraca jej wartość');
+
+/* Przeznaczenie spoza listy nie może po cichu podstawić 0,60. */
+uruchom(null);
+const bezTypu=plik({T:{125:0.45,250:0.40,500:0.38,1000:0.37,2000:0.35,4000:0.33}});
+bezTypu.pomieszczenie.typ='inne';
+api.przyjmij(bezTypu);
+sprawdz(api.ST.cel==null,'przeznaczenie spoza listy nie podstawia celu za użytkownika');
+E('m2').innerHTML=''; E('b2').onclick();
+sprawdz(E('m2').innerHTML.indexOf('Wybierz rodzaj wnętrza')>=0,
+  'brak wybranego celu zatrzymuje przejście dalej');
+
+console.log('\nJednostka — sztuki, a przy panelu dzielonym komplet');
+const jedn=policz('tex','w100','k1'), kompl=policz('tex','w100','k2');
+sprawdz(jedn.sklad.indexOf('panel 1030 × 640')>=0&&jedn.sklad.indexOf('komplet')<0,
+  'panel pojedynczy opisany jako panel');
+sprawdz(kompl.sklad.indexOf('komplet')>=0&&/\(\d+ panel/.test(kompl.sklad)&&
+  kompl.szt===jedn.szt,
+  'panel dzielony opisany jako komplet, z liczbą paneli w środku i tą samą liczbą sztuk');
 
 console.log(zle?'\n'+zle+' testów nie przeszło\n':'\nWszystkie testy przeszły\n');
 process.exit(zle?1:0);

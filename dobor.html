@@ -101,8 +101,10 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <h1>Cel adaptacji</h1>
   <p class="note">Docelowy czas pogłosu w pasmach mowy. Wartości poniżej to typowe zalecenia dla danego rodzaju wnętrza.</p>
   <div id="cele"></div>
-  <label class="fld" style="margin:14px 0">Cel własny [s]
-    <input id="celWl" type="text" inputmode="decimal" autocomplete="off" placeholder="0,60"></label>
+  <div id="celWlBox" class="hide" style="margin:2px 0 14px">
+    <label class="fld">Docelowy czas pogłosu [s]
+      <input id="celWl" type="text" inputmode="decimal" autocomplete="off" placeholder="np. 0,45"></label>
+  </div>
   <div id="m2"></div>
   <div class="btnrow"><button class="ghost" onclick="idz(1)">Wstecz</button><button id="b2">Dalej</button></div>
 </div>
@@ -116,7 +118,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <h2 id="hMont">Wybierz wersję</h2>
   <div id="mont"></div>
   <div id="rekom"></div>
-  <h2 id="hFormat">Wybierz karton</h2>
+  <h2 id="hFormat">Wybierz format</h2>
   <div id="format"></div>
   <h2>Wybierz miejsce montażu</h2>
   <div id="gdzie"></div>
@@ -203,32 +205,40 @@ const PASMA=[125,250,500,1000,2000,4000];
 
   Wszystkie trzy tabele do podmiany na α_p od producentów przed rozmową
   z klientem. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.4, 3.5 i 3.9. */
+/* FORMATY — wspólne dla obu wykończeń. Panel ma ramkę 15 mm dookoła, więc
+   lico czynne jest o 30 mm mniejsze w obu osiach od wymiaru zewnętrznego.
+
+   Jednostką jest SZTUKA. Przy panelu dzielonym jedna sztuka to KOMPLET dwóch
+   paneli z jednej płyty przeciętej wzdłuż na 610 i 390 mm — dlatego panel
+   pojedynczy i komplet mają CO DO METRA to samo pole czynne. Wybór między
+   nimi jest decyzją o wyglądzie ściany, nie o pochłanianiu.
+
+   Ramka nie pochłania, więc pole czynne liczy się z lica, a pole zewnętrzne
+   z całego panelu — bo tyle miejsca zajmuje on na ścianie. */
+const FORMATY=[
+  {id:'k1', n:'Panel 1030 × 640 mm',
+   o:'Jedna sztuka, lico czynne 1000 × 610 mm.',
+   panele:[{n:'1030 × 640', dl:1.030, sz:0.640, wdl:1.000, wsz:0.610}]},
+  {id:'k2', n:'Komplet 640 × 640 i 640 × 420 mm',
+   o:'Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie.',
+   panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
+           {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]},
+  /* Zestaw mieszany: sztuki po połowie jednego i drugiego rodzaju. Skoro oba
+     mają identyczne pole czynne, przeplatanka NIE ZMIENIA ani liczby sztuk,
+     ani powierzchni pochłaniającej — daje wyłącznie trzy formaty paneli do
+     układania zamiast jednego lub dwóch. Różni się miejscem na ścianie,
+     i to o promile. */
+  {id:'k3', n:'Zestaw mieszany — po połowie',
+   o:'Połowa sztuk to panel duży, połowa to komplet mozaikowy. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania dokładnie tyle samo.',
+   mieszany:['k1','k2']}
+];
+
 const WYK={
   tex:{
     nazwa:'Panele tekstylne',
     opis:'Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny.',
     etykieta:'Wybierz wersję',
-    /* Jednostką sprzedaży jest KARTON, nie panel. Oba kartony mieszczą jedną
-       płytę wełny 1000 × 610 pociętą bez odpadu, więc mają CO DO METRA to samo
-       pole czynne — wybór między nimi jest decyzją o wyglądzie ściany, nie
-       o pochłanianiu. Ramka MDF 15 mm nie pochłania, więc pole czynne liczy
-       się z wełny, a pole zewnętrzne — z panelu, bo tyle miejsca zajmuje. */
-    formaty:[
-      {id:'t1', n:'Panel 1030 × 640 mm',
-       o:'Jeden panel w kartonie. Wełna czynna 1000 × 610 mm.',
-       panele:[{n:'1030 × 640', dl:1.030, sz:0.640, wdl:1.000, wsz:0.610}]},
-      {id:'t2', n:'Zestaw 640 × 640 i 640 × 420 mm',
-       o:'Dwa panele w jednym kartonie, z tej samej płyty wełny przeciętej wzdłuż na 610 i 390 mm. Do układania mozaiki na ścianie i suficie.',
-       panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
-               {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]},
-      /* Zestaw mieszany: kartony po połowie jednego i drugiego rodzaju. Skoro
-         oba mają identyczne pole czynne, przeplatanka NIE ZMIENIA liczby
-         kartonów ani powierzchni pochłaniającej — daje wyłącznie trzy formaty
-         paneli do układania zamiast jednego lub dwóch. Różni się jedynie
-         miejscem na ścianie, i to o promile. */
-      {id:'t3', n:'Zestaw mieszany — po połowie',
-       o:'Połowa kartonów z panelem dużym, połowa z parą mozaikową. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania dokładnie tyle samo.',
-       mieszany:['t1','t2']}],
+    formaty:FORMATY,
     montaze:[
       {id:'w100', premium:true, n:'Premium · wełna 100 mm, mocniej w dole pasma',
        o:'Sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36, a przy 125 Hz 0,47 wobec 0,14. To ta grubość chroni przed wytłumieniem samej góry pasma. Potrzeba jej też nieco mniej.',
@@ -239,20 +249,19 @@ const WYK={
   },
   nuo:{
     nazwa:'Panele drewniane NUO_WALL',
-    opis:'Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na odwrocie. System muto\' GmbH — wybór gatunku drewna i grawerunku.',
+    opis:'Fornir drewniany perforowany laserowo, w ramie, z absorberem na odwrocie. Materiał muto\' GmbH — wybór gatunku drewna i grawerunku.',
     etykieta:'Wybierz wersję',
-    /* Tu pole czynne równa się zewnętrznemu — i to nie jest niekonsekwencja
-       wobec paneli tekstylnych. α tekstylnych pochodzi z modelu SAMEJ WEŁNY,
-       więc stosuje się do powierzchni wełny. α NUO pochodzi z badania
-       komorowego GOTOWEGO PANELU w ramie, więc odnosi się do całej jego
-       powierzchni, z ramą włącznie. */
-    formaty:[
-      {id:'n1', n:'950 × 950 mm',   panele:[{n:'950 × 950',   dl:0.950, sz:0.950, wdl:0.950, wsz:0.950}]},
-      {id:'n2', n:'2480 × 950 mm',  panele:[{n:'2480 × 950',  dl:2.480, sz:0.950, wdl:2.480, wsz:0.950}]},
-      {id:'n3', n:'2440 × 1220 mm', panele:[{n:'2440 × 1220', dl:2.440, sz:1.220, wdl:2.440, wsz:1.220}]}],
+    /* Te same formaty co tekstylne i to samo liczenie pola czynnego z lica.
+       Wcześniej NUO miał własne, duże formaty ram producenta i pole czynne
+       równe zewnętrznemu, bo α pochodzi z badania komorowego gotowego panelu.
+       Przy naszym formacie to przestaje być bezpieczne: w próbce 2440 × 1220
+       rama zajmowała ułamek powierzchni, a w panelu 1030 × 640 jest to już
+       około 8 %. Liczenie z lica zaniża wynik o tyle samo — czyli w stronę
+       bezpieczną. Do sprawdzenia, gdy producent poda szerokość profilu. */
+    formaty:FORMATY,
     montaze:[
       {id:'n100', premium:true, n:'Premium · absorber 100 mm, mocniej w dole pasma',
-       o:'Grubszy absorber sięga niżej. Liczby paneli to nie zmienia — w pasmach mowy oba warianty pochłaniają niemal wszystko — zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
+       o:'Grubszy absorber sięga niżej. Liczby sztuk to nie zmienia — w pasmach mowy oba warianty pochłaniają niemal wszystko — zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
        alfa:{125:0.20, 250:0.85, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}},
       {id:'n50', n:'Standard · absorber 50 mm',
        o:'Wariant płytszy, z krzywą pochłaniania wprost z ulotki producenta. Szczyt 500–1000 Hz, w dole pasma wyraźnie słabszy — przy 125 Hz pochłania 0,10.',
@@ -568,23 +577,39 @@ function przyjmij(j){
 $('b1').onclick=()=>idz(2);
 
 /*═══════════════ 2. CEL ═══════════════*/
+/* Cel własny jest POZYCJĄ LISTY, nie polem stojącym zawsze obok. Pole
+   z podpowiedzią „0,60" wyglądało na wypełnione i sugerowało cel, którego
+   nikt nie wybrał — a przy przeznaczeniu spoza listy program i tak liczył
+   z 0,60, nie pytając nikogo o zdanie. */
 function rysujCele(){
-  ST.cel = (CELE.find(c=>c.id===ST.typ)||{t:0.60}).t;
-  $('cele').innerHTML=CELE.map(c=>
-    '<label class="opt'+(c.id===ST.typ?' sel':'')+'" data-t="'+c.t+'" data-id="'+c.id+'">'+
-    '<b>'+c.n+'</b><span>zalecany czas pogłosu do '+pl(c.t)+' s</span></label>').join('');
-  $('cele').querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
-    $('cele').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
-    o.classList.add('sel'); ST.cel=parseFloat(o.dataset.t); $('celWl').value='';
-    S($('m2'),'');});
+  const dopasowany=(CELE.find(c=>c.id===ST.typ)||{}).id||null;
+  ST.celId=dopasowany;
+  ST.cel=dopasowany?CELE.find(c=>c.id===dopasowany).t:null;
+  const o=CELE.map(c=>({id:c.id, n:c.n, o:'zalecany czas pogłosu do '+pl(c.t)+' s'}));
+  o.push({id:'wlasny', n:'Cel własny',
+    o:'gdy wartość narzuca operat akustyczny, norma albo wymaganie klienta'});
+  wybor('cele', o, ST.celId, id=>{
+    ST.celId=id; S($('m2'),'');
+    $('celWlBox').classList.toggle('hide', id!=='wlasny');
+    if(id==='wlasny'){
+      const v=parseFloat(($('celWl').value||'').replace(',','.'));
+      ST.cel=v>0?v:null;
+      if($('celWl').focus)$('celWl').focus();
+    }else ST.cel=(CELE.find(c=>c.id===id)||{}).t;
+  });
+  $('celWlBox').classList.toggle('hide', ST.celId!=='wlasny');
 }
 $('celWl').addEventListener('input',()=>{
   const s=$('celWl').value.replace(/[.]/g,',').replace(/[^0-9,]/g,'');
   $('celWl').value=s;
   const v=parseFloat(s.replace(',','.'));
-  if(v>0){ST.cel=v;$('cele').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));}
+  ST.cel=v>0?v:null;
 });
 $('b2').onclick=()=>{
+  if(ST.cel==null){
+    S($('m2'),'err', ST.celId==='wlasny'
+      ? 'Wpisz docelowy czas pogłosu.'
+      : 'Wybierz rodzaj wnętrza albo podaj cel własny.');return;}
   if(!(ST.cel>0.1&&ST.cel<3)){S($('m2'),'err','Cel poza sensownym zakresem (0,1–3 s).');return;}
   /* „Cel już spełniony" trzeba rozstrzygać na wartości SKORYGOWANEJ, nie na
      surowym odczycie. Przy pomiarze telefonem surowe 0,28 s wygląda na spełnienie
@@ -611,7 +636,7 @@ function wybor(gdzie, opcje, wybrane, przy){
     (o.o?'<span>'+o.o+'</span>':'')+'</label>').join('');
   box.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
     box.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
-    el.classList.add('sel'); S($('m3'),''); przy(el.dataset.id);});
+    el.classList.add('sel'); przy(el.dataset.id);});
 }
 
 /* Zmiana wykończenia unieważnia wariant i format — należą do wykończenia,
@@ -622,7 +647,7 @@ function domyslneWykonczenia(){
 }
 function opisFormatu(f){
   const q=polaFormatu(f);
-  return (f.o?f.o+' ':'')+'Pochłania '+pl(q.czynne)+' m² na karton, zajmuje '+pl(q.zewn)+' m² ściany.';
+  return (f.o?f.o+' ':'')+'Pochłania '+pl(q.czynne)+' m² na sztukę, zajmuje '+pl(q.zewn)+' m² ściany.';
 }
 /*═══════════════ REKOMENDACJA WERSJI ═══════════════
   Wersję wskazuje POMIAR, nie cennik. Program liczy równowagę tonalną po
@@ -684,10 +709,12 @@ function rysujWariantIFormat(){
      użytkownik sam czegoś nie kliknie. */
   ST.rekom=rekomendujWersje();
   if(ST.rekom&&!ST.montRecznie) ST.mont=ST.rekom.id;
-  wybor('mont', wyk().montaze, ST.mont, id=>{ST.mont=id; ST.montRecznie=true; pokazRekom();});
+  wybor('mont', wyk().montaze, ST.mont, id=>{
+    ST.mont=id; ST.montRecznie=true; S($('m3'),''); pokazRekom();});
   pokazRekom();
-  $('hFormat').textContent=ST.wyk==='tex'?'Wybierz karton':'Wybierz format ramy';
-  wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format, id=>{ST.format=id;});
+  $('hFormat').textContent='Wybierz format';
+  wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format,
+    id=>{ST.format=id; S($('m3'),'');});
 }
 /* Komunikat pod listą wersji: co program zaleca i czy wybór się z tym zgadza. */
 function pokazRekom(){
@@ -708,7 +735,8 @@ function rysujPanele(){
   wybor('wyk', Object.keys(WYK).map(k=>({id:k,n:WYK[k].nazwa,o:WYK[k].opis})), ST.wyk,
     /* Zmiana wykończenia unieważnia też ręczny wybór wersji: rekomendacja liczy
        się z α tego wykończenia i przy drugim może wypaść inaczej. */
-    id=>{ST.wyk=id; ST.montRecznie=false; domyslneWykonczenia(); rysujWariantIFormat();});
+    id=>{ST.wyk=id; ST.montRecznie=false; S($('m3'),'');
+         domyslneWykonczenia(); rysujWariantIFormat();});
   rysujWariantIFormat();
 }
 
@@ -719,26 +747,25 @@ function rysujGdzie(){
     {id:'oba',    n:'Ściany i sufit', o:'najbardziej równomierny rozkład chłonności'}
   ];
   ST.gdzie='oba';
-  wybor('gdzie', opcje, ST.gdzie, id=>{ST.gdzie=id;});
+  wybor('gdzie', opcje, ST.gdzie, id=>{ST.gdzie=id; S($('m3'),'');});
 }
-/* Kartony czy sztuki: panele tekstylne sprzedajemy w kartonach, a karton
-   mozaikowy zawiera dwa panele. Klient musi widzieć, ile paneli faktycznie
-   dostanie, bo od tego zależy, co da się ułożyć na ścianie. */
-const jednostka=n=>ST.wyk==='tex'
-  ? ilu(n,'karton','kartony','kartonów')
-  : ilu(n,'panel','panele','paneli');
+/* Liczymy w SZTUKACH, jednakowo dla obu wykończeń. Przy panelu dzielonym
+   jedna sztuka to komplet dwóch paneli — i tak trzeba to nazwać, bo klient
+   musi wiedzieć, ile paneli faktycznie dostanie: od tego zależy, co da się
+   ułożyć na ścianie. */
 function skladKartonow(n){ return skladFormatu(format(),n); }
 function skladFormatu(f,n){
   if(f.mieszany){
-    /* Kartony rozkładają się po połowie; przy nieparzystej liczbie nadwyżka
-       idzie na karton z panelem dużym. */
+    /* Sztuki rozkładają się po połowie; przy nieparzystej liczbie nadwyżka
+       idzie na panel pojedynczy. */
     const skl=f.mieszany.map(id=>wyk().formaty.find(x=>x.id===id));
     const ile=[Math.ceil(n/2), Math.floor(n/2)];
     return skl.map((x,i)=>skladFormatu(x,ile[i])).filter((t,i)=>ile[i]>0).join('  +  ');
   }
   const p=f.panele;
   if(p.length===1) return n+' × panel '+p[0].n+' mm';
-  return p.map(x=>n+' × '+x.n).join(' + ')+' mm ('+(n*p.length)+' '+ilu(n*p.length,'panel','panele','paneli')+')';
+  return n+' × komplet '+p.map(x=>x.n).join(' + ')+' mm ('+
+    (n*p.length)+' '+ilu(n*p.length,'panel','panele','paneli')+')';
 }
 
 /* Ile ściany zajmie propozycja — polem zewnętrznym paneli razy liczba kartonów. */
@@ -796,7 +823,7 @@ $('b3').onclick=()=>{
 
   if(ST.pogladowy && dolny.szt>0 && gorny.szt/dolny.szt>WIDELKI_MAX_KROTNOSC){
     S($('m3'),'err','<b>Widełki wyszłyby zbyt szerokie, żeby były do czegoś przydatne.</b><br>'+
-      'Przy tym celu wychodzi od '+dolny.szt+' do '+gorny.szt+' paneli — '+
+      'Przy tym celu wychodzi od '+dolny.szt+' do '+gorny.szt+' szt. — '+
       (gorny.szt/dolny.szt).toFixed(1).replace('.',',')+'-krotna różnica. Powodem jest to, że cel '+
       pl(ST.cel)+' s leży blisko granicy szacunku dla pomiaru telefonem. '+
       'Powtórz badanie z głośnikiem zewnętrznym albo wybierz mniej ambitny cel.');
@@ -818,17 +845,17 @@ function pokazWynik(dolny,gorny,bazowy){
   /* nagłówek: widełki albo liczba */
   if(ST.pogladowy){
     $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
-    $('wynCap').textContent=jednostka(gorny.szt)+'  ·  '+format().n;
+    $('wynCap').textContent='szt.  ·  '+format().n;
     $('wynTryb').innerHTML='<div class="msg warn"><b>Widełki, nie liczba — pomiar był poglądowy.</b><br>'+
       'Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. '+
       'Dokładną liczbę da pomiar z głośnikiem zewnętrznym.</div>';
-    $('wynGl').innerHTML='<div class="msg info"><b>Zacznij od '+dolny.szt+' paneli.</b><br>'+
+    $('wynGl').innerHTML='<div class="msg info"><b>Zacznij od '+dolny.szt+' szt.</b><br>'+
       'Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — '+
       'panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, '+
-      'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' sztuk.</div>';
+      'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' szt.</div>';
   } else {
-    $('wynSzt').innerHTML=bazowy.szt+'<small> '+(ST.wyk==='tex'?'kart.':'szt.')+'</small>';
-    $('wynCap').textContent=jednostka(bazowy.szt)+'  ·  '+format().n+'  ·  '+skladKartonow(bazowy.szt);
+    $('wynSzt').innerHTML=bazowy.szt+'<small> szt.</small>';
+    $('wynCap').textContent=format().n+'  ·  '+skladKartonow(bazowy.szt);
     $('wynTryb').innerHTML='';
     $('wynGl').innerHTML='<div class="msg good">Pomiar pełny, więc liczba jest konkretna. '+
       'Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.</div>';
@@ -897,8 +924,8 @@ function pokazWynik(dolny,gorny,bazowy){
     ['wykończenie', wyk().nazwa],
     ['wariant', montaz().n.replace(' · zalecane','')],
     ['format', format().n],
-    ['pole czynne w kartonie', pl(poleCzynne())+' m²'],
-    ['pole zajmowane na ścianie', pl(poleZewn())+' m² na karton'],
+    ['pole czynne sztuki', pl(poleCzynne())+' m²'],
+    ['pole zajmowane na ścianie', pl(poleZewn())+' m² na sztukę'],
     ['model', bazowy.eyring?'Eyring (α średnie > '+ALFA_EYRING+')':'Sabine'],
     ['powierzchnia lica', pl(bazowy.pow,1)+' m²'],
     ['dostępne miejsce', pl(dostepne(),1)+' m²'],
@@ -970,14 +997,14 @@ $('bJson').onclick=()=>{
 
       zestaw_mieszany:!!format().mieszany,
       sklad:skladKartonow(w.bazowy.szt),
-      panele_w_kartonie:(format().mieszany
+      panele_w_sztuce:(format().mieszany
         ? format().mieszany.reduce((a,id)=>a.concat(
             (wyk().formaty.find(x=>x.id===id)||{panele:[]}).panele),[])
         : format().panele).map(x=>({wymiar_mm:x.n,
           pole_czynne_m2:+(x.wdl*x.wsz).toFixed(3),
           pole_zewnetrzne_m2:+(x.dl*x.sz).toFixed(3)})),
-      pole_czynne_kartonu_m2:+poleCzynne().toFixed(3),
-      pole_zewnetrzne_kartonu_m2:+poleZewn().toFixed(3),
+      pole_czynne_sztuki_m2:+poleCzynne().toFixed(3),
+      pole_zewnetrzne_sztuki_m2:+poleZewn().toFixed(3),
       /* Boki i tyl lite; u tekstylnych ramka MDF 15 mm tez nie pochlania,
          wiec pole czynne liczy sie z welny, a zewnetrzne z panelu. */
       montaz:'bezposrednio do sciany lub sufitu',

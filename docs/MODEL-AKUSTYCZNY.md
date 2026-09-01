@@ -236,7 +236,7 @@ następuje.
 
 #### Kryterium wskazuje wersję panelu
 
-To samo sprawdzenie steruje **rekomendacją wersji** (6.4). Program liczy
+To samo sprawdzenie steruje **rekomendacją wersji** (6.5). Program liczy
 równowagę po adaptacji osobno dla wersji Standard i Premium i wskazuje tę,
 której to pomieszczenie potrzebuje — łącznie z przypadkiem, gdy wystarcza
 tańsza. Werdykt i rekomendacja muszą stać na jednym progu, inaczej program
@@ -347,34 +347,45 @@ Wtedy α dla montaży zbadanych bierzemy wprost, a model służy tylko do reszty
 Wełna siedzi w **ramce z MDF 15 mm**, z litym tyłem; tkanina obszywa lico.
 Wymiar zewnętrzny panelu jest więc o 30 mm większy od wełny w obu osiach.
 
-**Jednostką sprzedaży jest karton, nie panel.** Oba kartony mieszczą jedną
-płytę wełny 1000 × 610 pociętą bez odpadu:
+**Liczymy w sztukach.** Przy panelu dzielonym jedna sztuka to **komplet**
+dwóch paneli z jednej płyty — i tak trzeba to nazywać, bo klient musi wiedzieć,
+ile paneli faktycznie dostanie: od tego zależy, co da się ułożyć na ścianie.
 
-| karton | zawartość | wełna czynna | pole czynne | pole zewnętrzne |
+| sztuka | zawartość | wełna czynna | pole czynne | pole zewnętrzne |
 |---|---|---|---|---|
-| **A** | panel 1030 × 640 | 1000 × 610 | 0,610 m² | 0,659 m² |
-| **B** | panel 640 × 640 | 610 × 610 | 0,372 m² | 0,410 m² |
-| | panel 640 × 420 | 610 × 390 | 0,238 m² | 0,269 m² |
-| | **razem karton B** | | **0,610 m²** | **0,678 m²** |
+| **panel pojedynczy** | 1030 × 640 | 1000 × 610 | 0,610 m² | 0,659 m² |
+| **komplet dzielony** | 640 × 640 | 610 × 610 | 0,372 m² | 0,410 m² |
+| | 640 × 420 | 610 × 390 | 0,238 m² | 0,269 m² |
+| | **razem komplet** | | **0,610 m²** | **0,678 m²** |
 
-Karton B powstaje z przecięcia płyty wzdłuż na 610 i 390 mm, a służy
+Komplet powstaje z przecięcia płyty wzdłuż na 610 i 390 mm, a służy
 **architekturze**: dwa formaty pozwalają układać na ścianie i suficie mozaikę,
 zamiast rytmu opartego na jednym prostokącie.
 
-Do wyboru jest jeszcze **zestaw mieszany** — kartony po połowie jednego
+Do wyboru jest jeszcze **zestaw mieszany** — sztuki po połowie jednego
 i drugiego rodzaju, przy nieparzystej liczbie z nadwyżką po stronie panelu
-dużego. Skoro oba kartony mają identyczne pole czynne, przeplatanka **nie
-zmienia ani liczby kartonów, ani powierzchni pochłaniającej**: daje wyłącznie
-trzy formaty paneli na ścianie zamiast jednego lub dwóch. Zajmuje ściany
-pomiędzy jednym a drugim kartonem, co przy sprawdzeniu miejsca liczymy średnią
-— nieparzystość myli ją o ułamek jednej ramki, czyli mniej niż wynosi
-dokładność samego szacunku dostępnej powierzchni.
+pojedynczego. Skoro oba mają identyczne pole czynne, przeplatanka **nie zmienia
+ani liczby sztuk, ani powierzchni pochłaniającej**: daje wyłącznie trzy formaty
+paneli na ścianie zamiast jednego lub dwóch. Zajmuje ściany pomiędzy jednym
+a drugim, co przy sprawdzeniu miejsca liczymy średnią — nieparzystość myli ją
+o ułamek jednej ramki, czyli mniej niż wynosi dokładność samego szacunku
+dostępnej powierzchni.
 
-**Akustycznie oba kartony są identyczne — 0,610 m² co do metra.** Jedna płyta
-wełny, jeden karton, to samo pochłanianie. Wybór kartonu jest więc wyłącznie
+**Te same trzy formaty obowiązują dla obu wykończeń.** Panele drewniane miały
+wcześniej własne, duże formaty ram producenta (950 × 950, 2480 × 950,
+2440 × 1220) i pole czynne równe zewnętrznemu, bo ich α pochodzi z badania
+komorowego gotowego panelu. **Przy naszym formacie to przestaje być
+bezpieczne:** w próbce 2440 × 1220 rama zajmowała ułamek powierzchni,
+a w panelu 1030 × 640 jest to już około 8 %. Dlatego NUO liczy się teraz
+z lica, tak samo jak tekstylne — zaniża wynik o mniej więcej tyle, ile wynosi
+udział ramy, czyli w stronę bezpieczną. Do sprawdzenia, gdy producent poda
+szerokość profilu.
+
+**Akustycznie obie sztuki są identyczne — 0,610 m² co do metra.** Jedna płyta
+wełny, jedna sztuka, to samo pochłanianie. Wybór formatu jest więc wyłącznie
 decyzją o wyglądzie i tak trzeba go klientowi przedstawiać.
 
-Różnią się jedynie **miejscem na ścianie**: karton mozaikowy zajmuje 0,678
+Różnią się jedynie **miejscem na ścianie**: komplet dzielony zajmuje 0,678
 wobec 0,659 m², bo ma dwie ramki zamiast jednej. Trzy procent — bez znaczenia
 poza pomieszczeniem naprawdę ciasnym, ale rachunek to uwzględnia.
 
@@ -699,7 +710,19 @@ Do zapytania powinna iść **cała podstawa rachunku**, nie sama liczba sztuk:
 pomiar, cel, wykończenie, wariant i format. Handlowiec dostaje wtedy komplet
 i nie musi niczego odtwarzać z klientem przez telefon.
 
-### 6.4 Wersje Standard i Premium — wskazuje je pomiar
+### 6.4 Cel adaptacji — nic nie podstawia się samo
+
+Cel wybiera się z listy rodzajów wnętrza albo podaje własny. **Cel własny jest
+pozycją listy**, nie polem stojącym zawsze obok niej.
+
+Poprzednio pole z podpowiedzią `0,60` wyglądało na wypełnione i sugerowało
+wartość, której nikt nie wybrał. Gorzej: przy przeznaczeniu spoza listy
+(`inne`) program **podstawiał 0,60 po cichu** i liczył z tego panele, nie pytając
+nikogo o zdanie. Teraz brak wyboru zatrzymuje przejście dalej z komunikatem,
+bo cel jest wartością, którą ktoś musi świadomie wskazać — od niej zależy cała
+propozycja.
+
+### 6.5 Wersje Standard i Premium — wskazuje je pomiar
 
 Oba wykończenia występują w dwóch wersjach, różniących się grubością
 pochłaniacza: **Standard 50 mm** i **Premium 100 mm**. Etykieta niesie treść
