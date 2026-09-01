@@ -206,5 +206,43 @@ const mieszany=policz('nuo','n100','t1');
 sprawdz(mieszany.czynne===0.902&&mieszany.szt>0,
   'format spoza wykończenia cofa się do formatu tego wykończenia');
 
+console.log('\nRekomendacja wersji — ma wskazywać pomiar, nie cennik');
+/* Wersję wybiera równowaga tonalna po adaptacji, liczona osobno dla obu
+   wersji. Rekomendacja, która czasem mówi „Standard wystarczy", jest brana
+   serio, gdy mówi „potrzeba Premium". */
+function rekomendacja(T,cel){
+  uruchom(null);
+  api.przyjmij(plik({T:T}));
+  api.ST.cel=cel; E('b2').onclick();
+  return {typ:api.ST.rekom&&api.ST.rekom.typ, wersja:api.ST.mont};
+}
+const rowny  =rekomendacja({125:0.45,250:0.40,500:0.38,1000:0.37,2000:0.35,4000:0.33},0.30);
+const lagodny=rekomendacja({125:0.45,250:0.40,500:0.38,1000:0.37,2000:0.35,4000:0.33},0.35);
+const martwy =rekomendacja({125:0.28,250:0.26,500:0.38,1000:0.40,2000:0.42,4000:0.44},0.30);
+const bezPasma=rekomendacja({125:0.45,500:0.38,1000:0.37,2000:0.35,4000:0.33},0.30);
+
+sprawdz(rowny.typ==='premium'&&rowny.wersja==='w100',
+  'ambitny cel przy równym dole — zalecane Premium');
+sprawdz(lagodny.typ==='standard'&&lagodny.wersja==='w50',
+  'łagodny cel — program mówi, że Standard wystarczy, i sam go wybiera');
+/* To jest przypadek, na ktorym poprzednie kryterium sie mylilo: dol juz
+   przytlumiony mocniej niz gora, panele podnosza stosunek W STRONE 1,0,
+   czyli poprawiaja rownowage. Ostrzezenie bylo tam falszywe. */
+sprawdz(martwy.typ==='standard',
+  'gdy dół jest już przytłumiony, wzrost stosunku to poprawa, nie usterka');
+sprawdz(bezPasma.typ==='nieocenialna'&&bezPasma.wersja==='w100',
+  'bez pasma 250 Hz wersji nie da się wskazać — domyślnie bezpieczniejsze Premium');
+
+/* Wybor wbrew rekomendacji nie moze zniknac — handlowiec ma go widziec. */
+uruchom(null);
+api.przyjmij(plik({T:{125:0.45,250:0.40,500:0.38,1000:0.37,2000:0.35,4000:0.33}}));
+api.ST.cel=0.30; E('b2').onclick();
+api.ST.mont='w50'; api.ST.montRecznie=true;
+E('b3').onclick(); E('bJson').onclick();
+const zr=JSON.parse(pobrane).rekomendacja;
+sprawdz(zr&&zr.zalecana==='w100'&&zr.wybrana==='w50'&&zr.zgodna===false&&
+  zr.uzasadnienie.length>0,
+  'rozbieżność wyboru z rekomendacją idzie do zapytania wraz z uzasadnieniem');
+
 console.log(zle?'\n'+zle+' testów nie przeszło\n':'\nWszystkie testy przeszły\n');
 process.exit(zle?1:0);

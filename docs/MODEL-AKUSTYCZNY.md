@@ -215,6 +215,33 @@ Miara: `T(250 Hz) / T(1 kHz)`. Wzrost oznacza wnętrze głuche w górze i dudni�
 w dole — klasyczna porażka cienkich absorberów. Klient dostaje pomieszczenie
 wytłumione zgodnie z obietnicą i mimo to ma poczucie, że coś jest nie tak.
 
+#### Sam wzrost nie wystarczy — poprawka kryterium
+
+Do tej wersji ostrzeżenie wypadało, gdy stosunek rósł o 0,05 lub więcej.
+To jest błędne w pomieszczeniach, w których **dół jest już przytłumiony mocniej
+niż góra**. Przykład z testu: stosunek wyjściowy 0,65, panele podnoszą go
+w stronę 1,0 — czyli **poprawiają** równowagę, a kryterium oparte na samej
+różnicy krzyczało „przetłumione".
+
+Warunek poprawny wymaga **obu** rzeczy naraz:
+
+```
+adaptacja psuje równowagę  ⟺  (T_po(250)/T_po(1k) − T_przed(250)/T_przed(1k) ≥ 0,05)
+                               ∧  (T_po(250)/T_po(1k) > 1,05)
+```
+
+Czyli: stosunek rośnie **i** ląduje powyżej neutralnego 1,0 z zapasem progu.
+Ruch w stronę 1,0 nigdy nie jest usterką, niezależnie od tego, z której strony
+następuje.
+
+#### Kryterium wskazuje wersję panelu
+
+To samo sprawdzenie steruje **rekomendacją wersji** (6.4). Program liczy
+równowagę po adaptacji osobno dla wersji Standard i Premium i wskazuje tę,
+której to pomieszczenie potrzebuje — łącznie z przypadkiem, gdy wystarcza
+tańsza. Werdykt i rekomendacja muszą stać na jednym progu, inaczej program
+potrafiłby zalecić wersję, którą sam za chwilę oceni jako niewystarczającą.
+
 ### 3.4 Materiał — wełna kupowana na przedział, nie na liczbę
 
 Wcześniejsze zalecenie brzmiało **60 kg/m³** i było wynikiem minimaksowym:
@@ -662,3 +689,37 @@ i przesłania go dalej.
 Do zapytania powinna iść **cała podstawa rachunku**, nie sama liczba sztuk:
 pomiar, cel, wykończenie, wariant i format. Handlowiec dostaje wtedy komplet
 i nie musi niczego odtwarzać z klientem przez telefon.
+
+### 6.4 Wersje Standard i Premium — wskazuje je pomiar
+
+Oba wykończenia występują w dwóch wersjach, różniących się grubością
+pochłaniacza: **Standard 50 mm** i **Premium 100 mm**. Etykieta niesie treść
+techniczną, nie samą kategorię handlową — „Premium · wełna 100 mm, **mocniej
+w dole pasma**" — żeby „Standard wystarczy" czytało się jako *nie potrzebujesz
+dodatkowego pochłaniania w dole*, a nie jako *dostałeś tańszy produkt*.
+
+**Wersję wskazuje pomiar, nie cennik.** Program liczy równowagę tonalną po
+adaptacji osobno dla obu wersji (3.3) i ustawia zalecaną jako **domyślnie
+wybraną**, dopóki użytkownik sam czegoś nie kliknie. Cztery rozstrzygnięcia:
+
+| sytuacja | zalecenie |
+|---|---|
+| Standard utrzymuje równowagę | **Standard** — i program mówi wprost, że Premium nie jest potrzebne |
+| Standard psuje, Premium utrzymuje | **Premium**, z dwiema liczbami z tego pokoju |
+| żadna nie utrzymuje | **Premium** jako lepsza, ale z zastrzeżeniem, że panele same dudnienia nie naprawią |
+| brak pasma 250 Hz lub 1 kHz | **Premium** — bez tych pasm nie da się ocenić, a Premium w dole niczym nie ryzykuje |
+
+To nie jest uprzejmość wobec klienta, tylko warunek wiarygodności:
+rekomendacja, która **czasem odradza droższą wersję**, jest brana serio, gdy
+zaleca droższą. Lista, na której Premium zawsze wygrywa, jest odczytywana jako
+gadanie sprzedawcy — i słusznie.
+
+**Wybór wbrew rekomendacji nie znika.** Widać go w propozycji i idzie do
+zapytania razem z uzasadnieniem, bo handlowiec musi wiedzieć, że klient wybrał
+inaczej, niż program radził.
+
+**Czego wersje nie zmieniają:** przy panelach NUO grubość absorbera **nie
+wpływa na liczbę paneli** — oba warianty mają α 1,00 w pasmach mowy, z których
+liczy się Tmid. Przy panelach tekstylnych Premium potrzeba nieco **mniej**.
+Handlowiec musi znać tę asymetrię, bo zdanie „grubszy pochłania więcej, więc
+sztuk mniej" jest prawdziwe tylko dla tekstylnych.

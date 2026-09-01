@@ -110,8 +110,9 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <h1>Panele</h1>
   <h2>Wykończenie</h2>
   <div id="wyk"></div>
-  <h2 id="hMont">Sposób mocowania</h2>
+  <h2 id="hMont">Wersja</h2>
   <div id="mont"></div>
+  <div id="rekom"></div>
   <h2 id="hFormat">Format</h2>
   <div id="format"></div>
   <h2>Gdzie</h2>
@@ -130,6 +131,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <div id="wynGl"></div>
   <h2>Czas pogłosu po adaptacji</h2>
   <div id="wynTab"></div>
+  <div id="wynRekom"></div>
   <div id="wynBil"></div>
   <div id="wynMies"></div>
   <div class="btnrow" style="margin-top:18px">
@@ -202,7 +204,7 @@ const WYK={
   tex:{
     nazwa:'Panele tekstylne',
     opis:'Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny.',
-    etykieta:'Grubość wełny',
+    etykieta:'Wersja',
     /* Jednostką sprzedaży jest KARTON, nie panel. Oba kartony mieszczą jedną
        płytę wełny 1000 × 610 pociętą bez odpadu, więc mają CO DO METRA to samo
        pole czynne — wybór między nimi jest decyzją o wyglądzie ściany, nie
@@ -217,17 +219,17 @@ const WYK={
        panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
                {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]}],
     montaze:[
-      {id:'w100', n:'Wełna 100 mm · zalecane',
-       o:'Pracuje w całym paśmie mowy i sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36 przy wełnie 50 mm. To ta grubość chroni przed wytłumieniem samej góry pasma.',
+      {id:'w100', premium:true, n:'Premium · wełna 100 mm, mocniej w dole pasma',
+       o:'Sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36, a przy 125 Hz 0,47 wobec 0,14. To ta grubość chroni przed wytłumieniem samej góry pasma. Potrzeba jej też nieco mniej.',
        alfa:{125:0.47, 250:0.67, 500:0.77, 1000:0.85, 2000:0.90, 4000:0.92}},
-      {id:'w50', n:'Wełna 50 mm',
-       o:'Panel płytszy i tańszy, skuteczny od około 800 Hz w górę. Poniżej 500 Hz wypada wyraźnie słabiej — przy dudniącym dole nie wystarczy.',
+      {id:'w50', n:'Standard · wełna 50 mm',
+       o:'Pracuje w paśmie mowy, od około 800 Hz w górę. W dole pasma wypada wyraźnie słabiej — tam, gdzie wnętrze dudni, nie wystarczy.',
        alfa:{125:0.14, 250:0.36, 500:0.67, 1000:0.88, 2000:0.89, 4000:0.92}}]
   },
   nuo:{
     nazwa:'Panele drewniane NUO_WALL',
     opis:'Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na odwrocie. System muto\' GmbH — wybór gatunku drewna i grawerunku.',
-    etykieta:'Konstrukcja',
+    etykieta:'Wersja',
     /* Tu pole czynne równa się zewnętrznemu — i to nie jest niekonsekwencja
        wobec paneli tekstylnych. α tekstylnych pochodzi z modelu SAMEJ WEŁNY,
        więc stosuje się do powierzchni wełny. α NUO pochodzi z badania
@@ -238,10 +240,10 @@ const WYK={
       {id:'n2', n:'2480 × 950 mm',  panele:[{n:'2480 × 950',  dl:2.480, sz:0.950, wdl:2.480, wsz:0.950}]},
       {id:'n3', n:'2440 × 1220 mm', panele:[{n:'2440 × 1220', dl:2.440, sz:1.220, wdl:2.440, wsz:1.220}]}],
     montaze:[
-      {id:'n100', n:'Absorber 100 mm · zalecane',
-       o:'Sięga niżej — przy 250 Hz około 0,85 wobec 0,60 przy 50 mm. Liczby paneli to nie zmienia (w pasmach mowy oba warianty pochłaniają niemal wszystko), zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
+      {id:'n100', premium:true, n:'Premium · absorber 100 mm, mocniej w dole pasma',
+       o:'Grubszy absorber sięga niżej. Liczby paneli to nie zmienia — w pasmach mowy oba warianty pochłaniają niemal wszystko — zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
        alfa:{125:0.20, 250:0.85, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}},
-      {id:'n50', n:'Absorber 50 mm',
+      {id:'n50', n:'Standard · absorber 50 mm',
        o:'Wariant płytszy, z krzywą pochłaniania wprost z ulotki producenta. Szczyt 500–1000 Hz, w dole pasma wyraźnie słabszy — przy 125 Hz pochłania 0,10.',
        alfa:{125:0.10, 250:0.60, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}}]
   }
@@ -290,6 +292,21 @@ const PASMA_KONTROLI=[250,500,1000,2000,4000];
 /* Progi przełączenia Sabine → Eyring. Przy dużym średnim pochłanianiu założenie
    pola rozproszonego przestaje obowiązywać i Sabine zawyża chłonność. */
 const ALFA_EYRING=0.25;
+
+/* Równowaga tonalna: T(250 Hz)/T(1 kHz). Wzrost oznacza dół dłuższy od góry,
+   czyli wnętrze dudniące w dole i głuche w górze — klasyczną porażkę cienkich
+   absorberów.
+
+   Sam wzrost NIE WYSTARCZY jako powód do ostrzeżenia i to była wada tego
+   kryterium do tej wersji. W pomieszczeniu, w którym dół jest już przytłumiony
+   mocniej niż góra (stosunek 0,65), panele podnoszą go w stronę 1,0 — czyli
+   POPRAWIAJĄ równowagę. Sprawdzenie oparte na samej różnicy krzyczało tam
+   „przetłumione", choć działo się dokładnie odwrotnie.
+
+   Ostrzegamy więc dopiero, gdy zachodzą OBA warunki: adaptacja stosunek
+   podnosi, i zostawia go powyżej neutralnego 1,0 z zapasem progu. */
+const BILANS_PROG=0.05;
+const zlyBilans=(rPrzed,rPo)=>(rPo-rPrzed>=BILANS_PROG)&&(rPo>1+BILANS_PROG);
 
 const CELE=[
   {id:'biuro',      n:'Biuro',                    t:0.60},
@@ -414,6 +431,7 @@ function przyjmij(j){
   $('podglad').classList.add('hide');
   ST.kontrola=null; ST.wynik=null;
   ST.wersjaSilnika=null; ST.rozrzutPasm=null; ST.rozjazdMowy=null;
+  ST.rekom=null; ST.montRecznie=false;
   const p=j.pomieszczenie;
   if(!p||!(p.L>0)||!(p.W>0)||!(p.H>0)){
     S($('m1'),'err','W pliku brakuje wymiarów pomieszczenia. Czy to na pewno wynik badania czasu pogłosu?');return;}
@@ -559,16 +577,91 @@ function opisFormatu(f){
   const zewn=f.panele.reduce((a,p)=>a+p.dl*p.sz,0);
   return (f.o?f.o+' ':'')+'Pochłania '+pl(czynne)+' m², zajmuje '+pl(zewn)+' m² ściany.';
 }
+/*═══════════════ REKOMENDACJA WERSJI ═══════════════
+  Wersję wskazuje POMIAR, nie cennik. Program liczy równowagę tonalną po
+  adaptacji osobno dla obu wersji i mówi, która jest temu pomieszczeniu
+  potrzebna — także wtedy, gdy wystarcza tańsza.
+
+  To nie jest uprzejmość wobec klienta, tylko warunek wiarygodności:
+  rekomendacja, która czasem mówi „Standard wystarczy", jest brana serio, gdy
+  mówi „potrzeba Premium". Lista, na której droższe zawsze wygrywa, jest
+  odczytywana jako gadanie sprzedawcy — i słusznie.
+
+  Kryterium to istniejące sprawdzenie z 3.3, nie nowa fizyka. */
+function rekomendujWersje(){
+  const w=wyk();
+  if(w.montaze.length<2) return null;
+  const prem=w.montaze.find(m=>m.premium)||w.montaze[0];
+  const std =w.montaze.find(m=>!m.premium)||w.montaze[1];
+
+  /* Bez obu pasm porównanie dołu z górą jest bezpodstawne — patrz reguła 3
+     kontraktu danych. Domyślnie proponujemy wtedy Premium, bo w dole pasma
+     niczym nie ryzykuje. */
+  if(!(ST.zmierzone[250]&&ST.zmierzone[1000]))
+    return {id:prem.id, typ:'nieocenialna', tekst:
+      '<b>Nie da się wskazać wersji na tym pomiarze.</b> Pasmo '+
+      (!ST.zmierzone[250]?'250 Hz':'1 kHz')+' nie dało wiarygodnego wyniku, a bez niego '+
+      'nie wiadomo, czy dół pasma zostanie w tyle. Proponujemy Premium, bo w dole niczym nie ryzykuje.'};
+
+  const kor=ST.pogladowy?KOR_MAX:1.0;
+  const rPrzed=ST.T[250]/ST.T[1000];
+  const oc=m=>{const r=policzDla(kor,m.alfa);
+    return {rPo:r.T_po[250]/r.T_po[1000], szt:r.szt};};
+  const P=oc(prem), S_=oc(std);
+  const ile=(a,b)=>pl(a)+' na '+pl(b);
+
+  if(!zlyBilans(rPrzed,S_.rPo))
+    return {id:std.id, typ:'standard', tekst:
+      '<b>W tym pomieszczeniu wystarczy wersja Standard.</b> Dół pasma nie zostaje w tyle: '+
+      'stosunek T(250 Hz) do T(1 kHz) zmienia się z '+ile(rPrzed,S_.rPo)+'. '+
+      'Premium nic tu nie zepsuje, ale nie jest potrzebne'+
+      (P.szt<S_.szt?' — poza tym, że potrzeba go o '+(S_.szt-P.szt)+' mniej':'')+'.'};
+
+  if(!zlyBilans(rPrzed,P.rPo))
+    return {id:prem.id, typ:'premium', tekst:
+      '<b>To pomieszczenie potrzebuje wersji Premium.</b> Przy Standardzie stosunek '+
+      'T(250 Hz) do T(1 kHz) rośnie z '+ile(rPrzed,S_.rPo)+' — wnętrze wytłumiłoby się mocniej '+
+      'w górze pasma niż w dole i sprawiało wrażenie ciężkiego. Premium zatrzymuje go na '+
+      pl(P.rPo)+'.'};
+
+  return {id:prem.id, typ:'obie-za-slabe', tekst:
+    '<b>Żadna z wersji nie utrzyma równowagi tonalnej.</b> Stosunek T(250 Hz) do T(1 kHz) '+
+    'rośnie z '+pl(rPrzed)+' na '+pl(S_.rPo)+' przy Standardzie i '+pl(P.rPo)+' przy Premium. '+
+    'Premium wypada lepiej i to je proponujemy, ale dudnienia w dole same panele nie naprawią'+
+    (ST.wyk==='nuo'?' — panele tekstylne z wełną 100 mm sięgają niżej niż jedno i drugie.':'.')};
+}
+
 function rysujWariantIFormat(){
   $('hMont').textContent=wyk().etykieta;
-  wybor('mont', wyk().montaze, ST.mont, id=>{ST.mont=id;});
+  /* Rekomendacja jest DOMYŚLNYM wyborem, nie tylko komentarzem — dopóki
+     użytkownik sam czegoś nie kliknie. */
+  ST.rekom=rekomendujWersje();
+  if(ST.rekom&&!ST.montRecznie) ST.mont=ST.rekom.id;
+  wybor('mont', wyk().montaze, ST.mont, id=>{ST.mont=id; ST.montRecznie=true; pokazRekom();});
+  pokazRekom();
   $('hFormat').textContent=ST.wyk==='tex'?'Karton':'Format ramy';
   wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format, id=>{ST.format=id;});
 }
+/* Komunikat pod listą wersji: co program zaleca i czy wybór się z tym zgadza. */
+function pokazRekom(){
+  const r=ST.rekom;
+  if(!r){$('rekom').innerHTML='';return;}
+  const styl=r.typ==='standard'?'good':r.typ==='obie-za-slabe'?'err':
+             r.typ==='nieocenialna'?'info':'warn';
+  const zgodne=ST.mont===r.id;
+  const nazwa=(wyk().montaze.find(m=>m.id===r.id)||{}).n||'';
+  $('rekom').innerHTML='<div class="msg '+styl+'">'+r.tekst+'</div>'+
+    (zgodne?'':'<div class="msg info">Wybrałeś inną wersję niż zalecana '+
+      '(<b>'+nazwa.split(' · ')[0]+'</b>). Rachunek policzy się dla Twojego wyboru, '+
+      'a w zapytaniu pójdzie informacja o obu.</div>');
+}
+
 function rysujPanele(){
   if(!ST.wyk){ST.wyk='tex';domyslneWykonczenia();}
   wybor('wyk', Object.keys(WYK).map(k=>({id:k,n:WYK[k].nazwa,o:WYK[k].opis})), ST.wyk,
-    id=>{ST.wyk=id; domyslneWykonczenia(); rysujWariantIFormat();});
+    /* Zmiana wykończenia unieważnia też ręczny wybór wersji: rekomendacja liczy
+       się z α tego wykończenia i przy drugim może wypaść inaczej. */
+    id=>{ST.wyk=id; ST.montRecznie=false; domyslneWykonczenia(); rysujWariantIFormat();});
   rysujWariantIFormat();
 }
 
@@ -613,8 +706,8 @@ function T_z_A(A,eyring){
   const am=Math.min(0.99,A/ST.S);
   return 0.161*ST.V/(-ST.S*Math.log(1-am));
 }
-function policzDla(korekta){
-  const a=montaz().alfa;
+function policzDla(korekta, alfa){
+  const a=alfa||montaz().alfa;
   let eyring=false, pow=0, T_po={}, A0={};
   for(let it=0;it<3;it++){
     PASMA.forEach(f=>A0[f]=A_z_T(ST.T[f],eyring)/korekta);
@@ -703,16 +796,24 @@ function pokazWynik(dolny,gorny,bazowy){
   $('wynTab').innerHTML=t+'</tbody></table>'+
     (uwagi.length?'<p class="note" style="font-size:12px;margin-top:8px">'+uwagi.join('<br>')+'</p>':'');
 
+  /* Wybór wbrew rekomendacji zostaje widoczny w propozycji, nie tylko w kroku 3
+     — to jest ta informacja, której handlowiec potrzebuje przy rozmowie. */
+  $('wynRekom').innerHTML = (ST.rekom&&ST.mont!==ST.rekom.id)
+    ? '<div class="msg warn"><b>Policzone dla wersji '+montaz().n.split(' · ')[0]+
+      ', a zalecana była '+((wyk().montaze.find(m=>m.id===ST.rekom.id)||{}).n||'').split(' · ')[0]+
+      '.</b><br>'+ST.rekom.tekst.replace(/<\/?b>/g,'')+'</div>'
+    : '';
+
   /* Bilans tonalny ma sens tylko wtedy, gdy oba pasma zostały FAKTYCZNIE zmierzone.
      Przy brakach obydwa przyjmują Tmid, stosunek wychodzi 1,00 i werdykt
      „równowaga zachowana" byłby wnioskiem z niczego. */
   const rPrzed=ST.T[250]/ST.T[1000], rPo=bazowy.T_po[250]/bazowy.T_po[1000];
-  const pog=rPo-rPrzed;
+  const zle=zlyBilans(rPrzed,rPo);
   $('wynBil').innerHTML= !(ST.zmierzone[250]&&ST.zmierzone[1000])
     ? '<div class="msg warn"><b>Równowagi tonalnej nie da się ocenić.</b> Pasmo '+
       (!ST.zmierzone[250]?'250 Hz':'1 kHz')+' nie dało wiarygodnego wyniku, a bez niego porównanie dołu z górą jest bezpodstawne. '+
       'Głośnik zewnętrzny zwykle dowozi oba pasma.</div>'
-    : pog<0.05
+    : !zle
       ? '<div class="msg good"><b>Równowaga tonalna zachowana.</b> Stosunek T(250 Hz) do T(1 kHz) zmienia się z '+
         pl(rPrzed)+' na '+pl(rPo)+'. Wnętrze wyciszy się równomiernie.</div>'
       : '<div class="msg warn"><b>Uwaga na równowagę tonalną.</b> Stosunek T(250 Hz) do T(1 kHz) rośnie z '+
@@ -801,6 +902,12 @@ $('bJson').onclick=()=>{
       rozjazd_mowy:ST.rozjazdMowy!=null?+ST.rozjazdMowy.toFixed(2):null,
       uwagi:(ST.kontrola&&ST.kontrola.uwagi)||[]},
     cel_Tmid_s:ST.cel,
+    /* Co program zalecil i co klient wybral. Rozbieznosc jest informacja
+       handlowa, nie bledem — dlatego idzie do zapytania, a nie znika. */
+    rekomendacja:ST.rekom?{
+      zalecana:ST.rekom.id, wybrana:ST.mont, zgodna:ST.mont===ST.rekom.id,
+      podstawa:ST.rekom.typ,
+      uzasadnienie:ST.rekom.tekst.replace(/<[^>]+>/g,'')}:null,
     panel:{wykonczenie:ST.wyk, wykonczenie_nazwa:wyk().nazwa,
       wariant:montaz().id, wariant_nazwa:montaz().n.replace(' · zalecane',''),
       format:format().n,
