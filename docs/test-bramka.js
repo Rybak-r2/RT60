@@ -124,13 +124,15 @@ function zPamieci(j){
   uruchom(j);
   return {odrzucony:E('podglad').classList.has('hide'),
           tekst:E('m1').innerHTML.replace(/<[^>]+>/g,''),
-          skad:E('skad').innerHTML.replace(/<[^>]+>/g,'')};
+          skad:E('skad').innerHTML.replace(/<[^>]+>/g,''),
+          zrodlo:E('zrodloWej').innerHTML.replace(/<[^>]+>/g,' ')};
 }
 let r=zPamieci(plik({Tmid:0.353,
   T:{125:0.42,250:0.38,500:0.353,1000:0.345,2000:0.32,4000:0.30}}));
-if(!r.odrzucony&&r.skad.indexOf('przejęty')>=0)
-  console.log('  ok    poprawny pomiar przejęty bez wczytywania pliku');
-else {zle++;console.log('  BŁĄD  przejęcie poprawnego pomiaru nie zadziałało\n         '+r.skad);}
+if(!r.odrzucony&&r.zrodlo.indexOf('Pomiar z tego badania')>=0&&
+   r.zrodlo.indexOf('Wczytaj inny plik')>=0)
+  console.log('  ok    pomiar przejęty bez pliku, z możliwością wczytania innego');
+else {zle++;console.log('  BŁĄD  przejęcie poprawnego pomiaru nie zadziałało\n         '+r.zrodlo);}
 
 r=zPamieci(plik({wersja:'silnik-v2',
   T:{250:0.40,500:0.38,1000:0.36,2000:0.35,4000:0.34}}));

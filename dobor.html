@@ -55,10 +55,7 @@ input:focus,select:focus{outline:1px solid var(--cool);border-color:var(--cool)}
 .msg.warn{background:rgba(255,176,32,.08);border-color:var(--signal);color:#F2CE93}
 .msg.info{background:rgba(88,192,200,.07);border-color:var(--cool);color:#A9DDE1}
 .msg.good{background:rgba(127,201,107,.08);border-color:var(--ok);color:#B5DFA8}
-.drop{border:1px dashed var(--line);border-radius:3px;padding:26px 18px;text-align:center;background:var(--panel);cursor:pointer}
-.drop.over{border-color:var(--signal);background:rgba(255,176,32,.06)}
-.drop b{display:block;margin-bottom:5px}
-.drop span{color:var(--muted);font-size:13px}
+#zrodloWej.over{outline:1px dashed var(--signal);outline-offset:3px;border-radius:3px}
 .big{text-align:center;padding:18px 0 6px}
 .big .num{font-family:var(--mono);font-size:52px;font-weight:300;letter-spacing:-.03em;line-height:1;color:var(--signal)}
 .big .num small{font-size:20px;color:var(--muted);margin-left:4px}
@@ -87,10 +84,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <p class="eyebrow">Krok 1 z 4</p>
   <h1>Wczytaj wynik badania</h1>
   <p class="note" id="skad">Plik JSON pobrany na końcu badania czasu pogłosu. Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.</p>
-  <div class="drop" id="drop">
-    <b>Wybierz plik albo przeciągnij tutaj</b>
-    <span>badanie-akustyczne.json</span>
-  </div>
+  <div id="zrodloWej"></div>
   <input type="file" id="plik" accept="application/json,.json" class="hide">
   <div id="m1"></div>
   <div id="podglad" class="hide">
@@ -116,15 +110,15 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 <!-- ── 3. panele i rozmieszczenie ───────────────────────────────────── -->
 <div id="v3" class="hide">
   <p class="eyebrow">Krok 3 z 4</p>
-  <h1>Panele</h1>
-  <h2>Wykończenie</h2>
+  <h1>Wybierz panele</h1>
+  <h2>Wybierz wykończenie</h2>
   <div id="wyk"></div>
-  <h2 id="hMont">Wersja</h2>
+  <h2 id="hMont">Wybierz wersję</h2>
   <div id="mont"></div>
   <div id="rekom"></div>
-  <h2 id="hFormat">Format</h2>
+  <h2 id="hFormat">Wybierz karton</h2>
   <div id="format"></div>
-  <h2>Gdzie</h2>
+  <h2>Wybierz miejsce montażu</h2>
   <div id="gdzie"></div>
   <p class="note" style="margin-top:10px">Rozmieszczenie nie zmienia wyliczonego czasu pogłosu — model Sabine'a nie rozróżnia, na której powierzchni leży chłonność. Wybór służy sprawdzeniu, czy panele się zmieszczą, i przygotowaniu rozrysowania.</p>
   <div id="m3"></div>
@@ -213,7 +207,7 @@ const WYK={
   tex:{
     nazwa:'Panele tekstylne',
     opis:'Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny.',
-    etykieta:'Wersja',
+    etykieta:'Wybierz wersję',
     /* Jednostką sprzedaży jest KARTON, nie panel. Oba kartony mieszczą jedną
        płytę wełny 1000 × 610 pociętą bez odpadu, więc mają CO DO METRA to samo
        pole czynne — wybór między nimi jest decyzją o wyglądzie ściany, nie
@@ -246,7 +240,7 @@ const WYK={
   nuo:{
     nazwa:'Panele drewniane NUO_WALL',
     opis:'Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na odwrocie. System muto\' GmbH — wybór gatunku drewna i grawerunku.',
-    etykieta:'Wersja',
+    etykieta:'Wybierz wersję',
     /* Tu pole czynne równa się zewnętrznemu — i to nie jest niekonsekwencja
        wobec paneli tekstylnych. α tekstylnych pochodzi z modelu SAMEJ WEŁNY,
        więc stosuje się do powierzchni wełny. α NUO pochodzi z badania
@@ -375,14 +369,31 @@ function opisPodstawy(){
 const ST={};
 
 /*═══════════════ 1. WCZYTANIE ═══════════════*/
-$('drop').onclick=()=>$('plik').click();
-['dragenter','dragover'].forEach(e=>$('drop').addEventListener(e,ev=>{
-  ev.preventDefault();$('drop').classList.add('over');}));
-['dragleave','drop'].forEach(e=>$('drop').addEventListener(e,ev=>{
-  ev.preventDefault();$('drop').classList.remove('over');}));
-$('drop').addEventListener('drop',ev=>{
-  const f=ev.dataTransfer.files&&ev.dataTransfer.files[0];if(f)czytaj(f);});
-$('plik').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)czytaj(f);};
+/* Skąd bierzemy wynik — w tej samej grafice co każdy inny wybór w programie:
+   kropka zaznaczenia, a nie ramka, której nie dało się odróżnić od zwykłego
+   pola. Przeciąganie pliku nadal działa, na całym pojemniku. */
+function rysujZrodlo(){
+  const o=[];
+  if(ST.jPomiaru) o.push({id:'pomiar', n:'Pomiar z tego badania',
+    o:'Przejęty wprost z badania'+(ST.godzPomiaru?', godz. '+ST.godzPomiaru:'')+
+      '. Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki.'});
+  o.push({id:'plik', n:ST.jPomiaru?'Wczytaj inny plik':'Wybierz plik z badania',
+    o:(ST.jPomiaru?'Jeśli chcesz policzyć dla wcześniejszego badania. ':'badanie-akustyczne.json. ')+
+      'Kliknij albo przeciągnij plik tutaj.'});
+  wybor('zrodloWej', o, ST.zrodloWej, id=>{
+    if(id==='plik'){ $('plik').click(); rysujZrodlo(); return; }
+    ST.zrodloWej='pomiar'; przyjmij(ST.jPomiaru); rysujZrodlo();
+  });
+}
+function wczytajPlik(f){ ST.zrodloWej='plik'; rysujZrodlo(); czytaj(f); }
+
+['dragenter','dragover'].forEach(e=>$('zrodloWej').addEventListener(e,ev=>{
+  ev.preventDefault();$('zrodloWej').classList.add('over');}));
+['dragleave','drop'].forEach(e=>$('zrodloWej').addEventListener(e,ev=>{
+  ev.preventDefault();$('zrodloWej').classList.remove('over');}));
+$('zrodloWej').addEventListener('drop',ev=>{
+  const f=ev.dataTransfer.files&&ev.dataTransfer.files[0];if(f)wczytajPlik(f);});
+$('plik').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)wczytajPlik(f);};
 
 function czytaj(f){
   const r=new FileReader();
@@ -675,7 +686,7 @@ function rysujWariantIFormat(){
   if(ST.rekom&&!ST.montRecznie) ST.mont=ST.rekom.id;
   wybor('mont', wyk().montaze, ST.mont, id=>{ST.mont=id; ST.montRecznie=true; pokazRekom();});
   pokazRekom();
-  $('hFormat').textContent=ST.wyk==='tex'?'Karton':'Format ramy';
+  $('hFormat').textContent=ST.wyk==='tex'?'Wybierz karton':'Wybierz format ramy';
   wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format, id=>{ST.format=id;});
 }
 /* Komunikat pod listą wersji: co program zaleca i czy wybór się z tym zgadza. */
@@ -916,18 +927,17 @@ const KLUCZ_POMIARU='rt60-pomiar';
 (function(){
   let surowe=null, j=null;
   try{ surowe=sessionStorage.getItem(KLUCZ_POMIARU); }catch(e){}
-  if(!surowe){
+  if(surowe){ try{ j=JSON.parse(surowe); }catch(e){ j=null; } }
+  if(j){
+    ST.jPomiaru=j; ST.godzPomiaru=(j.czas||'').slice(11,16); ST.zrodloWej='pomiar';
+    $('skad').innerHTML='Nic z wyniku nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.';
+    przyjmij(j);
+  }else{
     $('skad').innerHTML='Plik JSON pobrany na końcu badania czasu pogłosu. '+
       'Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.<br>'+
       '<a href="index.html" style="color:var(--cool)">Nie masz jeszcze wyniku? Zmierz czas pogłosu &rarr;</a>';
-    return;
   }
-  try{ j=JSON.parse(surowe); }catch(e){ return; }
-  przyjmij(j);
-  const godz=(j.czas||'').slice(11,16);
-  $('skad').innerHTML='Pomiar przejęty wprost z badania'+(godz?', godz. '+godz:'')+
-    '. Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki.';
-  $('drop').innerHTML='<b>Wczytaj inny plik</b><span>jeśli chcesz policzyć dla wcześniejszego badania</span>';
+  rysujZrodlo();
 })();
 
 /*═══════════════ EKSPORT ═══════════════*/

@@ -149,7 +149,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 
 <div id="v3" class="hide">
   <p class="eyebrow">Krok 2 z 4</p>
-  <h1>Źródło dźwięku</h1>
+  <h1>Wybierz źródło dźwięku</h1>
   <div id="srcPick">
     <label class="opt sel" id="oExt"><input type="radio" name="src" value="ext" checked>
       <b>Głośnik zewnętrzny · pomiar właściwy</b><span>Dowolny głośnik Bluetooth w rogu pomieszczenia, minimum 2 m od telefonu. Pełne pasmo, ocena zrozumiałości mowy i wynik nadający się pod dobór adaptacji.</span></label>
@@ -176,6 +176,11 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <p class="eyebrow">Krok 3 z 4</p>
   <h1 id="mTitle">Punkt 1 z 3</h1>
   <p class="note" id="mHint">Stań w miejscu oznaczonym na rysunku i naciśnij START. Nie ruszaj się przez kilka sekund.</p>
+  <!-- Ciało jest silnym pochłaniaczem i zasłania mikrofon. Telefon przy piersi
+       albo w kieszeni mierzy głównie cień własnego użytkownika. -->
+  <p class="note" id="mChwyt"><b>Trzymaj telefon w wyciągniętej ręce</b>, mikrofonem w górę albo od siebie —
+  nie przy brzuchu ani przy piersi. Ciało silnie pochłania dźwięk i zasłania mikrofon, przez co czas pogłosu
+  wychodzi zaniżony.</p>
   <div class="plan" id="planBox"></div>
   <div class="dots"><div id="d1" class="act">PUNKT 1</div><div id="d2">PUNKT 2</div><div id="d3">PUNKT 3</div></div>
   <button id="b4">START</button><div id="m4"></div>
