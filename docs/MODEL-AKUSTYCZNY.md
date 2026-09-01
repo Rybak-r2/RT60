@@ -327,16 +327,20 @@ płytę wełny 1000 × 610 pociętą bez odpadu:
 |---|---|---|---|---|
 | **A** | panel 1030 × 640 | 1000 × 610 | 0,610 m² | 0,659 m² |
 | **B** | panel 640 × 640 | 610 × 610 | 0,372 m² | 0,410 m² |
-| | panel 640 × 410 | 610 × 380 | 0,232 m² | 0,262 m² |
-| | **razem karton B** | | **0,604 m²** | **0,672 m²** |
+| | panel 640 × 420 | 610 × 390 | 0,238 m² | 0,269 m² |
+| | **razem karton B** | | **0,610 m²** | **0,678 m²** |
 
-Karton B powstaje z przecięcia płyty wzdłuż, a służy **architekturze**: dwa
-formaty pozwalają układać na ścianie i suficie mozaikę, zamiast rytmu opartego
-na jednym prostokącie.
+Karton B powstaje z przecięcia płyty wzdłuż na 610 i 390 mm, a służy
+**architekturze**: dwa formaty pozwalają układać na ścianie i suficie mozaikę,
+zamiast rytmu opartego na jednym prostokącie.
 
-**Akustycznie oba kartony są równoważne** — 0,610 wobec 0,604 m², różnica 1 %.
-Wybór kartonu jest więc decyzją o wyglądzie, nie o pochłanianiu, i tak trzeba
-go klientowi przedstawiać.
+**Akustycznie oba kartony są identyczne — 0,610 m² co do metra.** Jedna płyta
+wełny, jeden karton, to samo pochłanianie. Wybór kartonu jest więc wyłącznie
+decyzją o wyglądzie i tak trzeba go klientowi przedstawiać.
+
+Różnią się jedynie **miejscem na ścianie**: karton mozaikowy zajmuje 0,678
+wobec 0,659 m², bo ma dwie ramki zamiast jednej. Trzy procent — bez znaczenia
+poza pomieszczeniem naprawdę ciasnym, ale rachunek to uwzględnia.
 
 #### Dwa różne pola, i mylenie ich było błędem
 
@@ -349,13 +353,6 @@ To jest poprawka, którą wymusiła ramka:
 Sprawdzenie „czy panele się zmieszczą" musi iść z pola **zewnętrznego**.
 Do tej wersji szło z czynnego, przez co **zaniżało zapotrzebowanie na miejsce
 o 8 % przy panelu dużym i o 13 % przy małym**.
-
-> **Do potwierdzenia:** przecięcie płyty opisano jako 390 + 610 mm, ale panel
-> mały ma wymiar zewnętrzny 640 × 410, co przy ramce 15 mm daje wełnę
-> 610 × **380**, nie 390. Albo panel mały ma 640 × **420**, albo 10 mm schodzi
-> na rzaz i docięcie. Rachunek przyjmuje **380** — wartość wynikającą wprost
-> z podanego wymiaru zewnętrznego, a przy okazji ostrożniejszą. Przy 390
-> oba kartony miałyby identyczne 0,610 m².
 
 **Zapas z obszycia krawędzi (+26 % powierzchni) przestał istnieć** wraz
 z przejściem na konstrukcję ramową. Wcześniej był świadomym marginesem —

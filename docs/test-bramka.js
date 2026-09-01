@@ -181,8 +181,10 @@ sprawdz(nuo.zewn===nuo.czynne,
   'u NUO pole czynne równa się zewnętrznemu — α z badania gotowego panelu');
 /* Oba kartony to jedna płyta wełny pocięta bez odpadu, więc akustycznie
    są niemal równoważne — wybór kartonu jest decyzją o wyglądzie. */
-sprawdz(mozaika.panele.length===2&&Math.abs(mozaika.czynne-w100.czynne)<0.01,
-  'karton mozaikowy pochłania tyle samo co karton z jednym panelem');
+sprawdz(mozaika.panele.length===2&&mozaika.czynne===w100.czynne&&mozaika.szt===w100.szt,
+  'karton mozaikowy pochłania dokładnie tyle samo co karton z jednym panelem');
+sprawdz(mozaika.zewn>w100.zewn,
+  'karton mozaikowy zajmuje więcej ściany — dwie ramki zamiast jednej');
 sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
   'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
 /* Wełna kupowana na spec 40–60 kg/m³: α musi być najgorsza z przedziału,
