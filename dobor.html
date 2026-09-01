@@ -148,6 +148,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 </div>
 </div>
 
+<script src="karta.js"></script>
 <script>
 "use strict";
 const WERSJA='dobór v3';
@@ -938,6 +939,23 @@ function pokazWynik(dolny,gorny,bazowy){
   if(ST.pogladowy) d.push(['widełki korekty','×'+pl(KOR_MIN)+' … ×'+pl(KOR_MAX)]);
   $('wynDiag').innerHTML=d.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
   ST.wynik={bazowy:bazowy,dolny:dolny,gorny:gorny};
+
+  /* Propozycja idzie do karty pomieszczenia, żeby pomiar po montażu miał
+     z czym się porównać i wiedział, jaki cel obiecaliśmy. Karta jest dodatkiem
+     — gdy jej nie ma, dobór działa dokładnie jak wcześniej. */
+  try{
+    if(window.Karta&&window.Karta.dostepna())
+      window.Karta.dopiszPropozycje({L:ST.L,W:ST.W,H:ST.H,V:ST.V,typ:ST.typ},{
+        czas:new Date().toISOString(),
+        cel_Tmid_s:ST.cel,
+        charakter_pomiaru:ST.pogladowy?'pogladowy':'pelny',
+        Tmid_przed:ST.Tmid!=null?+ST.Tmid.toFixed(3):null,
+        wykonczenie:wyk().nazwa, wariant:montaz().n.replace(' · zalecane',''),
+        format:format().n,
+        sztuk:ST.pogladowy?null:bazowy.szt,
+        sztuk_od:ST.pogladowy?dolny.szt:null, sztuk_do:ST.pogladowy?gorny.szt:null,
+        powierzchnia_m2:+bazowy.pow.toFixed(2)});
+  }catch(e){}
 }
 
 /*═══════════════ PRZEJĘCIE POMIARU Z BADANIA ═══════════════

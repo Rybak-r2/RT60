@@ -197,6 +197,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
     <div id="rSpeech"></div>
     <h2>Pasma</h2><div id="rTbl"></div><div id="rStab"></div>
   </div>
+  <div id="rPrzedPo"></div>
   <!-- Co dalej. Główne działanie zależy od tego, co faktycznie zmierzono —
        skład ustawia pokazDalej(). Zapis danych zostaje zawsze, ale przestaje
        być jedynym wyjściem z programu. -->
@@ -210,6 +211,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <details><summary>Tryb techniczny</summary><div class="diag" id="rDiag"></div><div id="rDiagMsg"></div></details>
 </div>
 </div>
+<script src="karta.js"></script>
 <script>
 "use strict";
 /*═════════════ PAKOWANIE WYNIKU ═════════════
@@ -907,7 +909,11 @@ function finish(){
   }else{
     $('rStab').innerHTML='<div class="msg warn">Nie da się ocenić powtarzalności — żadne pasmo mowy nie wyszło w co najmniej dwóch punktach.</div>';
   }
-  $('rOk').classList.remove('hide');pokazDalej();diag();go(5);
+  $('rOk').classList.remove('hide');
+  /* Zapis do karty PRZED pokazaniem wyniku — zwraca stan sprzed dopisania,
+     czyli to, z czym porównujemy. */
+  pokazPrzedPo(zapiszDoKarty());
+  pokazDalej();diag();go(5);
 }
 function buildTable(avg,spread,qual,cnt){
   const n=ST.nPos||3;
@@ -998,6 +1004,64 @@ function budujJSON(){
   zawyża chłonność o jedną trzecią, jak z pomiaru głośnikiem zewnętrznym.
   Patrz docs/MODEL-AKUSTYCZNY.md, 1.5 i 6. */
 const KLUCZ_POMIARU='rt60-pomiar', KLUCZ_WYMIAROW='rt60-wymiary';
+
+/*═══════════════ KARTA POMIESZCZENIA — PORÓWNANIE „PRZED / PO" ═══════════════
+  Kalkulator akustyczny ma każdy. Dowodu, że obietnica się spełniła, nie ma
+  nikt. Ten sam program, który policzył panele, mierzy wynik po montażu
+  i mówi wprost, czy cel został osiągnięty.
+
+  Karta jest DODATKIEM: gdy jej nie ma — prywatne okno, wyczyszczone dane,
+  przeglądarka z zablokowanym zapisem — pomiar działa dokładnie jak wcześniej.
+  Stąd sprawdzenie window.Karta przy każdym wejściu. */
+const pl2=v=>v==null?'—':v.toFixed(2).replace('.',',');
+const dataPl=t=>{ try{ return new Date(t).toLocaleDateString('pl-PL'); }catch(e){ return null; } };
+
+function zapiszDoKarty(){
+  if(!global_karta()) return null;
+  try{ return window.Karta.dopiszPomiar(budujJSON()); }catch(e){ return null; }
+}
+function global_karta(){ return typeof window!=='undefined'&&window.Karta&&window.Karta.dostepna(); }
+
+function pokazPrzedPo(przed){
+  const box=$('rPrzedPo'); box.innerHTML='';
+  if(!przed||!przed.pomiary||!przed.pomiary.length||!(ST.Tmid>0)) return;
+  /* Porównujemy z OSTATNIM wcześniejszym pomiarem — jeśli ktoś mierzył kilka
+     razy przed montażem, punktem odniesienia jest ten najświeższy. */
+  const p0=przed.pomiary[przed.pomiary.length-1];
+  if(!(p0.Tmid>0)) return;
+  const data=dataPl(p0.czas), zm=100*(ST.Tmid-p0.Tmid)/p0.Tmid;
+  const cel=przed.propozycja&&przed.propozycja.cel_Tmid_s;
+
+  /* Pomiar poglądowy nie nadaje się na dowód: telefon zaniża czas pogłosu
+     o 20–30 %, więc „poprawa" mogłaby być samą zmianą sposobu pomiaru. */
+  const rozneTory = p0.charakter && p0.charakter!==(ST.src==='phone'?'pogladowy':'pelny');
+
+  let t='<h2>Porównanie z wcześniejszym badaniem</h2>';
+  t+='<div class="msg '+(zm<-5?'good':'info')+'"><b>Tmid '+pl2(p0.Tmid)+' → '+pl2(ST.Tmid)+' s'+
+     (isFinite(zm)?' ('+(zm>0?'+':'')+Math.round(zm)+' %)':'')+'</b><br>'+
+     'Wcześniejsze badanie tego pomieszczenia'+(data?' z '+data:'')+
+     '. Dopasowane po wymiarach i przeznaczeniu — jeśli to inne wnętrze, pomiń porównanie.</div>';
+
+  if(rozneTory)
+    t+='<div class="msg warn"><b>Oba pomiary zrobiono innym źródłem dźwięku.</b> '+
+       'Telefon zaniża czas pogłosu o 20–30 %, więc ta różnica może pochodzić z samej zmiany '+
+       'sposobu pomiaru, a nie ze zmiany w pomieszczeniu. Porównywać wolno tylko pomiary tego samego rodzaju.</div>';
+  else if(cel>0)
+    t+= ST.Tmid<=cel
+      ? '<div class="msg good"><b>Cel '+pl2(cel)+' s osiągnięty.</b> Adaptacja zrobiła to, '+
+        'co obiecywała — i jest to zmierzone, nie policzone.</div>'
+      : '<div class="msg warn"><b>Cel '+pl2(cel)+' s jeszcze nieosiągnięty</b> — brakuje '+
+        pl2(ST.Tmid-cel)+' s. Przelicz uzupełnienie w doborze paneli: policzy je z tego '+
+        'nowego pomiaru, czyli z tego, co w pomieszczeniu jest teraz.</div>';
+
+  t+='<p class="note" style="font-size:12px"><a href="#" id="rZapomnij" style="color:var(--muted)">'+
+     'To nie jest to samo pomieszczenie — usuń historię</a></p>';
+  box.innerHTML=t;
+  const z=$('rZapomnij');
+  if(z) z.onclick=e=>{ e.preventDefault();
+    try{ window.Karta.zapomnij({L:ST.L,W:ST.W,H:ST.H,typ:ST.type}); }catch(err){}
+    box.innerHTML='<p class="note">Historia tego pomieszczenia usunięta.</p>'; };
+}
 
 function pokazDalej(){
   const udany=ST.Tmid>0, tel=ST.src==='phone';

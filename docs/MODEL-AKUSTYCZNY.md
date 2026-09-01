@@ -571,13 +571,18 @@ w tym `silnik-v13` z 31.08 (salon 39,75 m³, głośnik zewnętrzny, Tmid 0,353 s
 udział pola późnego 0,513, wszystkie siedem pasm z wynikiem). Kończy się
 działaniem zależnym od jakości pomiaru (6.1), nie samym zapisem pliku.
 
+Karta pomieszczenia `karta.js` — historia jednego wnętrza w `localStorage`,
+wspólna dla obu programów, z porównaniem „przed / po" po montażu (6.2).
+
 Moduł doboru `dobór v3` — przejmuje pomiar wprost z badania albo z wczytanego
 pliku, sprawdza wiarygodność wejścia (5.3), liczy powierzchnię i liczbę paneli
 w wybranym wykończeniu i formacie, przełącza Sabine/Eyring, sprawdza równowagę
 tonalną, podaje widełki przy pomiarze poglądowym.
 
-Test regresyjny `npm test` — 24 przypadki na kodzie obu stron, uruchamianym na
-atrapie DOM.
+Testy regresyjne `npm test` — 66 przypadków na kodzie obu stron i na
+`karta.js`, uruchamianym na atrapie DOM i atrapie magazynu przeglądarki:
+`docs/test-bramka.js` (bramka, wykończenia, cel, rekomendacja) oraz
+`docs/test-karta.js` (karta i pętla przed/po).
 
 ### 5.3 Bramka wiarygodności wejścia — wdrożona
 
@@ -634,14 +639,15 @@ blokują, `silnik-v4` nie; realny plik z v2 zostaje odrzucony z krotnością
 
 1. **Tabela α_p od producenta wełny** — bez niej kolumna tekstylna jest
    oszacowaniem z modelu. Dla NUO takiej tabeli nie będzie (3.9).
-3. **Karta pomieszczenia** jako format narastający — 6.2, zanim dojdzie pomiar
-   kontrolny, bo później kosztuje przerobienie danych.
-4. **Pomiar kontrolny „przed / po"** — domknięcie pętli z 6.2.
-5. **Formularz kontaktowy i zamówienie** — 6.3; wymaga funkcji serwerowej
-   i przygotowania RODO.
-6. **Rozrysowanie rozmieszczenia** paneli na ścianach i suficie — ze wskazaniem,
+2. **Formularz kontaktowy i zapytanie ofertowe** — 6.3; wymaga funkcji
+   serwerowej i przygotowania RODO. To jedyna część wyprowadzająca dane poza
+   przeglądarkę.
+3. **Rozrysowanie rozmieszczenia** paneli na ścianach i suficie — ze wskazaniem,
    że to wskazówka montażowa, a nie rachunek: model Sabine'a nie rozróżnia,
    na której powierzchni leży chłonność.
+4. **Przeniesienie karty pomieszczenia między urządzeniami** — dziś siedzi
+   w jednej przeglądarce. Naturalna droga to wczytanie paczki ZIP z badania
+   po stronie pomiaru, tak jak dobór wczytuje JSON.
 
 Decyzja podjęta i obowiązująca: przy pomiarze poglądowym **widełki od–do**,
 nie pojedyncza liczba i nie blokada.
@@ -681,11 +687,33 @@ dowód, że obietnica się spełniła, nie ma nikt. Ten sam program, który poli
 panele, potrafi zmierzyć wynik po montażu i powiedzieć: cel osiągnięty albo
 brakuje jeszcze czterech.
 
-Konsekwencja projektowa: **karta pomieszczenia zamiast luźnych plików.** Paczka
-z `v15` (JSON + odpowiedzi impulsowe) jest jej zalążkiem; ma narastać —
-pomiar → dobór → montaż → pomiar kontrolny. Doklejanie tego później będzie
-kosztować przerobienie formatu danych, więc format projektujemy jako narastający
-od początku.
+**Wdrożone** (`karta.js`, wrzesień 2026). Karta pomieszczenia narasta:
+pomiar → propozycja → pomiar kontrolny. Leży w `localStorage` przeglądarki —
+nic nie idzie na serwer, to samo zobowiązanie co przy pomiarze i doborze.
+Cena: karta nie przenosi się między urządzeniami; od tego jest paczka ZIP.
+
+**Zasada nadrzędna: karta jest DODATKIEM.** Prywatne okno, wyczyszczone dane,
+przepełniony magazyn, przeglądarka z zablokowanym zapisem — każda z tych
+rzeczy ma skutkować tym, że program działa dokładnie jak wcześniej. Dlatego
+wszystko w `karta.js` siedzi w `try/catch` i zwraca `null` zamiast rzucać.
+**Pomiar nie może się zawalić dlatego, że historia się nie zapisała.**
+
+**Tożsamość pomieszczenia:** wymiary zaokrąglone do 10 cm plus przeznaczenie.
+Dokładniej się nie da — te same wymiary klient wpisuje za drugim razem na oko
+i 5,2 potrafi wrócić jako 5,18. Zaokrąglenie zszywa oba podejścia w jedną
+kartę. Skutek uboczny: dwa różne wnętrza o tych samych wymiarach trafią do
+jednej karty, dlatego przy porównaniu **zawsze pokazujemy datę** wcześniejszego
+pomiaru, a obok stoi odnośnik „to nie jest to samo pomieszczenie".
+
+**Czego porównanie nie zrobi:** jeśli oba pomiary wykonano różnymi źródłami
+dźwięku, zamiast werdyktu leci ostrzeżenie. Telefon zaniża czas pogłosu
+o 20–30 % (1.5), więc „poprawa" mogłaby pochodzić z samej zmiany sposobu
+pomiaru. Dowód wymaga dwóch pomiarów tego samego rodzaju.
+
+**Czego porównanie nie liczy:** brakującej liczby paneli. Byłby to drugi model
+obok tego z modułu doboru i oba zaczęłyby się rozjeżdżać. Zamiast tego wynik
+kieruje do doboru, który policzy uzupełnienie z **nowego** pomiaru, czyli
+z tego, co w pomieszczeniu jest teraz.
 
 ### 6.3 Formularz kontaktowy i zamówienie
 
