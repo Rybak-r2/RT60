@@ -183,7 +183,15 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
     <div id="rSpeech"></div>
     <h2>Pasma</h2><div id="rTbl"></div><div id="rStab"></div>
   </div>
-  <button id="bZapisz" style="margin-top:18px">Zapisz dane badania</button>
+  <!-- Co dalej. Główne działanie zależy od tego, co faktycznie zmierzono —
+       skład ustawia pokazDalej(). Zapis danych zostaje zawsze, ale przestaje
+       być jedynym wyjściem z programu. -->
+  <div style="margin-top:18px">
+    <button id="bDobor" class="hide">Dobierz panele &rarr;</button>
+    <button id="bPowtorz" class="hide" style="margin-top:9px">Powtórz badanie</button>
+    <button id="bZapisz" class="ghost" style="margin-top:9px">Zapisz dane badania</button>
+  </div>
+  <p class="note" style="font-size:12.5px;margin-top:9px" id="dalejOpis"></p>
   <p class="note" style="font-size:12.5px;margin-top:8px" id="zapisOpis"></p>
   <details><summary>Tryb techniczny</summary><div class="diag" id="rDiag"></div><div id="rDiagMsg"></div></details>
 </div>
@@ -787,8 +795,8 @@ function finish(){
       'Mikrofon i głośnik są w jednej obudowie, więc do mikrofonu dociera znikoma część pola pogłosowego. '+
       'Czas pogłosu wychodzi zwykle o 20–30 % za krótki, chłonność o tyle samo za wysoka, a pasma 250 i 500 Hz '+
       'najczęściej w ogóle nie dają wyniku. Liczba poniżej służy do zgrubnego rozeznania.<br>'+
-      '<b>Ten wynik nie nadaje się jako podstawa doboru adaptacji akustycznej.</b> '+
-      'Powtórz badanie z dowolnym głośnikiem Bluetooth ustawionym w rogu pomieszczenia.</div>'
+      '<b>Do doboru paneli taki pomiar daje widełki od–do, nigdy konkretnej liczby.</b> '+
+      'Powtórzenie z dowolnym głośnikiem Bluetooth ustawionym w rogu pomieszczenia zamienia je w jedną liczbę.</div>'
     : '';
   const P=ST.pos.filter(Boolean),avg={},spread={},qual={},cnt={};
   BANDS.forEach(f=>{
@@ -822,7 +830,7 @@ function finish(){
     buildTable(avg,spread,qual,cnt);$('rOk').classList.remove('hide');
     $('rT').innerHTML='—';$('rVerdict').innerHTML='';
     document.querySelector('#rOk .big').classList.add('hide');
-    diag();go(5);return;
+    pokazDalej();diag();go(5);return;
   }
   $('rT').innerHTML=Tmid.toFixed(2).replace('.',',')+'<small>s</small>';
   let v;
@@ -885,7 +893,7 @@ function finish(){
   }else{
     $('rStab').innerHTML='<div class="msg warn">Nie da się ocenić powtarzalności — żadne pasmo mowy nie wyszło w co najmniej dwóch punktach.</div>';
   }
-  $('rOk').classList.remove('hide');diag();go(5);
+  $('rOk').classList.remove('hide');pokazDalej();diag();go(5);
 }
 function buildTable(avg,spread,qual,cnt){
   const n=ST.nPos||3;
@@ -969,6 +977,69 @@ function budujJSON(){
 
 /* Jedno pobranie = komplet. Wyniki i surowiec razem, bo osobno przychodziłaby
    połowa. Czytnik w środku, żeby osoba otwierająca paczkę wiedziała, co ma. */
+/*═══════════════ CO DALEJ PO POMIARZE ═══════════════
+  Pomiar nie kończy się zapisem pliku, tylko działaniem — a jakim, zależy od
+  tego, co faktycznie zmierzono. Jeden uniwersalny przycisk „dobierz panele"
+  znaczyłby, że narzędzie sprzedaje równie pewnie z pomiaru telefonem, który
+  zawyża chłonność o jedną trzecią, jak z pomiaru głośnikiem zewnętrznym.
+  Patrz docs/MODEL-AKUSTYCZNY.md, 1.5 i 6. */
+const KLUCZ_POMIARU='rt60-pomiar', KLUCZ_WYMIAROW='rt60-wymiary';
+
+function pokazDalej(){
+  const udany=ST.Tmid>0, tel=ST.src==='phone';
+  const D=$('bDobor'), P=$('bPowtorz');
+  D.classList.toggle('hide',!udany);
+  P.classList.toggle('hide',udany&&!tel);
+  /* Klasa ghost niesie hierarchię działań. Bez niej trzy przyciski krzyczą
+     równie głośno i nie widać, co jest zalecane. */
+  P.classList.toggle('ghost',udany);
+  P.textContent=tel?'Powtórz z głośnikiem zewnętrznym':'Powtórz badanie';
+  $('dalejOpis').innerHTML = !udany
+    ? 'Bez czasu pogłosu w pasmach mowy nie ma czego dobierać — powierzchnia paneli liczy się właśnie z nich. '+
+      'Zapis danych zostaje: w paczce są odpowiedzi impulsowe, więc pomiar da się przejrzeć niezależnym narzędziem.'
+    : tel
+      ? 'Dobór policzy z tego <b>widełki od–do</b> wraz z zaleceniem, od ilu paneli zacząć. '+
+        'Powtórzenie z głośnikiem zewnętrznym zamienia widełki w jedną liczbę.'
+      : 'Wynik nadaje się jako podstawa doboru — dostaniesz konkretną liczbę paneli.';
+}
+
+$('bDobor').onclick=()=>{
+  /* Do doboru idzie dokładnie ten sam obiekt, który trafia do paczki ZIP:
+     jeden kontrakt danych, jedno miejsce jego budowania. Przekazanie leci przez
+     pamięć karty przeglądarki — nic nie wychodzi na serwer, a zamknięcie karty
+     je kasuje. Bramka wiarygodności po stronie doboru sprawdza ten wynik tak
+     samo jak plik wrzucony ręcznie; przekazanie nie jest wejściem bocznym. */
+  try{ sessionStorage.setItem(KLUCZ_POMIARU,JSON.stringify(budujJSON())); }
+  catch(e){
+    $('dalejOpis').innerHTML='<span class="r">Nie udało się przekazać wyniku ('+e.message+'). '+
+      'Zapisz dane badania i wczytaj plik ręcznie w module doboru.</span>'; return; }
+  location.href='dobor.html';
+};
+
+/* Powtórzenie to pełny restart strony, nie cofnięcie widoku. Stan pomiaru —
+   punkty, odpowiedzi impulsowe, licznik prób — jest jednorazowy i cofnięcie do
+   kroku 2 zostawiłoby w nim resztki poprzedniego podejścia. Wymiary przenoszą
+   się przez restart, bo droga zalecana najczęściej („powtórz z głośnikiem")
+   nie może być tą, która każe wpisywać wszystko od nowa. */
+$('bPowtorz').onclick=()=>{
+  try{ sessionStorage.setItem(KLUCZ_WYMIAROW,
+    JSON.stringify({L:ST.L,W:ST.W,H:ST.H,typ:ST.type})); }catch(e){}
+  location.reload();
+};
+
+/* Odtworzenie wymiarów po restarcie. Klucz kasuje się od razu po odczycie —
+   ma przeżyć jedno przeładowanie, nie całą sesję. */
+(function(){
+  let w=null;
+  try{ w=JSON.parse(sessionStorage.getItem(KLUCZ_WYMIAROW)||'null');
+       sessionStorage.removeItem(KLUCZ_WYMIAROW); }catch(e){}
+  if(!w||!(w.L>0))return;
+  const tekst=v=>String(v).replace('.',',');
+  $('fL').value=tekst(w.L); $('fW').value=tekst(w.W); $('fH').value=tekst(w.H);
+  if(w.typ)$('fType').value=w.typ;
+  pokazKubature();
+})();
+
 $('bZapisz').onclick=()=>{
   const b=$('bZapisz'); b.disabled=true; b.textContent='Pakuję…';
   try{

@@ -102,5 +102,37 @@ if(przeszlo) console.log('  ok    propozycja policzona, ślad kontroli w eksporc
 else {zle++;console.log('  BŁĄD  eksport bez śladu kontroli albo bez propozycji\n         '+
   JSON.stringify(w.kontrola_wejscia));}
 
+console.log('\nPrzejęcie pomiaru wprost z badania');
+/* Przekazanie z pomiaru nie może być wejściem bocznym omijającym bramkę.
+   Uruchamiamy skrypt strony jeszcze raz, z pomiarem czekającym w pamięci. */
+function zPamieci(j){
+  const mem={};
+  global.sessionStorage={getItem:k=>k in mem?mem[k]:null,
+    setItem:(k,v)=>{mem[k]=String(v);}, removeItem:k=>{delete mem[k];}};
+  mem['rt60-pomiar']=JSON.stringify(j);
+  for(const k in cache) delete cache[k];
+  new Function(src)();
+  return {odrzucony:E('podglad').classList.has('hide'),
+          tekst:E('m1').innerHTML.replace(/<[^>]+>/g,''),
+          skad:E('skad').innerHTML.replace(/<[^>]+>/g,'')};
+}
+let r=zPamieci(plik({Tmid:0.353,
+  T:{125:0.42,250:0.38,500:0.353,1000:0.345,2000:0.32,4000:0.30}}));
+if(!r.odrzucony&&r.skad.indexOf('przejęty')>=0)
+  console.log('  ok    poprawny pomiar przejęty bez wczytywania pliku');
+else {zle++;console.log('  BŁĄD  przejęcie poprawnego pomiaru nie zadziałało\n         '+r.skad);}
+
+r=zPamieci(plik({wersja:'silnik-v2',
+  T:{250:0.40,500:0.38,1000:0.36,2000:0.35,4000:0.34}}));
+if(r.odrzucony&&r.tekst.indexOf('silnik-v2')>=0)
+  console.log('  ok    zły pomiar przejęty z badania blokowany tak samo jak plik');
+else {zle++;console.log('  BŁĄD  przejęcie omija bramkę wiarygodności — wejście boczne');}
+
+r=zPamieci(plik({Tmid:1.251,
+  T:{125:1.90,250:0.224,500:0.501,1000:2.001,2000:0.90,4000:0.70}}));
+if(r.odrzucony&&r.tekst.indexOf('rozjeżdżają się')>=0)
+  console.log('  ok    rozjazd pasm wykrywany także na drodze przejęcia');
+else {zle++;console.log('  BŁĄD  rozjazd pasm przepuszczony przy przejęciu');}
+
 console.log(zle?'\n'+zle+' testów nie przeszło\n':'\nWszystkie testy przeszły\n');
 process.exit(zle?1:0);

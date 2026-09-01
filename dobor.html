@@ -77,7 +77,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 <div id="v1">
   <p class="eyebrow">Krok 1 z 4</p>
   <h1>Wczytaj wynik badania</h1>
-  <p class="note">Plik JSON pobrany na końcu badania czasu pogłosu. Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.</p>
+  <p class="note" id="skad">Plik JSON pobrany na końcu badania czasu pogłosu. Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.</p>
   <div class="drop" id="drop">
     <b>Wybierz plik albo przeciągnij tutaj</b>
     <span>badanie-akustyczne.json</span>
@@ -597,6 +597,34 @@ function pokazWynik(dolny,gorny,bazowy){
   $('wynDiag').innerHTML=d.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
   ST.wynik={bazowy:bazowy,dolny:dolny,gorny:gorny};
 }
+
+/*═══════════════ PRZEJĘCIE POMIARU Z BADANIA ═══════════════
+  Klient trafia tu wprost z pomiaru, przyciskiem, a nie przez zapisany i ręcznie
+  wczytany plik. Wynik czeka w pamięci karty przeglądarki (sessionStorage) —
+  nic nie przechodzi przez serwer, zamknięcie karty go kasuje.
+
+  Wchodzi tą samą drogą co plik wrzucony ręcznie: przez przyjmij(), czyli i
+  przez bramkę wiarygodności. Skrót omijający kontrolę byłby dziurą dokładnie
+  w tym zabezpieczeniu, którym ta kontrola ma być — a że pomiar przyszedł
+  „z naszego" programu, nie czyni go wiarygodnym: stary silnik albo pasma
+  wyliczone z szumu wyglądają tak samo z obu stron. */
+const KLUCZ_POMIARU='rt60-pomiar';
+(function(){
+  let surowe=null, j=null;
+  try{ surowe=sessionStorage.getItem(KLUCZ_POMIARU); }catch(e){}
+  if(!surowe){
+    $('skad').innerHTML='Plik JSON pobrany na końcu badania czasu pogłosu. '+
+      'Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.<br>'+
+      '<a href="index.html" style="color:var(--cool)">Nie masz jeszcze wyniku? Zmierz czas pogłosu &rarr;</a>';
+    return;
+  }
+  try{ j=JSON.parse(surowe); }catch(e){ return; }
+  przyjmij(j);
+  const godz=(j.czas||'').slice(11,16);
+  $('skad').innerHTML='Pomiar przejęty wprost z badania'+(godz?', godz. '+godz:'')+
+    '. Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki.';
+  $('drop').innerHTML='<b>Wczytaj inny plik</b><span>jeśli chcesz policzyć dla wcześniejszego badania</span>';
+})();
 
 /*═══════════════ EKSPORT ═══════════════*/
 $('bJson').onclick=()=>{
