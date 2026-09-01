@@ -425,13 +425,27 @@ handlowe, które trzeba umieć powiedzieć klientowi:
 3. Sprawdzenie równowagi tonalnej (3.3) wyłapuje jedno i drugie samo, bez
    osobnej reguły w kodzie.
 
-**Czego brakuje — do zdobycia od muto':**
+**Producent nie dysponuje innymi badaniami** (ustalone 1.09.2026). Tabela α_p
+dla obu grubości nie nadejdzie, bo jej nie ma. To zmienia status liczb z 3.9:
+**przestają być wartością tymczasową w oczekiwaniu na dane, a stają się
+wartością roboczą** — najlepszą, jaka jest dostępna, i jedyną, jaką będziemy
+mieli, dopóki nie zmierzymy gotowego panelu sami.
+
+Konsekwencja, którą trzeba trzymać: **żadna liczba, którą sprzedajemy, nie
+opiera się na szacunku.** Liczba paneli NUO wychodzi z krzywej 50 mm, czyli
+z odczytu ulotki, i jest identyczna dla obu grubości — bo oba warianty mają
+α 1,00 przy 500 i 1000 Hz, z których liczy się Tmid. Szacunek dla 100 mm
+wpływa wyłącznie na komentarz o równowadze tonalnej. Gdyby kiedyś któraś
+z tych wartości się zmieniła, ta granica musi zostać: **szacunek opisuje,
+odczyt liczy.**
+
+**Czego nadal brakuje:**
 
 | | dlaczego to blokuje |
 |---|---|
-| tabela α_p **osobno dla 50 i 100 mm** | dziś mamy jedną krzywą z wykresu i szacunek dla drugiego wariantu |
-| **do którego wariantu odnosi się krzywa z ulotki** | całe przypisanie 50/100 mm stoi na przesłance z kształtu krzywej |
+| **do którego wariantu odnosi się krzywa z ulotki** | całe przypisanie 50/100 mm stoi na przesłance z kształtu krzywej. Do rozstrzygnięcia pytaniem do producenta — to jedna informacja, nie badanie |
 | **który absorber** — pianka melaminowa czy filc akustyczny | ulotka podaje jedną krzywą dla obu, a to dwa różne materiały |
+| pomiar własny gotowego panelu | jedyna droga do wartości zmierzonych, skoro producent badań nie ma. Program do tego służy — patrz 6.2 |
 | ceny i terminy dostaw | bez nich nie ma zamówienia |
 | klasa ogniowa | NUO to **B1 wg DIN 4102, i to z badania orientacyjnego**; wełna jest A1. W obiektach użyteczności publicznej potrafi to rozstrzygnąć wybór za klienta |
 
@@ -443,8 +457,8 @@ handlowe, które trzeba umieć powiedzieć klientowi:
    właściwości użytkowych tego nie zastępuje: podaje samo AW, bez pasm i bez
    montażu (3.5). **Prosić trzeba o raport z badania ISO 354 wraz z opisem
    montażu.**
-2. **Tabela α_p i dane techniczne NUO_WALL od muto'** — 3.9. Dziś α tego
-   wykończenia pochodzi z odczytu wykresu w ulotce.
+2. **Pomiar własny panelu NUO_WALL** — producent innych badań nie ma (3.9),
+   więc to jedyna droga do wartości zmierzonych zamiast odczytanych z wykresu.
 3. **Potwierdzenie gęstości dostarczanej wełny** — przedział 40–60 kg/m³ jest
    założeniem zakupowym (3.4), nie wartością z karty; `AFr` producent podaje
    jako `NPD`.
@@ -543,8 +557,8 @@ blokują, `silnik-v4` nie; realny plik z v2 zostaje odrzucony z krotnością
 
 ### 5.4 Kolejność dalszych prac
 
-1. **Tabele α_p — od producenta wełny i od muto'** — bez nich obie kolumny
-   liczb są oszacowaniem z modelu i z odczytu wykresu.
+1. **Tabela α_p od producenta wełny** — bez niej kolumna tekstylna jest
+   oszacowaniem z modelu. Dla NUO takiej tabeli nie będzie (3.9).
 3. **Karta pomieszczenia** jako format narastający — 6.2, zanim dojdzie pomiar
    kontrolny, bo później kosztuje przerobienie danych.
 4. **Pomiar kontrolny „przed / po"** — domknięcie pętli z 6.2.
