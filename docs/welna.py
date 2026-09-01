@@ -74,9 +74,9 @@ for dw, dp, nazwa in [(.050, 0, "50 mm na scianie"), (.050, .050, "50 mm + pustk
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AW wg ISO 11654 — zeby model dalo sie porownac z tym, co producent DEKLARUJE.
-# Karta ROCKTON PREMIUM podaje wylacznie AW (0,90 dla 50-80 mm, 1,00 dla
-# 100-200 mm) i ani jednej wartosci pasmowej, wiec to jedyny punkt styku
-# miedzy modelem a deklaracja.
+# Deklaracja wlasciwosci uzytkowych welny podaje wylacznie AW (0,90 dla
+# 50-80 mm, 1,00 dla 100-200 mm) i ani jednej wartosci pasmowej, wiec to
+# jedyny punkt styku miedzy modelem a deklaracja producenta.
 # ─────────────────────────────────────────────────────────────────────────────
 PASMA_AW = [250, 500, 1000, 2000, 4000]
 KRZYWA_ODN = {250: 0.80, 500: 1.00, 1000: 1.00, 2000: 1.00, 4000: 0.90}
@@ -104,8 +104,8 @@ def aw(a):
     return round(odn[500], 2), ksztalt
 
 if __name__ == '__main__':
-    print("\n=== AW z modelu wobec deklaracji ROCKTON PREMIUM ===")
-    print("    (DWU RW-CEE-DoP-0205/M/20/w1: AW 0,90 dla 50-80 mm, 1,00 dla 100-200 mm)\n")
+    print("\n=== AW z modelu wobec deklaracji producenta welny ===")
+    print("    (deklarowane: AW 0,90 dla 50-80 mm, 1,00 dla 100-200 mm)\n")
     print(f"  {'wariant':<26}{'rho':>5}  " + "  ".join(f"{f:>4}" for f in PASMA_AW) +
           f"   {'AW model':>9}  {'karta':>6}")
     for nazwa, dw, dp, karta in [("50 mm na scianie", .050, 0, "0,90"),
@@ -118,3 +118,31 @@ if __name__ == '__main__':
             print(f"  {nazwa:<26}{gest:>5}  " + "  ".join(f"{ap[f]:4.2f}" for f in PASMA_AW) +
                   f"   {w:>6.2f}{k:<3}  {karta:>6}")
         print()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Welna jest kupowana NA SPEC, nie na jedna gestosc: operaty akustyczne opisuja
+# ja przedzialem i tak tez ja zamawiamy. Rachunek musi wiec stac na najgorszym
+# przypadku z tego przedzialu, pasmo po pasmie — inaczej obietnica trzyma sie
+# tylko przy szczesliwej dostawie.
+# ─────────────────────────────────────────────────────────────────────────────
+def sigma_z_gestosci(rho):
+    """sigma(rho) dopasowane do tablicy Biesa i Hansena uzytej wyzej.
+    Zakotwiczone na (30, 15 000) i (60, 42 000); kontrola: 45 -> 27 400
+    wobec tabelarycznych 28 000, 80 -> 64 400 wobec 63 000."""
+    return 15000.0 * (rho / 30.0) ** 1.4854
+
+def krzywa_zakresu(rho_min, rho_max, d_welny, d_pustki=0.0, krok=5):
+    """alfa najmniejsza w kazdym pasmie w calym przedziale gestosci."""
+    rho = list(range(int(rho_min), int(rho_max) + 1, krok))
+    krz = [krzywa(sigma_z_gestosci(r), d_welny, d_pustki) for r in rho]
+    return {f: min(k[f] for k in krz) for f in PASMA}
+
+if __name__ == '__main__':
+    print("\n=== Welna deklarowana 40-60 kg/m3 — najgorszy przypadek pasmowo ===\n")
+    print(f"  {'wariant':<20}" + "  ".join(f"{f:>5}" for f in PASMA) + f"  {'AW':>6}")
+    for nazwa, d in [("50 mm na scianie", .050), ("100 mm na scianie", .100)]:
+        a = krzywa_zakresu(40, 60, d)
+        w, k = aw(a)
+        print(f"  {nazwa:<20}" + "  ".join(f"{a[f]:5.2f}" for f in PASMA) + f"  {w:5.2f}{k}")
+    print("\n  Te wartosci ida do dobor.html.")

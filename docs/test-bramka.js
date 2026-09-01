@@ -161,23 +161,34 @@ function policz(wyk,mont,format){
 }
 const w100=policz('tex','w100','t1');
 const w50 =policz('tex','w50','t1');
-const nuo =policz('nuo','rama','n1');
+const nuo =policz('nuo','n100','n1');
+const nuo50=policz('nuo','n50','n1');
 console.log('        tekstylny 100 mm, 1000×610 : '+w100.szt+' szt., '+w100.pow+' m²');
 console.log('        tekstylny  50 mm, 1000×610 : '+w50.szt +' szt., '+w50.pow +' m²');
-console.log('        NUO_WALL 950×950           : '+nuo.szt +' szt., '+nuo.pow +' m²');
+console.log('        NUO_WALL 100 mm, 950×950   : '+nuo.szt +' szt., '+nuo.pow +' m²');
+console.log('        NUO_WALL  50 mm, 950×950   : '+nuo50.szt+' szt., '+nuo50.pow+' m²');
 
 function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
   else {zle++;console.log('  BŁĄD  '+opis);} }
 sprawdz(w100.lico===0.61&&nuo.lico===0.902,'pole modułu bierze się z wybranego formatu');
-sprawdz(w100.alfa[250]===0.72&&w50.alfa[250]===0.39&&nuo.alfa[250]===0.6,
+sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
   'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
+/* Wełna kupowana na spec 40–60 kg/m³: α musi być najgorsza z przedziału,
+   inaczej obietnica trzyma się tylko przy szczęśliwej dostawie. */
+sprawdz(w100.alfa[500]===0.77&&w100.alfa[1000]===0.85,
+  'wełna liczona najgorszym przypadkiem z przedziału 40–60 kg/m³');
+/* Grubość absorbera NUO zmienia dół pasma, a nie liczbę paneli: oba warianty
+   nasycają się na 1,00 w pasmach mowy, z których liczy się Tmid. */
+sprawdz(nuo.szt===nuo50.szt&&nuo.pow===nuo50.pow,
+  'grubość absorbera NUO nie zmienia liczby paneli, tylko dół pasma');
 sprawdz(w50.pow>w100.pow,'wełna 50 mm wymaga większej powierzchni niż 100 mm');
 sprawdz(nuo.pow<w100.pow,'NUO wymaga mniejszej powierzchni — α 1,00 w pasmach mowy');
-sprawdz(nuo.zrodlo.indexOf('NUO_WALL')>=0&&w100.zrodlo.indexOf('Mikiego')>=0,
-  'eksport podaje właściwe źródło α dla każdego wykończenia');
+sprawdz(nuo50.zrodlo.indexOf('NUO_WALL')>=0&&nuo.zrodlo.indexOf('SZACUNEK')>=0&&
+  w100.zrodlo.indexOf('Mikiego')>=0,
+  'eksport podaje właściwe źródło α — także to, że 100 mm NUO jest szacunkiem');
 /* Format z poprzedniego wykończenia nie może wywrócić rachunku — wybór cofa
    się wtedy do pierwszego formatu wykończenia właśnie wybranego. */
-const mieszany=policz('nuo','rama','t1');
+const mieszany=policz('nuo','n100','t1');
 sprawdz(mieszany.lico===0.902&&mieszany.szt>0,
   'format spoza wykończenia cofa się do formatu tego wykończenia');
 

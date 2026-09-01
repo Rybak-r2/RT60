@@ -145,14 +145,6 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 "use strict";
 const WERSJA='dobór v3';
 
-/*═══════════════ DANE MATERIAŁOWE ═══════════════
-  UWAGA — WARTOŚCI TYMCZASOWE.
-  α poniżej pochodzą z modelu Mikiego dla oporności przepływu σ = 30 000 Pa·s/m²
-  (wartość zgodna z deklaracją AW 0,90 dla ROCKTON PREMIUM 50 mm), a nie z badania
-  gotowego panelu. Model jest systematycznie zaniżony o 0,10–0,15 w skali AW wobec
-  badań komorowych, bo nie liczy krawędzi próbki. Kierunek błędu jest bezpieczny —
-  obiecuje mniej, niż panel da — ale do rozmowy z klientem trzeba je podmienić na
-  tabelę α_p 250–4000 Hz od producenta. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.5. */
 const PASMA=[125,250,500,1000,2000,4000];
 
 /*═══════════════ WYKOŃCZENIA ═══════════════
@@ -179,15 +171,33 @@ const PASMA=[125,250,500,1000,2000,4000];
   Sprawdzenie równowagi tonalnej (3.3) wyłapuje jedno i drugie samo.
 
   ŹRÓDŁO LICZB — WARTOŚCI TYMCZASOWE:
-  · tekstylne — model Mikiego, σ = 28 000 Pa·s/m² (wełna ok. 45 kg/m³),
-    padanie rozproszone, tył sztywny. Implementacja: docs/welna.py.
-    Model jest systematycznie zaniżony o 0,10–0,15 w skali AW wobec badań
-    komorowych, bo nie liczy krawędzi próbki. Kierunek błędu jest bezpieczny.
-  · drewniane — odczytane z wykresu α_p w ulotce NUO_WALL (muto', 10.2021),
-    z dokładnością do kroku 0,05 wymaganego przez ISO 11654. To odczyt
-    z obrazka, nie tabela producenta.
-  Obie tabele do podmiany na α_p od producentów przed rozmową z klientem.
-  Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.4 i 3.5. */
+
+  · tekstylne — model Mikiego, padanie rozproszone, tył sztywny; implementacja
+    docs/welna.py. Wełnę zamawiamy NA SPEC, przedziałem 40–60 kg/m³, tak jak
+    opisują ją operaty akustyczne. Do rachunku idzie więc α NAJMNIEJSZA
+    z tego przedziału, pasmo po paśmie — inaczej obietnica trzymałaby się
+    tylko przy szczęśliwej dostawie. Model jest w dodatku systematycznie
+    zaniżony o 0,10–0,15 w skali AW wobec badań komorowych, bo nie liczy
+    krawędzi próbki; oba marginesy działają w tę samą, bezpieczną stronę.
+
+  · drewniane 50 mm — odczytane z wykresu α_p w ulotce NUO_WALL (muto',
+    10.2021), z krokiem 0,05 wymaganym przez ISO 11654. Odczyt z obrazka,
+    nie tabela producenta.
+
+  · drewniane 100 mm — SZACUNEK. Ulotka podaje jedną krzywą, przypisaliśmy ją
+    wariantowi cieńszemu (α 0,10 przy 125 Hz i szczyt 500–1000 Hz to sygnatura
+    układu płytkiego). Głębszy wariant policzony metodą, którą dokument
+    przewiduje dla przypadków niezbadanych: krotnością z modelu, zakotwiczoną
+    na krzywej producenta, z krotnością wziętą najmniejszą z zakresu możliwych
+    oporności absorbera, i dodatkowo ściętą o jeden krok ISO.
+    Uwaga praktyczna: grubość NUO NIE ZMIENIA liczby paneli — oba warianty
+    nasycają się na α 1,00 w pasmach mowy, z których liczy się Tmid. Różnią
+    się dołem pasma, czyli wyłącznie werdyktem o równowadze tonalnej. Dlatego
+    szacunek jest tu celowo ostrożny: zaniżone α przy 250 Hz każe ostrzegać
+    częściej, a to jest bezpieczny kierunek pomyłki.
+
+  Wszystkie trzy tabele do podmiany na α_p od producentów przed rozmową
+  z klientem. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.4, 3.5 i 3.9. */
 const WYK={
   tex:{
     nazwa:'Panele tekstylne',
@@ -197,11 +207,11 @@ const WYK={
              {id:'t2', n:'500 × 610 mm',  dl:0.500, sz:0.610}],
     montaze:[
       {id:'w100', n:'Wełna 100 mm · zalecane',
-       o:'Pracuje w całym paśmie mowy i sięga niżej: przy 250 Hz pochłania 0,72 wobec 0,39 przy wełnie 50 mm. To ta grubość chroni przed wytłumieniem samej góry pasma.',
-       alfa:{125:0.48, 250:0.72, 500:0.84, 1000:0.88, 2000:0.91, 4000:0.92}},
+       o:'Pracuje w całym paśmie mowy i sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36 przy wełnie 50 mm. To ta grubość chroni przed wytłumieniem samej góry pasma.',
+       alfa:{125:0.47, 250:0.67, 500:0.77, 1000:0.85, 2000:0.90, 4000:0.92}},
       {id:'w50', n:'Wełna 50 mm',
        o:'Panel płytszy i tańszy, skuteczny od około 800 Hz w górę. Poniżej 500 Hz wypada wyraźnie słabiej — przy dudniącym dole nie wystarczy.',
-       alfa:{125:0.16, 250:0.39, 500:0.70, 1000:0.90, 2000:0.92, 4000:0.92}}]
+       alfa:{125:0.14, 250:0.36, 500:0.67, 1000:0.88, 2000:0.89, 4000:0.92}}]
   },
   nuo:{
     nazwa:'Panele drewniane NUO_WALL',
@@ -211,8 +221,11 @@ const WYK={
              {id:'n2', n:'2480 × 950 mm',  dl:2.480, sz:0.950},
              {id:'n3', n:'2440 × 1220 mm', dl:2.440, sz:1.220}],
     montaze:[
-      {id:'rama', n:'Rama aluminiowa 40 lub 80 mm',
-       o:'Absorber za fornirem, w ramie. Głębokość profilu nie wchodzi do rachunku: producent podaje jedną krzywą pochłaniania, bez rozbicia na głębokości i rodzaj wypełnienia (pianka melaminowa albo filc akustyczny).',
+      {id:'n100', n:'Absorber 100 mm · zalecane',
+       o:'Sięga niżej — przy 250 Hz około 0,85 wobec 0,60 przy 50 mm. Liczby paneli to nie zmienia (w pasmach mowy oba warianty pochłaniają niemal wszystko), zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
+       alfa:{125:0.20, 250:0.85, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}},
+      {id:'n50', n:'Absorber 50 mm',
+       o:'Wariant płytszy, z krzywą pochłaniania wprost z ulotki producenta. Szczyt 500–1000 Hz, w dole pasma wyraźnie słabszy — przy 125 Hz pochłania 0,10.',
        alfa:{125:0.10, 250:0.60, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}}]
   }
 };
@@ -273,8 +286,10 @@ $('ver').textContent=WERSJA;
 /* Podstawa rachunku zależy od wykończenia, więc opis powstaje razem z wynikiem. */
 function opisPodstawy(){
   return (ST.wyk==='nuo'
-    ? 'α odczytane z wykresu α_p w ulotce NUO_WALL (muto\', 10.2021) — odczyt z obrazka, nie tabela producenta.'
-    : 'α z modelu Mikiego (σ = 28 000 Pa·s/m², wełna ok. 45 kg/m³) — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.')+
+    ? (ST.mont==='n100'
+        ? 'α dla absorbera 100 mm — szacunek z krzywej producenta przeliczonej na głębszy wariant; wartość tymczasowa do czasu otrzymania tabeli α_p.'
+        : 'α odczytane z wykresu α_p w ulotce producenta (10.2021) — odczyt z obrazka, nie tabela.')
+    : 'α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.')+
     ' Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają.';
 }
 
@@ -665,8 +680,8 @@ function pokazWynik(dolny,gorny,bazowy){
         pl(rPrzed)+' na '+pl(rPo)+' — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego.'+
         (ST.wyk==='tex'&&ST.mont==='w50'
           ? ' <b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej.'
-          : ST.wyk==='nuo'
-            ? ' NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>W dole pasma zastąpią je tylko panele tekstylne z wełną 100 mm.</b>'
+          : ST.wyk==='nuo'&&ST.mont==='n50'
+            ? ' NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>Absorber 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm.'
             : '')+'</div>';
 
   /* mieszczenie się */
@@ -760,10 +775,12 @@ $('bJson').onclick=()=>{
     model:w.bazowy.eyring?'Eyring':'Sabine',
     alfa_panelu:montaz().alfa,
     alfa_zrodlo:ST.wyk==='nuo'
-      ? 'odczyt z wykresu alfa_p w ulotce NUO_WALL (muto, 10.2021) — WARTOSCI TYMCZASOWE, '+
-        'do podmiany na tabele alfa_p od producenta'
-      : 'model Mikiego, sigma 28000 Pa*s/m2 (welna ok. 45 kg/m3) — WARTOSCI TYMCZASOWE, '+
-        'do podmiany na tabele alfa_p od producenta welny'
+      ? (ST.mont==='n100'
+          ? 'SZACUNEK: krzywa producenta dla wariantu 50 mm przeliczona na 100 mm — WARTOSCI TYMCZASOWE'
+          : 'odczyt z wykresu alfa_p w ulotce NUO_WALL (muto, 10.2021) — WARTOSCI TYMCZASOWE, '+
+            'do podmiany na tabele alfa_p od producenta')
+      : 'model Mikiego, welna deklarowana 40-60 kg/m3, alfa najmniejsza z przedzialu '+
+        'w kazdym pasmie — WARTOSCI TYMCZASOWE, do podmiany na tabele alfa_p od producenta welny'
   };
   const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);

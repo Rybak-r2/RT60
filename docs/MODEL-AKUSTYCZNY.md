@@ -215,55 +215,54 @@ Miara: `T(250 Hz) / T(1 kHz)`. Wzrost oznacza wnętrze głuche w górze i dudni�
 w dole — klasyczna porażka cienkich absorberów. Klient dostaje pomieszczenie
 wytłumione zgodnie z obietnicą i mimo to ma poczucie, że coś jest nie tak.
 
-### 3.4 Materiał — gęstość wymaga ponownego rozstrzygnięcia
+### 3.4 Materiał — wełna kupowana na przedział, nie na liczbę
 
-Dotychczasowe zalecenie brzmiało **60 kg/m³** i było wynikiem minimaksowym:
-panel cienki na ścianie chce wełny gęstszej, panel z pustką — rzadszej, a 60 to
-punkt, w którym najgorszy przypadek jest najmniejszy. Do tego dochodził argument
-sztywności: poniżej ~50 kg/m³ płyta ugina się trzymana za krawędź.
+Wcześniejsze zalecenie brzmiało **60 kg/m³** i było wynikiem minimaksowym:
+panel cienki na ścianie chce wełny gęstszej, panel z pustką — rzadszej.
+Do tego dochodził argument sztywności: poniżej ~50 kg/m³ płyta ugina się
+trzymana za krawędź.
 
-**Przejście na panel ramowy unieważnia obie przesłanki.** Wariantu z pustką nie
-ma — wszystko idzie bezpośrednio na ścianę. Wełna nie jest już niczym trzymana:
+**Przejście na panel ramowy unieważniło obie przesłanki.** Wariantu z pustką
+nie ma — wszystko idzie bezpośrednio na ścianę. Wełna nie jest niczym trzymana:
 leży w ramie z płyty drewnopochodnej, z litym tyłem, i nie musi nieść sama
 siebie.
 
-Zostaje więc czysta akustyka. Model Mikiego dla **100 mm bezpośrednio na
-ścianie**, padanie rozproszone, tył sztywny (σ wg Biesa i Hansena):
+**Decyzja obowiązująca: wełna deklarowana przedziałem 40–60 kg/m³** — tak samo,
+jak opisują ją operaty akustyczne, i tak samo jest zamawiana.
 
-| ρ [kg/m³] | 125 | 250 | 500 | 1 k | 2 k | 4 k | α(250)/α(1 k) |
+Konsekwencja rachunkowa jest ważniejsza, niż wygląda. Skoro materiał jest
+kupowany na przedział, to **do rachunku wchodzi α najmniejsza z tego przedziału,
+pasmo po paśmie** — nie środek i nie wartość nominalna. Inaczej obietnica
+trzymałaby się tylko przy szczęśliwej dostawie.
+
+Model Mikiego dla montażu przylegającego, tył sztywny, padanie rozproszone
+(`docs/welna.py`, funkcja `krzywa_zakresu`):
+
+| wariant | 125 | 250 | 500 | 1 k | 2 k | 4 k | AW |
 |---|---|---|---|---|---|---|---|
-| 20 | 0,32 | 0,62 | 0,87 | 0,95 | 0,91 | 0,93 | 0,66 |
-| 30 | 0,40 | 0,71 | 0,90 | 0,92 | 0,92 | 0,93 | 0,77 |
-| **40** | 0,47 | **0,73** | 0,87 | 0,89 | 0,92 | 0,92 | **0,83** |
-| **45** | 0,48 | 0,72 | 0,84 | 0,88 | 0,91 | 0,92 | **0,83** |
-| 50 | 0,49 | 0,70 | 0,81 | 0,86 | 0,91 | 0,92 | 0,81 |
-| 60 | 0,49 | 0,67 | 0,77 | 0,85 | 0,90 | 0,92 | 0,79 |
-| 80 | 0,44 | 0,58 | 0,70 | 0,80 | 0,87 | 0,91 | 0,72 |
+| wełna 100 mm | 0,47 | 0,67 | 0,77 | 0,85 | 0,90 | 0,92 | 0,85 |
+| wełna 50 mm | 0,14 | 0,36 | 0,67 | 0,88 | 0,89 | 0,92 | 0,65 |
 
-Optimum przesuwa się do **40–45 kg/m³**: najwyższe pochłanianie przy 250 Hz
-i najlepsza równowaga tonalna. 60 kg/m³ traci przy 250 Hz około 7 % i jest
-gorsze w bilansie góra–dół. Kierunek jest jednoznaczny, ale **decyzja
-zakupowa należy do ALACER-a** — dopóki nie zapadnie, kalkulator liczy z 45 kg/m³
-(σ = 28 000 Pa·s/m²), bo na tej wartości stały dotychczasowe liczby.
+Najgorszy przypadek nie leży przy jednej gęstości: dla 100 mm w paśmie mowy
+wypada przy 60 kg/m³, a przy 125 Hz przy 40 kg/m³. Dlatego minimum liczy się
+**osobno w każdym paśmie**, a nie przez wybór jednej „najgorszej" gęstości.
 
-**Warto odnotować:** 100 mm przylegające do ściany daje przy 250 Hz α 0,72,
-czyli tyle samo co dawne 50 mm odsunięte o 50 mm pustki (0,70), a przy 125 Hz
-nawet więcej (0,48 wobec 0,40). **Rezygnacja z dystansów nie kosztowała nic
-akustycznie** — grubość załatwia to, co wcześniej załatwiała pustka, i bez
-listew.
+**Warto odnotować:** 100 mm przylegające do ściany daje przy 250 Hz α 0,67,
+czyli praktycznie tyle samo co dawne 50 mm odsunięte o 50 mm pustki (0,70),
+a przy 125 Hz wyraźnie więcej (0,47 wobec 0,40). **Rezygnacja z dystansów nie
+kosztowała nic akustycznie** — grubość załatwia to, co załatwiała pustka,
+i bez listew.
 
-**Kandydat: ROCKWOOL ROCKTON PREMIUM.** Płyta 1000 × 610 mm, grubości 50/100/
-150/200 mm, `AW 0,90` (50–99 mm) i `AW 1,00` (100–200 mm), `CS(10)0,5`,
-λD = 0,033 W/mK, klasa A1.
+**Materiał:** wełna mineralna, płyta 1000 × 610 mm, grubości 50 i 100 mm,
+klasa reakcji na ogień **A1**, λD = 0,033 W/mK, `CS(10)0,5`. Deklaracja
+właściwości użytkowych wybranego wyrobu potwierdza `AW 0,90` dla 50–80 mm
+i **`AW 1,00` dla 100–200 mm**, więc wariant domyślny jest grubością
+katalogową i da się go kupić wprost z oferty.
 
-Deklaracja `RW-CEE-DoP-0205/M/20/w1` potwierdza: **100 mm jest grubością
-katalogową** (R_D 3,00 m²K/W, AW 1,00), więc wariant domyślny da się kupić
-wprost z oferty.
-
-> **Brak w karcie:** `AFr` (oporność przepływu) zadeklarowana jako **NPD**, oraz
-> gęstość (EN 13162 jej nie wymaga). To są dwie liczby do zdobycia — i dopiero
-> one pozwolą sprawdzić, czy ROCKTON w ogóle trafia w 40–45 kg/m³.
-
+> **Czego deklaracja nie podaje:** `AFr` (oporność przepływu) jest `NPD`,
+> a gęstości EN 13162 nie wymaga. Przedział 40–60 kg/m³ jest więc założeniem
+> zakupowym, nie wartością odczytaną z karty — i tak jest traktowany
+> w rachunku.
 
 ### 3.5 Model α(f) i jego granica
 
@@ -276,11 +275,11 @@ Implementacja: `docs/welna.py`.
 250 Hz. Przyczyna: komora pogłosowa mierzy próbkę 10–12 m², której krawędzie
 podnoszą wynik (dlatego α_s bywa > 1), a model liczy powierzchnię nieskończoną.
 
-#### Sprawdzenie wobec deklaracji ROCKTON PREMIUM
+#### Sprawdzenie wobec deklaracji producenta wełny
 
-Deklaracja właściwości użytkowych `RW-CEE-DoP-0205/M/20/w1` (10.02.2021) podaje
-**wyłącznie AW** — 0,90 dla grubości 50–80 mm i **1,00 dla 100–200 mm** — i ani
-jednej wartości pasmowej. To jedyny punkt styku między modelem a deklaracją,
+Deklaracja właściwości użytkowych wybranej wełny podaje **wyłącznie AW** —
+0,90 dla grubości 50–80 mm i **1,00 dla 100–200 mm** — i ani jednej wartości
+pasmowej. To jedyny punkt styku między modelem a deklaracją,
 więc `docs/welna.py` liczy AW wg ISO 11654 (przesuwana krzywa odniesienia),
 żeby porównanie było wprost, a nie „na oko":
 
@@ -307,14 +306,14 @@ domyślnym** — i jedyny wariant, w którym deklaracja producenta wspiera nasze
 liczby zamiast im przeczyć.
 
 **Wniosek niezmieniony: kalkulatora nie wolno budować na modelu.** Potrzebna
-jest **tabela α_p w pasmach oktawowych 250–4000 Hz** od Rockwoola wraz
-z podaniem montażu. Rockwool ją ma — `AW` jest z niej wyliczone wg ISO 11654.
+jest **tabela α_p w pasmach oktawowych 250–4000 Hz** od producenta wełny wraz
+z podaniem montażu. Producent ją ma — `AW` jest z niej wyliczone wg ISO 11654.
 Wtedy α dla montaży zbadanych bierzemy wprost, a model służy tylko do reszty,
 **skalibrowany na punktach zbadanych**.
 
 > Czego deklaracja **nie** rozstrzyga: `AFr` (oporność przepływu) to `NPD`,
-> gęstości EN 13162 nie wymaga i jej nie ma. Oba pytania z Części 4 zostają
-> otwarte, a wybór gęstości z 3.4 nie ma się o co oprzeć poza modelem.
+> gęstości EN 13162 nie wymaga i jej nie ma. Dlatego 3.4 przyjmuje przedział
+> 40–60 kg/m³ jako założenie zakupowe i liczy najgorszym przypadkiem z niego.
 
 ### 3.6 Panel — konstrukcja ramowa, pochłania samo lico
 
@@ -383,26 +382,44 @@ Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na
 odwrocie. System firmy **muto' GmbH** (Karlsruhe); ALACER jest tu odsprzedawcą,
 nie wytwórcą — inaczej niż przy panelach tekstylnych.
 
-**Formaty ram:** 950 × 950, 2480 × 950 i 2440 × 1220 mm. Profile 40 lub 80 mm.
-Moduły są duże, więc liczba sztuk skacze skokowo — przy małym pomieszczeniu
-sensowny jest właściwie tylko format 950 × 950.
+**Formaty ram:** 950 × 950, 2480 × 950 i 2440 × 1220 mm. Moduły są duże, więc
+liczba sztuk skacze skokowo — przy małym pomieszczeniu sensowny jest właściwie
+tylko format 950 × 950.
 
-**α — odczytane z wykresu w ulotce** (muto', NUO_WALL, 10.2021), z dokładnością
-do kroku 0,05 wymaganego przez ISO 11654:
+**Dwie grubości absorbera: 50 i 100 mm.** Ulotka podaje **jedną** krzywą
+pochłaniania, bez wskazania wariantu.
 
-| | 125 | 250 | 500 | 1 k | 2 k | 4 k |
-|---|---|---|---|---|---|---|
-| α_p NUO_WALL | 0,10 | 0,60 | 1,00 | 1,00 | 0,75 | 0,45 |
+| α_p | 125 | 250 | 500 | 1 k | 2 k | 4 k | źródło |
+|---|---|---|---|---|---|---|---|
+| **50 mm** | 0,10 | 0,60 | 1,00 | 1,00 | 0,75 | 0,45 | odczyt wykresu z ulotki |
+| **100 mm** | 0,20 | 0,85 | 1,00 | 1,00 | 0,75 | 0,45 | **szacunek** |
 
-To **odczyt z obrazka, nie tabela producenta** — dokładnie ta sama rezerwa co
-przy modelu Mikiego, i tak samo do zastąpienia przed rozmową z klientem.
+Krzywą z ulotki przypisaliśmy wariantowi **cieńszemu**: α 0,10 przy 125 Hz
+i szczyt 500–1000 Hz to sygnatura układu płytkiego — warstwa 100 mm dałaby przy
+125 Hz raczej 0,3–0,4. Założenie jest zarazem ostrożne: przypisanie krzywej
+wariantowi grubszemu zmuszałoby do zgadywania **w dół** dla cieńszego, czyli do
+obiecywania więcej, niż wiemy.
+
+Wariant 100 mm policzony metodą, którą 3.5 przewiduje dla konfiguracji
+niezbadanych — **modelem użytym wyłącznie do różnicy, zakotwiczonym na krzywej
+producenta**: krotność α(100 mm)/α(50 mm) z modelu Mikiego, wzięta najmniejsza
+z zakresu opornści możliwych dla wypełnienia (pianka melaminowa albo lekki filc,
+σ ≈ 8–20 000 Pa·s/m²), a wynik dodatkowo ścięty o jeden krok ISO.
+
+**Dlaczego można sobie pozwolić na szacunek akurat tutaj:** grubość absorbera
+**nie zmienia liczby paneli**. Oba warianty mają α 1,00 przy 500 i 1000 Hz,
+czyli w pasmach, z których liczy się Tmid i powierzchnia. Różnica siedzi
+wyłącznie w dole pasma, więc wpływa jedynie na **werdykt o równowadze
+tonalnej**. Dlatego szacunek jest celowo zaniżony: niższe α przy 250 Hz każe
+ostrzegać częściej, a to jest bezpieczny kierunek pomyłki.
 
 **Charakter: absorber wąskopasmowy.** Ulotka mówi wprost „particularly in
 frequencies between 400 Hz and 1250 Hz" i wykres to potwierdza. Konsekwencje
 handlowe, które trzeba umieć powiedzieć klientowi:
 
-1. **Przy dudniącym dole NUO nie zastąpi wełny.** Przy 250 Hz daje 0,60 wobec
-   0,72 wełny 100 mm, a przy 125 Hz 0,10 wobec 0,48 — pięciokrotnie mniej.
+1. **Przy dudniącym dole NUO ustępuje wełnie.** Wariant 50 mm daje przy 125 Hz
+   0,10 wobec 0,47 wełny 100 mm — prawie pięciokrotnie mniej. Wariant 100 mm
+   nadrabia przy 250 Hz (0,85 wobec 0,67), ale przy 125 Hz nadal zostaje w tyle.
 2. **Przy 4 kHz zostawia górę żywą** (0,45 wobec 0,92). To bywa **zaletą**:
    wełna potrafi wygłuszyć wnętrze na głucho, NUO nie.
 3. Sprawdzenie równowagi tonalnej (3.3) wyłapuje jedno i drugie samo, bez
@@ -412,26 +429,26 @@ handlowe, które trzeba umieć powiedzieć klientowi:
 
 | | dlaczego to blokuje |
 |---|---|
-| tabela α_p w pasmach oktawowych | jak wyżej: dziś mamy odczyt z wykresu |
+| tabela α_p **osobno dla 50 i 100 mm** | dziś mamy jedną krzywą z wykresu i szacunek dla drugiego wariantu |
+| **do którego wariantu odnosi się krzywa z ulotki** | całe przypisanie 50/100 mm stoi na przesłance z kształtu krzywej |
 | **który absorber** — pianka melaminowa czy filc akustyczny | ulotka podaje jedną krzywą dla obu, a to dwa różne materiały |
-| **która głębokość profilu** — 40 czy 80 mm | głębokość zmienia α układu rezonansowego, a krzywa jest jedna |
 | ceny i terminy dostaw | bez nich nie ma zamówienia |
 | klasa ogniowa | NUO to **B1 wg DIN 4102, i to z badania orientacyjnego**; wełna jest A1. W obiektach użyteczności publicznej potrafi to rozstrzygnąć wybór za klienta |
 
 
 ## Część 4. Otwarte
 
-1. **Tabela α_p od Rockwoola** — blokuje wiarygodność kalkulatora. Bez niej
-   liczby są ostrożnym oszacowaniem, nie deklaracją. Deklaracja właściwości
-   użytkowych tego nie zastępuje: podaje samo AW, bez pasm i bez montażu
-   (3.5). **Prosić trzeba o raport z badania ISO 354 wraz z opisem montażu.**
+1. **Tabela α_p od producenta wełny** — blokuje wiarygodność kalkulatora. Bez
+   niej liczby są ostrożnym oszacowaniem, nie deklaracją. Deklaracja
+   właściwości użytkowych tego nie zastępuje: podaje samo AW, bez pasm i bez
+   montażu (3.5). **Prosić trzeba o raport z badania ISO 354 wraz z opisem
+   montażu.**
 2. **Tabela α_p i dane techniczne NUO_WALL od muto'** — 3.9. Dziś α tego
    wykończenia pochodzi z odczytu wykresu w ulotce.
-3. **Gęstość wełny do rozstrzygnięcia na nowo** — 3.4. Konstrukcja ramowa
-   unieważniła argumenty za 60 kg/m³; model wskazuje 40–45.
-4. **Gęstość i AFr wybranej wełny** — do zamknięcia modelu i do sprawdzenia,
-   czy ROCKTON trafia w ten przedział.
-5. **Ceny i terminy** obu wykończeń — bez nich nie ma zamówienia (6.3).
+3. **Potwierdzenie gęstości dostarczanej wełny** — przedział 40–60 kg/m³ jest
+   założeniem zakupowym (3.4), nie wartością z karty; `AFr` producent podaje
+   jako `NPD`.
+4. **Terminy dostaw** obu wykończeń — do odpowiedzi na zapytanie (6.3).
 4. **Weryfikacja przyrządem odniesienia** — jeden pomiar równolegle z REW i
    UMIK-1. Wiemy, że 0,376 s jest lepiej ugruntowane niż 0,288, ale nie mamy
    dowodu, że jest prawdziwe.
@@ -526,9 +543,8 @@ blokują, `silnik-v4` nie; realny plik z v2 zostaje odrzucony z krotnością
 
 ### 5.4 Kolejność dalszych prac
 
-1. **Tabele α_p — od Rockwoola i od muto'** — bez nich obie kolumny liczb są
-   oszacowaniem z modelu i z odczytu wykresu.
-2. **Rozstrzygnięcie gęstości wełny** — 3.4, decyzja zakupowa.
+1. **Tabele α_p — od producenta wełny i od muto'** — bez nich obie kolumny
+   liczb są oszacowaniem z modelu i z odczytu wykresu.
 3. **Karta pomieszczenia** jako format narastający — 6.2, zanim dojdzie pomiar
    kontrolny, bo później kosztuje przerobienie danych.
 4. **Pomiar kontrolny „przed / po"** — domknięcie pętli z 6.2.
@@ -595,6 +611,12 @@ przeglądarkę. Dwie rzeczy wynikają z tego wprost:
    (RODO). To nie jest opcjonalne i trzeba to przygotować **zanim** formularz
    ruszy.
 
-Do rozstrzygnięcia: czy „zamówienie" znaczy **zapytanie ofertowe** (bez cen,
-odpowiedź handlowca), czy **sprzedaż z ceną i płatnością**. Różnica przechodzi
-przez cały moduł: bez cennika obu wykończeń drugi wariant nie jest możliwy.
+**Rozstrzygnięte: „zamówienie" znaczy zapytanie ofertowe.** Bez cen, bez
+płatności — klient wysyła propozycję wraz z danymi pomieszczenia, odpowiada
+handlowiec. To upraszcza moduł: cennik obu wykończeń nie jest potrzebny do
+uruchomienia, a funkcja serwerowa sprowadza się do przyjęcia formularza
+i przesłania go dalej.
+
+Do zapytania powinna iść **cała podstawa rachunku**, nie sama liczba sztuk:
+pomiar, cel, wykończenie, wariant i format. Handlowiec dostaje wtedy komplet
+i nie musi niczego odtwarzać z klientem przez telefon.
