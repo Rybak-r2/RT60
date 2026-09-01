@@ -112,7 +112,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <div id="wyk"></div>
   <h2 id="hMont">Sposób mocowania</h2>
   <div id="mont"></div>
-  <h2>Format</h2>
+  <h2 id="hFormat">Format</h2>
   <div id="format"></div>
   <h2>Gdzie</h2>
   <div id="gdzie"></div>
@@ -203,8 +203,19 @@ const WYK={
     nazwa:'Panele tekstylne',
     opis:'Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny.',
     etykieta:'Grubość wełny',
-    formaty:[{id:'t1', n:'1000 × 610 mm', dl:1.000, sz:0.610},
-             {id:'t2', n:'500 × 610 mm',  dl:0.500, sz:0.610}],
+    /* Jednostką sprzedaży jest KARTON, nie panel. Oba kartony mieszczą jedną
+       płytę wełny 1000 × 610 pociętą bez odpadu, więc akustycznie są niemal
+       równoważne — wybór między nimi jest decyzją o wyglądzie ściany, nie
+       o pochłanianiu. Ramka MDF 15 mm nie pochłania, więc pole czynne liczy
+       się z wełny, a pole zewnętrzne — z panelu, bo tyle miejsca zajmuje. */
+    formaty:[
+      {id:'t1', n:'Panel 1030 × 640 mm',
+       o:'Jeden panel w kartonie. Wełna czynna 1000 × 610 mm.',
+       panele:[{n:'1030 × 640', dl:1.030, sz:0.640, wdl:1.000, wsz:0.610}]},
+      {id:'t2', n:'Zestaw 640 × 640 i 640 × 410 mm',
+       o:'Dwa panele w jednym kartonie, z tej samej płyty wełny przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie.',
+       panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
+               {n:'640 × 410', dl:0.640, sz:0.410, wdl:0.610, wsz:0.380}]}],
     montaze:[
       {id:'w100', n:'Wełna 100 mm · zalecane',
        o:'Pracuje w całym paśmie mowy i sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36 przy wełnie 50 mm. To ta grubość chroni przed wytłumieniem samej góry pasma.',
@@ -217,9 +228,15 @@ const WYK={
     nazwa:'Panele drewniane NUO_WALL',
     opis:'Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na odwrocie. System muto\' GmbH — wybór gatunku drewna i grawerunku.',
     etykieta:'Konstrukcja',
-    formaty:[{id:'n1', n:'950 × 950 mm',   dl:0.950, sz:0.950},
-             {id:'n2', n:'2480 × 950 mm',  dl:2.480, sz:0.950},
-             {id:'n3', n:'2440 × 1220 mm', dl:2.440, sz:1.220}],
+    /* Tu pole czynne równa się zewnętrznemu — i to nie jest niekonsekwencja
+       wobec paneli tekstylnych. α tekstylnych pochodzi z modelu SAMEJ WEŁNY,
+       więc stosuje się do powierzchni wełny. α NUO pochodzi z badania
+       komorowego GOTOWEGO PANELU w ramie, więc odnosi się do całej jego
+       powierzchni, z ramą włącznie. */
+    formaty:[
+      {id:'n1', n:'950 × 950 mm',   panele:[{n:'950 × 950',   dl:0.950, sz:0.950, wdl:0.950, wsz:0.950}]},
+      {id:'n2', n:'2480 × 950 mm',  panele:[{n:'2480 × 950',  dl:2.480, sz:0.950, wdl:2.480, wsz:0.950}]},
+      {id:'n3', n:'2440 × 1220 mm', panele:[{n:'2440 × 1220', dl:2.440, sz:1.220, wdl:2.440, wsz:1.220}]}],
     montaze:[
       {id:'n100', n:'Absorber 100 mm · zalecane',
        o:'Sięga niżej — przy 250 Hz około 0,85 wobec 0,60 przy 50 mm. Liczby paneli to nie zmienia (w pasmach mowy oba warianty pochłaniają niemal wszystko), zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
@@ -235,11 +252,19 @@ const WYK={
 const wyk=()=>WYK[ST.wyk]||WYK.tex;
 const montaz=()=>wyk().montaze.find(m=>m.id===ST.mont)||wyk().montaze[0];
 const format=()=>wyk().formaty.find(f=>f.id===ST.format)||wyk().formaty[0];
-/* Pochłania wyłącznie lico. Oba wykończenia mają boki i tył lite — tekstylne
-   z płyty drewnopochodnej, drewniane w profilu aluminiowym — więc nie ma
-   powierzchni bocznych do doliczenia. Wcześniejszy zapas z obszycia krawędzi
-   tkaniną (+26 %) odpadł razem ze zmianą konstrukcji na ramową. */
-const lico=()=>{const f=format();return f.dl*f.sz;};
+/* Dwa różne pola, i mylenie ich było błędem do tej wersji.
+
+   POLE CZYNNE — powierzchnia, do której stosuje się α. U paneli tekstylnych to
+   sama wełna wewnątrz ramki MDF; ramka nie pochłania. Boki i tył są lite, więc
+   nic poza licem nie wchodzi.
+
+   POLE ZEWNĘTRZNE — tyle miejsca panel faktycznie zajmuje na ścianie. Sprawdzenie
+   „czy się zmieści" musi iść z niego, nie z pola czynnego: panel 1030 × 640
+   zajmuje o 8 % więcej niż jego wełna, a 640 × 410 aż o 13 %. Liczenie miejsca
+   polem czynnym zaniżało zapotrzebowanie na powierzchnię. */
+const poleCzynne=()=>format().panele.reduce((a,p)=>a+p.wdl*p.wsz,0);
+const poleZewn =()=>format().panele.reduce((a,p)=>a+p.dl*p.sz,0);
+const paneleWKartonie=()=>format().panele.length;
 
 /* Pomiar telefonem zawyża chłonność. Sześć pomiarów terenowych tego samego pokoju
    dało stosunek 1,31 (A_telefon / A_głośnik). To jedno pomieszczenie, więc zamiast
@@ -530,12 +555,14 @@ function domyslneWykonczenia(){
   ST.format=wyk().formaty[0].id;
 }
 function opisFormatu(f){
-  const pole=f.dl*f.sz;
-  return pl(pole)+' m² powierzchni czynnej na sztukę';
+  const czynne=f.panele.reduce((a,p)=>a+p.wdl*p.wsz,0);
+  const zewn=f.panele.reduce((a,p)=>a+p.dl*p.sz,0);
+  return (f.o?f.o+' ':'')+'Pochłania '+pl(czynne)+' m², zajmuje '+pl(zewn)+' m² ściany.';
 }
 function rysujWariantIFormat(){
   $('hMont').textContent=wyk().etykieta;
   wybor('mont', wyk().montaze, ST.mont, id=>{ST.mont=id;});
+  $('hFormat').textContent=ST.wyk==='tex'?'Karton':'Format ramy';
   wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format, id=>{ST.format=id;});
 }
 function rysujPanele(){
@@ -554,6 +581,18 @@ function rysujGdzie(){
   ST.gdzie='oba';
   wybor('gdzie', opcje, ST.gdzie, id=>{ST.gdzie=id;});
 }
+/* Kartony czy sztuki: panele tekstylne sprzedajemy w kartonach, a karton
+   mozaikowy zawiera dwa panele. Klient musi widzieć, ile paneli faktycznie
+   dostanie, bo od tego zależy, co da się ułożyć na ścianie. */
+const jednostka=()=>ST.wyk==='tex'?'kartonów':'paneli';
+function skladKartonow(n){
+  const p=format().panele;
+  if(p.length===1) return n+' × panel '+p[0].n+' mm';
+  return p.map(x=>n+' × '+x.n).join(' + ')+' mm, razem '+(n*p.length)+' paneli';
+}
+
+/* Ile ściany zajmie propozycja — polem zewnętrznym paneli razy liczba kartonów. */
+function zajmie(w){ return w.szt*poleZewn(); }
 function dostepne(){
   if(ST.gdzie==='sciany')return ST.Sscian*0.6;
   if(ST.gdzie==='sufit') return ST.Ssufit*0.8;
@@ -593,7 +632,7 @@ function policzDla(korekta){
     if(trzeba===eyring) break;
     eyring=trzeba;
   }
-  return {pow:pow, szt:Math.ceil(pow/lico()), T_po:T_po, A0:A0, eyring:eyring, kor:korekta};
+  return {pow:pow, szt:Math.ceil(pow/poleCzynne()), T_po:T_po, A0:A0, eyring:eyring, kor:korekta};
 }
 
 /* Widełki mają sens tylko wtedy, gdy nie są absurdalnie szerokie. Gdy cel wypada
@@ -615,8 +654,8 @@ $('b3').onclick=()=>{
   }
 
   const pods = ST.pogladowy ? gorny : dolny;   // tabela i sprawdzenie miejsca na wariancie pełnym
-  if(pods.pow>dostepne()){
-    S($('m3'),'warn','Potrzeba około '+pl(pods.pow,1)+' m² paneli, a na wybranych powierzchniach mieści się około '+
+  if(zajmie(pods)>dostepne()){
+    S($('m3'),'warn','Panele zajmą około '+pl(zajmie(pods),1)+' m² ściany, a na wybranych powierzchniach mieści się około '+
       pl(dostepne(),1)+' m². Wybierz ściany i sufit razem albo przyjmij mniej ambitny cel. Możesz też policzyć dalej — propozycja pokaże, ile brakuje.');
   } else S($('m3'),'');
   pokazWynik(dolny,gorny,pods);
@@ -629,7 +668,7 @@ function pokazWynik(dolny,gorny,bazowy){
   /* nagłówek: widełki albo liczba */
   if(ST.pogladowy){
     $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
-    $('wynCap').textContent=wyk().nazwa.toLowerCase()+' '+format().n;
+    $('wynCap').textContent=jednostka()+'  ·  '+format().n;
     $('wynTryb').innerHTML='<div class="msg warn"><b>Widełki, nie liczba — pomiar był poglądowy.</b><br>'+
       'Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. '+
       'Dokładną liczbę da pomiar z głośnikiem zewnętrznym.</div>';
@@ -638,8 +677,8 @@ function pokazWynik(dolny,gorny,bazowy){
       'panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, '+
       'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' sztuk.</div>';
   } else {
-    $('wynSzt').innerHTML=bazowy.szt+'<small> szt.</small>';
-    $('wynCap').textContent=wyk().nazwa.toLowerCase()+' '+format().n+'  ·  '+pl(bazowy.szt*lico(),1)+' m²';
+    $('wynSzt').innerHTML=bazowy.szt+'<small> '+(ST.wyk==='tex'?'kart.':'szt.')+'</small>';
+    $('wynCap').textContent=jednostka()+'  ·  '+format().n+'  ·  '+skladKartonow(bazowy.szt);
     $('wynTryb').innerHTML='';
     $('wynGl').innerHTML='<div class="msg good">Pomiar pełny, więc liczba jest konkretna. '+
       'Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.</div>';
@@ -685,10 +724,12 @@ function pokazWynik(dolny,gorny,bazowy){
             : '')+'</div>';
 
   /* mieszczenie się */
-  const potrz=(ST.pogladowy?gorny:bazowy).pow;
+  /* Miejsce liczy się polem ZEWNĘTRZNYM paneli, nie powierzchnią czynną —
+     ramka też wisi na ścianie. */
+  const potrz=zajmie(ST.pogladowy?gorny:bazowy);
   $('wynMies').innerHTML = potrz>dostepne()
-    ? '<div class="msg err"><b>Nie mieści się na wybranych powierzchniach.</b> Potrzeba '+pl(potrz,1)+
-      ' m², dostępne około '+pl(dostepne(),1)+' m². Rozłóż panele na ściany i sufit albo przyjmij łagodniejszy cel.</div>'
+    ? '<div class="msg err"><b>Nie mieści się na wybranych powierzchniach.</b> Panele zajmą '+pl(potrz,1)+
+      ' m², dostępne około '+pl(dostepne(),1)+' m². Rozłóż je na ściany i sufit albo przyjmij łagodniejszy cel.</div>'
     : '';
 
   const d=[
@@ -697,7 +738,9 @@ function pokazWynik(dolny,gorny,bazowy){
     ['cel Tmid', pl(ST.cel)+' s'],
     ['wykończenie', wyk().nazwa],
     ['wariant', montaz().n.replace(' · zalecane','')],
-    ['format', format().n+' ('+pl(lico())+' m²)'],
+    ['format', format().n],
+    ['pole czynne w kartonie', pl(poleCzynne())+' m²'],
+    ['pole zajmowane na ścianie', pl(poleZewn())+' m² na karton'],
     ['model', bazowy.eyring?'Eyring (α średnie > '+ALFA_EYRING+')':'Sabine'],
     ['powierzchnia lica', pl(bazowy.pow,1)+' m²'],
     ['dostępne miejsce', pl(dostepne(),1)+' m²'],
@@ -761,9 +804,14 @@ $('bJson').onclick=()=>{
     panel:{wykonczenie:ST.wyk, wykonczenie_nazwa:wyk().nazwa,
       wariant:montaz().id, wariant_nazwa:montaz().n.replace(' · zalecane',''),
       format:format().n,
-      dlugosc_mm:Math.round(format().dl*1000), szerokosc_mm:Math.round(format().sz*1000),
-      lico_m2:+lico().toFixed(3),
-      /* Boki i tyl lite — powierzchnia czynna to samo lico. */
+
+      panele_w_kartonie:format().panele.map(x=>({wymiar_mm:x.n,
+        pole_czynne_m2:+(x.wdl*x.wsz).toFixed(3),
+        pole_zewnetrzne_m2:+(x.dl*x.sz).toFixed(3)})),
+      pole_czynne_kartonu_m2:+poleCzynne().toFixed(3),
+      pole_zewnetrzne_kartonu_m2:+poleZewn().toFixed(3),
+      /* Boki i tyl lite; u tekstylnych ramka MDF 15 mm tez nie pochlania,
+         wiec pole czynne liczy sie z welny, a zewnetrzne z panelu. */
       montaz:'bezposrednio do sciany lub sufitu',
       rozmieszczenie:ST.gdzie},
     propozycja: ST.pogladowy

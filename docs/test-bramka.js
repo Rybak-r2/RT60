@@ -156,10 +156,12 @@ function policz(wyk,mont,format){
   E('b3').onclick(); E('bJson').onclick();
   const o=JSON.parse(pobrane);
   return {szt:o.propozycja.sztuk, pow:o.propozycja.powierzchnia_m2,
-          lico:o.panel.lico_m2, alfa:o.alfa_panelu, wykN:o.panel.wykonczenie,
+          czynne:o.panel.pole_czynne_kartonu_m2, zewn:o.panel.pole_zewnetrzne_kartonu_m2,
+          panele:o.panel.panele_w_kartonie, alfa:o.alfa_panelu,
           wariant:o.panel.wariant, zrodlo:o.alfa_zrodlo};
 }
 const w100=policz('tex','w100','t1');
+const mozaika=policz('tex','w100','t2');
 const w50 =policz('tex','w50','t1');
 const nuo =policz('nuo','n100','n1');
 const nuo50=policz('nuo','n50','n1');
@@ -170,7 +172,17 @@ console.log('        NUO_WALL  50 mm, 950×950   : '+nuo50.szt+' szt., '+nuo50.p
 
 function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
   else {zle++;console.log('  BŁĄD  '+opis);} }
-sprawdz(w100.lico===0.61&&nuo.lico===0.902,'pole modułu bierze się z wybranego formatu');
+sprawdz(w100.czynne===0.61&&nuo.czynne===0.902,'pole czynne bierze się z wybranego kartonu');
+/* Ramka MDF nie pochłania, ale zajmuje ścianę. Mylenie tych dwóch pól
+   zaniżało zapotrzebowanie na miejsce o 8–13 %. */
+sprawdz(w100.zewn===0.659&&w100.czynne===0.61,
+  'panel tekstylny zajmuje więcej ściany, niż pochłania');
+sprawdz(nuo.zewn===nuo.czynne,
+  'u NUO pole czynne równa się zewnętrznemu — α z badania gotowego panelu');
+/* Oba kartony to jedna płyta wełny pocięta bez odpadu, więc akustycznie
+   są niemal równoważne — wybór kartonu jest decyzją o wyglądzie. */
+sprawdz(mozaika.panele.length===2&&Math.abs(mozaika.czynne-w100.czynne)<0.01,
+  'karton mozaikowy pochłania tyle samo co karton z jednym panelem');
 sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
   'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
 /* Wełna kupowana na spec 40–60 kg/m³: α musi być najgorsza z przedziału,
@@ -189,7 +201,7 @@ sprawdz(nuo50.zrodlo.indexOf('NUO_WALL')>=0&&nuo.zrodlo.indexOf('SZACUNEK')>=0&&
 /* Format z poprzedniego wykończenia nie może wywrócić rachunku — wybór cofa
    się wtedy do pierwszego formatu wykończenia właśnie wybranego. */
 const mieszany=policz('nuo','n100','t1');
-sprawdz(mieszany.lico===0.902&&mieszany.szt>0,
+sprawdz(mieszany.czynne===0.902&&mieszany.szt>0,
   'format spoza wykończenia cofa się do formatu tego wykończenia');
 
 console.log(zle?'\n'+zle+' testów nie przeszło\n':'\nWszystkie testy przeszły\n');

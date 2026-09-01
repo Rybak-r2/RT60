@@ -315,31 +315,62 @@ Wtedy α dla montaży zbadanych bierzemy wprost, a model służy tylko do reszty
 > gęstości EN 13162 nie wymaga i jej nie ma. Dlatego 3.4 przyjmuje przedział
 > 40–60 kg/m³ jako założenie zakupowe i liczy najgorszym przypadkiem z niego.
 
-### 3.6 Panel — konstrukcja ramowa, pochłania samo lico
+### 3.6 Panel — ramka MDF, dwa kartony, dwa różne pola
 
-**Formatka 1000 × 610 mm — wymiar płyty wełny, zero odpadu przy cięciu.**
-Wariant połówkowy 500 × 610 mm, jedno cięcie, również bez odpadu.
+Wełna siedzi w **ramce z MDF 15 mm**, z litym tyłem; tkanina obszywa lico.
+Wymiar zewnętrzny panelu jest więc o 30 mm większy od wełny w obu osiach.
 
-> Odrzucone: **600 × 600 mm**. Z płyty 1000 × 610 zostaje niewykorzystany pas
-> 400 × 610 — **41 % odpadu**, czyli o 67 % więcej materiału na metr panelu.
+**Jednostką sprzedaży jest karton, nie panel.** Oba kartony mieszczą jedną
+płytę wełny 1000 × 610 pociętą bez odpadu:
 
-Wełna siedzi w ramie z płyty drewnopochodnej, z litym tyłem; tkanina obszywa
-**samo lico**. Boki i tył nie pochłaniają.
+| karton | zawartość | wełna czynna | pole czynne | pole zewnętrzne |
+|---|---|---|---|---|
+| **A** | panel 1030 × 640 | 1000 × 610 | 0,610 m² | 0,659 m² |
+| **B** | panel 640 × 640 | 610 × 610 | 0,372 m² | 0,410 m² |
+| | panel 640 × 410 | 610 × 380 | 0,232 m² | 0,262 m² |
+| | **razem karton B** | | **0,604 m²** | **0,672 m²** |
 
-**Zapas z obszycia krawędzi (+26 % powierzchni) przestał istnieć** razem z tą
-zmianą konstrukcji. Wcześniej był świadomym marginesem bezpieczeństwa —
+Karton B powstaje z przecięcia płyty wzdłuż, a służy **architekturze**: dwa
+formaty pozwalają układać na ścianie i suficie mozaikę, zamiast rytmu opartego
+na jednym prostokącie.
+
+**Akustycznie oba kartony są równoważne** — 0,610 wobec 0,604 m², różnica 1 %.
+Wybór kartonu jest więc decyzją o wyglądzie, nie o pochłanianiu, i tak trzeba
+go klientowi przedstawiać.
+
+#### Dwa różne pola, i mylenie ich było błędem
+
+To jest poprawka, którą wymusiła ramka:
+
+- **Pole czynne** — powierzchnia, do której stosuje się α. To sama wełna;
+  ramka MDF nie pochłania, boki i tył są lite.
+- **Pole zewnętrzne** — tyle miejsca panel faktycznie zajmuje na ścianie.
+
+Sprawdzenie „czy panele się zmieszczą" musi iść z pola **zewnętrznego**.
+Do tej wersji szło z czynnego, przez co **zaniżało zapotrzebowanie na miejsce
+o 8 % przy panelu dużym i o 13 % przy małym**.
+
+> **Do potwierdzenia:** przecięcie płyty opisano jako 390 + 610 mm, ale panel
+> mały ma wymiar zewnętrzny 640 × 410, co przy ramce 15 mm daje wełnę
+> 610 × **380**, nie 390. Albo panel mały ma 640 × **420**, albo 10 mm schodzi
+> na rzaz i docięcie. Rachunek przyjmuje **380** — wartość wynikającą wprost
+> z podanego wymiaru zewnętrznego, a przy okazji ostrożniejszą. Przy 390
+> oba kartony miałyby identyczne 0,610 m².
+
+**Zapas z obszycia krawędzi (+26 % powierzchni) przestał istnieć** wraz
+z przejściem na konstrukcję ramową. Wcześniej był świadomym marginesem —
 obiecywaliśmy mniej, niż panel dawał. Trzeba wiedzieć, że go nie ma.
 
-Margines nie zniknął jednak całkiem: **zaniżenie samego modelu Mikiego o
-0,10–0,15 w skali AW** (3.5) jest wielokrotnie większe od utraconych krawędzi
-i działa w tę samą, bezpieczną stronę.
+Margines nie zniknął całkiem: **zaniżenie samego modelu Mikiego o 0,10–0,15
+w skali AW** (3.5), wzmocnione liczeniem najgorszej gęstości z przedziału
+(3.4), jest wielokrotnie większe od utraconych krawędzi i działa w tę samą,
+bezpieczną stronę.
 
 > **Do odnotowania, drugiego rzędu:** panel z litym tyłem **zakrywa**
-> powierzchnię, która sama coś pochłaniała. Rachunek dodaje `S · α_panel`, nie
-> odejmując `S · α_ściany`. Dla tynku malowanego (α ≈ 0,02–0,05) to zawyżenie
-> zysku o 2–5 %, czyli mniej niż zaniżenie modelu. Do policzenia dokładnie,
-> gdy pojawi się tabela α_p od producenta.
-
+> powierzchnię, która sama coś pochłaniała — i zakrywa ją całym polem
+> zewnętrznym, razem z ramką. Rachunek dodaje `S_czynne · α_panel`, nie
+> odejmując `S_zewn · α_ściany`. Dla tynku malowanego (α ≈ 0,02–0,05) to
+> zawyżenie zysku o 2–5 %, czyli mniej niż zaniżenie modelu.
 
 ### 3.7 Tkanina — specyfikacja zakupowa
 
