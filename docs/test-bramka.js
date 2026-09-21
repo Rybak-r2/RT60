@@ -55,7 +55,7 @@ function uruchom(pomiar){
     setItem:(k,v)=>{mem[k]=String(v);}, removeItem:k=>{delete mem[k];}};
   if(pomiar) mem['rt60-pomiar']=JSON.stringify(pomiar);
   for(const k in cache) delete cache[k];
-  api=new Function(src+'\n;return {przyjmij:przyjmij,ST:ST};')();
+  api=new Function(src+'\n;return {przyjmij:przyjmij,ST:ST,propozycjaJSON:propozycjaJSON};')();
   return api;
 }
 uruchom(null);
@@ -125,8 +125,8 @@ console.log('\nPełny przebieg — bramka nie może zepsuć rachunku');
 api.przyjmij(plik({Tmid:0.353,
   T:{125:0.42,250:0.38,500:0.353,1000:0.345,2000:0.32,4000:0.30}}));
 api.ST.cel=0.30;
-E('b2').onclick(); E('b3').onclick(); E('bJson').onclick();
-const w=JSON.parse(pobrane);
+E('b2').onclick(); E('b3').onclick();
+const w=api.propozycjaJSON();
 const przeszlo = w.kontrola_wejscia && w.kontrola_wejscia.przeszla===true &&
   w.kontrola_wejscia.rozrzut_pasm===1.27 &&
   w.zrodlo_pomiaru.wersja_silnika==='silnik-v13' && w.propozycja.sztuk>0;
@@ -173,8 +173,8 @@ function policz(wyk,mont,format){
     T:{125:0.42,250:0.38,500:0.353,1000:0.345,2000:0.32,4000:0.30}}));
   api.ST.cel=0.30; E('b2').onclick();
   api.ST.wyk=wyk; api.ST.mont=mont; api.ST.format=format;
-  E('b3').onclick(); E('bJson').onclick();
-  const o=JSON.parse(pobrane);
+  E('b3').onclick();
+  const o=api.propozycjaJSON();
   return {szt:o.propozycja.sztuk, pow:o.propozycja.powierzchnia_m2,
           czynne:o.panel.pole_czynne_sztuki_m2, zewn:o.panel.pole_zewnetrzne_sztuki_m2,
           panele:o.panel.panele_w_sztuce, alfa:o.alfa_panelu, sklad:o.panel.sklad,
@@ -271,8 +271,8 @@ uruchom(null);
 api.przyjmij(plik({T:{125:0.45,250:0.40,500:0.38,1000:0.37,2000:0.35,4000:0.33}}));
 api.ST.cel=0.30; E('b2').onclick();
 api.ST.mont='w50'; api.ST.montRecznie=true;
-E('b3').onclick(); E('bJson').onclick();
-const zr=JSON.parse(pobrane).rekomendacja;
+E('b3').onclick();
+const zr=api.propozycjaJSON().rekomendacja;
 sprawdz(zr&&zr.zalecana==='w100'&&zr.wybrana==='w50'&&zr.zgodna===false&&
   zr.uzasadnienie.length>0,
   'rozbieżność wyboru z rekomendacją idzie do zapytania wraz z uzasadnieniem');

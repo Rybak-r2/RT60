@@ -574,15 +574,17 @@ działaniem zależnym od jakości pomiaru (6.1), nie samym zapisem pliku.
 Karta pomieszczenia `karta.js` — historia jednego wnętrza w `localStorage`,
 wspólna dla obu programów, z porównaniem „przed / po" po montażu (6.2).
 
-Moduł doboru `dobór v3` — przejmuje pomiar wprost z badania albo z wczytanego
+Moduł doboru `dobór v4` — przejmuje pomiar wprost z badania albo z wczytanego
 pliku, sprawdza wiarygodność wejścia (5.3), liczy powierzchnię i liczbę paneli
 w wybranym wykończeniu i formacie, przełącza Sabine/Eyring, sprawdza równowagę
 tonalną, podaje widełki przy pomiarze poglądowym.
 
-Testy regresyjne `npm test` — 66 przypadków na kodzie obu stron i na
+Testy regresyjne `npm test` — 82 przypadki na kodzie obu stron i na
 `karta.js`, uruchamianym na atrapie DOM i atrapie magazynu przeglądarki:
-`docs/test-bramka.js` (bramka, wykończenia, cel, rekomendacja) oraz
-`docs/test-karta.js` (karta i pętla przed/po).
+`docs/test-bramka.js` (bramka, wykończenia, cel, rekomendacja),
+`docs/test-karta.js` (karta i pętla przed/po) oraz `docs/test-paczka.js`
+(paczka wyniku i raport — archiwum otwierane **niezależną implementacją**,
+bo ZIP piszemy ręcznie i błąd o jeden bajt wyszedłby dopiero u klienta).
 
 ### 5.3 Bramka wiarygodności wejścia — wdrożona
 
@@ -637,11 +639,12 @@ blokują, `silnik-v4` nie; realny plik z v2 zostaje odrzucony z krotnością
 
 ### 5.4 Kolejność dalszych prac
 
-1. **Tabela α_p od producenta wełny** — bez niej kolumna tekstylna jest
+1. **Przycisk „Złóż zamówienie"** — zapytanie ofertowe do ALACER-a (6.3).
+   Wymaga funkcji serwerowej i przygotowania RODO; to jedyna część
+   wyprowadzająca dane poza przeglądarkę. Docelowo staje się działaniem
+   głównym na końcu doboru, a „Zapisz wynik" schodzi na drugi plan.
+2. **Tabela α_p od producenta wełny** — bez niej kolumna tekstylna jest
    oszacowaniem z modelu. Dla NUO takiej tabeli nie będzie (3.9).
-2. **Formularz kontaktowy i zapytanie ofertowe** — 6.3; wymaga funkcji
-   serwerowej i przygotowania RODO. To jedyna część wyprowadzająca dane poza
-   przeglądarkę.
 3. **Rozrysowanie rozmieszczenia** paneli na ścianach i suficie — ze wskazaniem,
    że to wskazówka montażowa, a nie rachunek: model Sabine'a nie rozróżnia,
    na której powierzchni leży chłonność.
@@ -737,6 +740,69 @@ i przesłania go dalej.
 Do zapytania powinna iść **cała podstawa rachunku**, nie sama liczba sztuk:
 pomiar, cel, wykończenie, wariant i format. Handlowiec dostaje wtedy komplet
 i nie musi niczego odtwarzać z klientem przez telefon.
+
+### 6.6 Zapis wyniku — jeden, na końcu, kompletny
+
+**Zapis należy tam, gdzie decyzja jest domknięta.** Pomiar nie zmienia się przy
+przymierzaniu wariantów, ale **wynik po adaptacji już tak**: Standard i Premium
+dają inny przewidywany czas pogłosu. Plik zapisany przed wyborem paneli mówi
+prawdę, ale niekompletną — po miesiącu nikt nie odtworzy, którą wersję klient
+właściwie wybierał.
+
+Dlatego komplet powstaje na końcu **doboru**, nie badania:
+
+```
+KONIEC BADANIA          [ Dobierz panele → ]  [ Powtórz… ]
+                        zapisz surowe dane pomiaru     ← mały odnośnik
+
+KONIEC DOBORU           [ Zmień panele ]  [ Zapisz wynik ]
+```
+
+Odnośnika na ekranie badania **nie da się usunąć** i to nie jest niedoróbka:
+ktoś, kto zmierzył i dalej nie idzie — bo tylko sprawdzał, albo bo pomiar się
+nie udał i chce przysłać surowiec do diagnozy — musi mieć jak zapisać. Ale
+przestaje konkurować z działaniem głównym.
+
+**Zawartość paczki** `wynik-<pomieszczenie>-<wariant>-<data>.zip`:
+
+| plik | dla kogo |
+|---|---|
+| `raport.html` | klient i architekt — dokument z własnym przyciskiem zapisu do PDF |
+| `propozycja-adaptacji.json` | archiwum; to samo jedzie z zapytaniem ofertowym |
+| `badanie-akustyczne.json` | moduł doboru — powrót i przeliczenie bez powtarzania badania |
+| `ir-punkt-N.wav` | akustyk — weryfikacja niezależnym narzędziem |
+| `czytaj-to.txt` | każdy — co jest czym |
+
+Nazwa niesie wariant i godzinę, więc trzy zapisy przy przymierzaniu Standard
+i Premium nie zleją się w jeden plik.
+
+**PDF bez biblioteki.** Raport jest samodzielną stroną HTML z arkuszem do
+druku i przyciskiem `window.print()`. Wciągnięcie jsPDF oznaczałoby 200–300 kB
+obcego kodu w projekcie, który dotąd nie ma ani jednej zewnętrznej zależności.
+Osobnego przycisku „Zapisz PDF" nie ma — raport siedzi w paczce.
+
+#### Dlaczego odpowiedzi impulsowe jadą przez IndexedDB
+
+Powstają w programie pomiarowym i żyją **tylko w pamięci tej strony** — giną
+przy każdym przeładowaniu. Żeby komplet dało się spakować na końcu doboru,
+muszą przejechać. To 4–6 MB: pamięć sesji (limit ok. 5 MB, zapis
+synchroniczny) by tego nie uniosła i zacięła telefon. IndexedDB trzyma dane
+binarne natywnie i ma wielokrotnie większy limit.
+
+**Zasada ta sama co przy karcie pomieszczenia: to jest dodatek.** Gdy
+IndexedDB zawiedzie, paczka powstaje **bez** surowca, a `czytaj-to.txt` mówi
+wprost, czego brakuje i jak zdobyć komplet. Dobór działa tak samo.
+
+Surowiec dołącza się tylko wtedy, gdy **wymiary w magazynie zgadzają się
+z wymiarami liczonego pomieszczenia**. Inaczej do paczki trafiłyby odpowiedzi
+impulsowe z zupełnie innego pomiaru — co byłoby gorsze niż ich brak.
+
+#### Czego w paczce nie ma i dlaczego
+
+`propozycja-adaptacji.json` **zniknęła z interfejsu jako osobne pobranie**.
+Sprawdzenie, kto ją czyta, dało odpowiedź: nikt. Architekt nie miał z niej
+pożytku, żaden program jej nie wczytywał. Została jako plik **w paczce**
+i jako załącznik zapytania — tam ma sens.
 
 ### 6.4 Cel adaptacji — nic nie podstawia się samo
 

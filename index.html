@@ -204,81 +204,23 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <div style="margin-top:18px">
     <button id="bDobor" class="hide">Dobierz panele &rarr;</button>
     <button id="bPowtorz" class="hide" style="margin-top:9px">Powtórz badanie</button>
-    <button id="bZapisz" class="ghost" style="margin-top:9px">Zapisz dane badania</button>
   </div>
+  <!-- Komplet zapisuje się teraz na końcu doboru, bo dopiero tam wiadomo, jakie
+       panele wybrano. Tu zostaje odnośnik dla kogoś, kto dalej nie idzie: bo
+       tylko sprawdzał albo bo pomiar się nie udał i chce przysłać surowiec do
+       diagnozy. Mały, żeby nie konkurował z „Dobierz panele". -->
+  <p class="note" style="font-size:12.5px;margin-top:11px">
+    <a href="#" id="bZapisz" style="color:var(--muted)">Zapisz surowe dane pomiaru</a>
+    — komplet z odpowiedziami impulsowymi zapiszesz na końcu doboru paneli.</p>
   <p class="note" style="font-size:12.5px;margin-top:9px" id="dalejOpis"></p>
   <p class="note" style="font-size:12.5px;margin-top:8px" id="zapisOpis"></p>
   <details><summary>Tryb techniczny</summary><div class="diag" id="rDiag"></div><div id="rDiagMsg"></div></details>
 </div>
 </div>
+<script src="paczka.js"></script>
 <script src="karta.js"></script>
 <script>
 "use strict";
-/*═════════════ PAKOWANIE WYNIKU ═════════════
-  Jeden przycisk musi oddać komplet: wyniki i surowiec, z którego je policzono.
-  Rozdzielenie na dwa pobrania oznaczało, że klient przyśle połowę — a bez
-  odpowiedzi impulsowych nie da się niczego przeliczyć ani zweryfikować.
-  ZIP zapisujemy sami, metodą "store" (bez kompresji): kilkadziesiąt linii
-  zamiast biblioteki z CDN, dzięki czemu aplikacja zostaje jednym plikiem
-  działającym bez sieci. */
-const CRC_TAB=(()=>{const t=new Uint32Array(256);
-  for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}
-  return t;})();
-function crc32(u8){let c=0xFFFFFFFF;
-  for(let i=0;i<u8.length;i++)c=CRC_TAB[(c^u8[i])&0xFF]^(c>>>8);
-  return (c^0xFFFFFFFF)>>>0;}
-
-function zip(pliki){                       // [{nazwa, dane:Uint8Array}]
-  const enc=new TextEncoder(), lok=[], cen=[];
-  let offset=0;
-  pliki.forEach(p=>{
-    const nm=enc.encode(p.nazwa), cr=crc32(p.dane), n=p.dane.length;
-    const lh=new DataView(new ArrayBuffer(30));
-    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0,true);
-    lh.setUint16(8,0,true); lh.setUint16(10,0,true); lh.setUint16(12,0x21,true);
-    lh.setUint32(14,cr,true); lh.setUint32(18,n,true); lh.setUint32(22,n,true);
-    lh.setUint16(26,nm.length,true); lh.setUint16(28,0,true);
-    lok.push(new Uint8Array(lh.buffer),nm,p.dane);
-
-    const ch=new DataView(new ArrayBuffer(46));
-    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true);
-    ch.setUint16(8,0,true); ch.setUint16(10,0,true); ch.setUint16(12,0,true); ch.setUint16(14,0x21,true);
-    ch.setUint32(16,cr,true); ch.setUint32(20,n,true); ch.setUint32(24,n,true);
-    ch.setUint16(28,nm.length,true); ch.setUint32(42,offset,true);
-    cen.push(new Uint8Array(ch.buffer),nm);
-    offset+=30+nm.length+n;
-  });
-  const cenDl=cen.reduce((a,x)=>a+x.length,0);
-  const eo=new DataView(new ArrayBuffer(22));
-  eo.setUint32(0,0x06054b50,true);
-  eo.setUint16(8,pliki.length,true); eo.setUint16(10,pliki.length,true);
-  eo.setUint32(12,cenDl,true); eo.setUint32(16,offset,true);
-  return new Blob([...lok,...cen,new Uint8Array(eo.buffer)],{type:'application/zip'});
-}
-
-/* Data i godzina w nazwie paczki. Bez tego kilka badań ląduje w pobranych jako
-   badanie-akustyczne(1).zip, (2), (3) — a po stronie ALACER przychodzi kilka
-   plików o tej samej nazwie i nie wiadomo, który dotyczy którego pomieszczenia.
-   Czas lokalny, bo to on zgadza się z tym, co użytkownik pamięta. */
-function stempel(){
-  const d=new Date(), z=n=>String(n).padStart(2,'0');
-  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+
-         '-'+z(d.getHours())+z(d.getMinutes());
-}
-
-/* Odpowiedź impulsowa jako WAV 32-bit float — format, który wczytają REW, ARTA,
-   Audacity i biblioteki pythonowe bez konwersji. */
-function wav(ir,fs){
-  const n=ir.length, b=new ArrayBuffer(44+n*4), v=new DataView(b);
-  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
-  w(0,'RIFF');v.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');
-  v.setUint32(16,16,true);v.setUint16(20,3,true);v.setUint16(22,1,true);
-  v.setUint32(24,fs,true);v.setUint32(28,fs*4,true);v.setUint16(32,4,true);v.setUint16(34,32,true);
-  w(36,'data');v.setUint32(40,n*4,true);
-  for(let i=0;i<n;i++)v.setFloat32(44+i*4,ir[i],true);
-  return new Uint8Array(b);
-}
-
 /*═════════════ FFT ═════════════*/
 function nextPow2(n){let p=1;while(p<n)p<<=1;return p;}
 function fft(re,im,inv){
@@ -912,6 +854,7 @@ function finish(){
   $('rOk').classList.remove('hide');
   /* Zapis do karty PRZED pokazaniem wyniku — zwraca stan sprzed dopisania,
      czyli to, z czym porównujemy. */
+  odlozSurowiec();
   pokazPrzedPo(zapiszDoKarty());
   pokazDalej();diag();go(5);
 }
@@ -1016,6 +959,18 @@ const KLUCZ_POMIARU='rt60-pomiar', KLUCZ_WYMIAROW='rt60-wymiary';
 const pl2=v=>v==null?'—':v.toFixed(2).replace('.',',');
 const dataPl=t=>{ try{ return new Date(t).toLocaleDateString('pl-PL'); }catch(e){ return null; } };
 
+/* Odpowiedzi impulsowe do IndexedDB, żeby komplet dało się spakować dopiero
+   na końcu doboru — tam, gdzie wiadomo, jakie panele wybrano. Tu żyją tylko
+   w pamięci tej strony i giną przy każdym przeładowaniu.
+   Nie czekamy na wynik: gdy zapis się nie uda, paczka powstanie bez surowca
+   i sama o tym napisze. Pomiar nie ma prawa na tym ucierpieć. */
+function odlozSurowiec(){
+  try{
+    if(window.Paczka&&ST.irs&&ST.irs.filter(Boolean).length)
+      Paczka.IR.zapisz(ST.irs, ST.fs, {L:ST.L,W:ST.W,H:ST.H,typ:ST.type});
+  }catch(e){}
+}
+
 function zapiszDoKarty(){
   if(!global_karta()) return null;
   try{ return window.Karta.dopiszPomiar(budujJSON()); }catch(e){ return null; }
@@ -1118,15 +1073,16 @@ $('bPowtorz').onclick=()=>{
   pokazKubature();
 })();
 
-$('bZapisz').onclick=()=>{
-  const b=$('bZapisz'); b.disabled=true; b.textContent='Pakuję…';
+$('bZapisz').onclick=(ev)=>{
+  if(ev&&ev.preventDefault)ev.preventDefault();
+  const b=$('bZapisz'); const etykieta=b.textContent; b.textContent='Pakuję…';
   try{
     const out=budujJSON();
     const enc=new TextEncoder();
     const pliki=[{nazwa:'badanie-akustyczne.json',
                   dane:enc.encode(JSON.stringify(out,null,2))}];
     ST.irs.forEach((ir,i)=>{ if(ir&&ir.length)
-      pliki.push({nazwa:'ir-punkt-'+(i+1)+'.wav', dane:wav(ir,ST.fs)}); });
+      pliki.push({nazwa:'ir-punkt-'+(i+1)+'.wav', dane:Paczka.wav(ir,ST.fs)}); });
     pliki.push({nazwa:'czytaj-to.txt', dane:enc.encode(
       'BADANIE AKUSTYCZNE POMIESZCZENIA — komplet danych\r\n'+
       '='.repeat(52)+'\r\n\r\n'+
@@ -1146,18 +1102,16 @@ $('bZapisz').onclick=()=>{
       '                          narzedziem (REW, ARTA, Audacity, Python)\r\n'+
       '                          bez wracania do pomieszczenia.\r\n\r\n'+
       'Plik przeznaczony do przeslania do ALACER.\r\n')});
-    const nazwa='badanie-akustyczne-'+stempel()+'.zip';
-    dl(zip(pliki),nazwa);
+    const nazwa='badanie-akustyczne-'+Paczka.stempel()+'.zip';
+    Paczka.dl(Paczka.zip(pliki),nazwa);
     $('zapisOpis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+
       pliki.length+' plików: wyniki, '+ST.irs.filter(Boolean).length+
       ' odpowiedzi impulsowe i opis zawartości.';
   }catch(e){
     $('zapisOpis').innerHTML='<span class="r">Nie udało się spakować ('+e.message+').</span>';
   }
-  b.disabled=false; b.textContent='Zapisz dane badania';
+  b.textContent=etykieta;
 };
-function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 </script>
 </body>
 </html>

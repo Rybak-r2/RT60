@@ -140,18 +140,20 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <div id="wynBil"></div>
   <div id="wynMies"></div>
   <div class="btnrow" style="margin-top:18px">
-    <button class="ghost" onclick="idz(3)">Zmień montaż</button>
-    <button class="ghost" id="bJson">Pobierz propozycję</button>
+    <button class="ghost" onclick="idz(3)">Zmień panele</button>
+    <button id="bWynik">Zapisz wynik</button>
   </div>
+  <p class="note" style="font-size:12.5px;margin-top:9px" id="wynZapis"></p>
   <details><summary>Podstawa rachunku</summary><div class="kv" id="wynDiag"></div></details>
   <div class="prov" id="prov"></div>
 </div>
 </div>
 
+<script src="paczka.js"></script>
 <script src="karta.js"></script>
 <script>
 "use strict";
-const WERSJA='dobór v3';
+const WERSJA='dobór v4';
 
 const PASMA=[125,250,500,1000,2000,4000];
 
@@ -496,6 +498,7 @@ function przyjmij(j){
   if(!j.pasma||!j.pasma.length){
     S($('m1'),'err','W pliku brakuje wyników pasmowych.');return;}
 
+  ST.pomiarZrodlo=j;          // surowy plik badania — wchodzi do paczki wyniku
   ST.L=p.L; ST.W=p.W; ST.H=p.H; ST.V=p.V||p.L*p.W*p.H; ST.typ=p.typ;
   ST.S=2*(p.L*p.W)+2*(p.L*p.H)+2*(p.W*p.H);
   ST.Ssufit=p.L*p.W;
@@ -985,17 +988,139 @@ const KLUCZ_POMIARU='rt60-pomiar';
   rysujZrodlo();
 })();
 
-/*═══════════════ EKSPORT ═══════════════*/
-$('bJson').onclick=()=>{
-  const w=ST.wynik; if(!w)return;
+/*═══════════════ PACZKA WYNIKU ═══════════════
+  Jedno zapisanie na końcu, kompletne. Zawiera raport do czytania, oba pliki
+  danych i surowiec pomiarowy — czyli wszystko, czego może potrzebować klient,
+  architekt, akustyk i my.
+
+  Dlaczego dopiero tutaj: pomiar się nie zmienia przy przymierzaniu wariantów,
+  ale WYNIK PO ADAPTACJI już tak — Standard i Premium dają inny przewidywany
+  czas pogłosu. Plik zapisany przed wyborem paneli jest prawdziwy, ale
+  niejednoznaczny: nie widać z niego, którą wersję klient właściwie wybrał. */
+
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const slug=t=>String(t||'').toLowerCase()
+  .replace(/[ąćęłńóśźż]/g,c=>({'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z'}[c]))
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+/* Raport jako samodzielna strona HTML. Otwiera się w każdej przeglądarce, bez
+   sieci, i ma własny przycisk drukowania — stąd PDF, bez wciągania do projektu
+   obcej biblioteki. Jasny motyw, bo to dokument do wydruku, nie ekran. */
+function raportHTML(){
+  const w=ST.wynik, b=w.bazowy, p=ST.pomiarZrodlo||{};
+  const data=new Date().toLocaleDateString('pl-PL');
+  const tor=ST.pogladowy?'głośnik telefonu — pomiar poglądowy':'głośnik zewnętrzny — pomiar pełny';
+  const rPrzed=ST.T[250]/ST.T[1000], rPo=b.T_po[250]/b.T_po[1000];
+  const bilansOK=ST.zmierzone[250]&&ST.zmierzone[1000]?!zlyBilans(rPrzed,rPo):null;
+
+  const wiersze=PASMA.map(f=>{
+    const przed=ST.T[f]*b.kor, po=b.T_po[f], d=100*(po-przed)/przed;
+    return '<tr><td>'+lbl(f)+(ST.zmierzone[f]?'':' <span class="sz">szacunek</span>')+
+      '</td><td>'+pl(przed)+'</td><td>'+pl(po)+'</td><td>'+(d>0?'+':'')+Math.round(d)+' %</td></tr>';
+  }).join('');
+
+  const ile=ST.pogladowy
+    ? '<b>'+w.dolny.szt+'–'+w.gorny.szt+' szt.</b> <span class="sz">widełki, bo pomiar był poglądowy</span>'
+    : '<b>'+b.szt+' szt.</b>';
+
+  const podstawa=[
+    ['Kubatura', pl(ST.V,1)+' m³'],
+    ['Pole granic', pl(ST.S,1)+' m²'],
+    ['Cel T<sub>mid</sub>', pl(ST.cel)+' s'],
+    ['Chłonność zmierzona A', pl(0.161*ST.V/ST.Tmid,1)+' m² Sab'],
+    ['Model', b.eyring?'Eyring':'Sabine'],
+    ['Powierzchnia czynna paneli', pl(b.pow,1)+' m²'],
+    ['Zajęta powierzchnia ścian', pl(b.szt*poleZewn(),1)+' m²'],
+    ['α panelu', PASMA.map(f=>pl(montaz().alfa[f])).join(' / ')+' <span class="sz">(125…4000 Hz)</span>'],
+    ['Źródło α', esc(opisPodstawy())],
+    ['Silnik pomiarowy', esc(ST.wersjaSilnika||'nie podano')],
+    ['Kontrola wejścia', ST.kontrola&&ST.kontrola.przeszla?'przeszła':'—']
+  ].map(x=>'<tr><td>'+x[0]+'</td><td colspan="3">'+x[1]+'</td></tr>').join('');
+
+  return '<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+  '<title>Raport akustyczny — '+esc(ST.typ||'pomieszczenie')+'</title><style>'+
+  'body{font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#15202B;'+
+  'background:#fff;max-width:760px;margin:0 auto;padding:28px 20px 60px}'+
+  'h1{font-size:25px;margin:0 0 4px;letter-spacing:-.02em}'+
+  'h2{font-size:16px;margin:26px 0 8px;padding-bottom:5px;border-bottom:1px solid #D8DEE4}'+
+  '.pod{color:#5A6672;margin:0 0 22px;font-size:13.5px}'+
+  '.duze{font-size:30px;font-weight:300;letter-spacing:-.02em;margin:6px 0 2px}'+
+  '.duze b{font-weight:600}'+
+  'table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0}'+
+  'th{text-align:right;font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;'+
+  'color:#5A6672;padding:0 0 6px;border-bottom:1px solid #D8DEE4}th:first-child{text-align:left}'+
+  'td{text-align:right;padding:6px 0;border-bottom:1px solid #EDF1F4}td:first-child{text-align:left}'+
+  '.sz{color:#78848F;font-size:11.5px}'+
+  '.uwaga{background:#FFF6E5;border-left:3px solid #E0A210;padding:10px 13px;margin:10px 0;font-size:13.5px}'+
+  '.dobrze{background:#EEF7EA;border-left:3px solid #4E9A36;padding:10px 13px;margin:10px 0;font-size:13.5px}'+
+  '.stopka{margin-top:32px;padding-top:12px;border-top:1px solid #D8DEE4;color:#78848F;font-size:11.5px}'+
+  'button{font:inherit;font-size:14px;background:#15202B;color:#fff;border:0;border-radius:3px;'+
+  'padding:11px 18px;cursor:pointer;margin:18px 0 0}'+
+  '@media print{button{display:none}body{padding:0;max-width:none}h2{break-after:avoid}'+
+  'table{break-inside:avoid}}'+
+  '</style></head><body>'+
+
+  '<h1>Raport akustyczny</h1>'+
+  '<p class="pod">'+esc(ST.typ||'pomieszczenie')+' · '+pl(ST.L,1)+' × '+pl(ST.W,1)+' × '+pl(ST.H,1)+' m'+
+  ' · '+pl(ST.V,1)+' m³ · '+data+'<br>Pomiar: '+esc(tor)+'</p>'+
+
+  '<h2>Stan teraz i po adaptacji</h2>'+
+  '<p class="duze">Czas pogłosu <b>'+pl(ST.Tmid*b.kor)+' s</b> &rarr; <b>'+
+  pl((b.T_po[500]+b.T_po[1000])/2)+' s</b></p>'+
+  '<p class="sz">T<sub>mid</sub>, średnia z pasm 500 Hz i 1 kHz. Cel: '+pl(ST.cel)+' s.</p>'+
+  (ST.pogladowy?'<div class="uwaga"><b>Pomiar wykonano głośnikiem telefonu.</b> '+
+   'Mikrofon i głośnik są w jednej obudowie, więc czas pogłosu wychodzi zwykle o 20–30 % za krótki. '+
+   'Liczby poniżej to widełki, nie deklaracja. Pomiar głośnikiem zewnętrznym zamieni je w jedną wartość.</div>':'')+
+
+  '<h2>Proponowana adaptacja</h2>'+
+  '<p class="duze">'+ile+'</p>'+
+  '<table><tr><td>Wykończenie</td><td colspan="3">'+esc(wyk().nazwa)+'</td></tr>'+
+  '<tr><td>Wersja</td><td colspan="3">'+esc(montaz().n.replace(' · zalecane',''))+'</td></tr>'+
+  '<tr><td>Format</td><td colspan="3">'+esc(format().n)+'</td></tr>'+
+  '<tr><td>Skład</td><td colspan="3">'+esc(skladKartonow(ST.pogladowy?w.dolny.szt:b.szt))+'</td></tr>'+
+  '<tr><td>Rozmieszczenie</td><td colspan="3">'+
+  (ST.gdzie==='sciany'?'ściany':ST.gdzie==='sufit'?'sufit':'ściany i sufit')+'</td></tr></table>'+
+  (ST.rekom&&ST.mont!==ST.rekom.id
+    ? '<div class="uwaga">Wybrano inną wersję niż zalecana. '+esc(ST.rekom.tekst.replace(/<[^>]+>/g,''))+'</div>'
+    : ST.rekom?'<div class="'+(ST.rekom.typ==='standard'?'dobrze':'uwaga')+'">'+
+      esc(ST.rekom.tekst.replace(/<[^>]+>/g,''))+'</div>':'')+
+
+  '<h2>Czas pogłosu w pasmach</h2>'+
+  '<table><thead><tr><th>pasmo</th><th>teraz</th><th>po</th><th>zmiana</th></tr></thead>'+
+  '<tbody>'+wiersze+'</tbody></table>'+
+  (bilansOK===null
+    ? '<div class="uwaga">Równowagi tonalnej nie dało się ocenić — brakuje wiarygodnego wyniku w paśmie 250 Hz albo 1 kHz.</div>'
+    : bilansOK
+      ? '<div class="dobrze"><b>Równowaga tonalna zachowana.</b> Stosunek T(250 Hz) do T(1 kHz) zmienia się z '+
+        pl(rPrzed)+' na '+pl(rPo)+'. Wnętrze wyciszy się równomiernie.</div>'
+      : '<div class="uwaga"><b>Uwaga na równowagę tonalną.</b> Stosunek T(250 Hz) do T(1 kHz) rośnie z '+
+        pl(rPrzed)+' na '+pl(rPo)+' — pomieszczenie wytłumi się mocniej w górze pasma niż w dole.</div>')+
+
+  '<h2>Podstawa rachunku</h2>'+
+  '<table>'+podstawa+'</table>'+
+
+  '<div class="stopka">Wartości α paneli są tymczasowe do czasu otrzymania tabel od producentów; '+
+  'kierunek ewentualnego błędu jest bezpieczny — model zaniża pochłanianie. '+
+  'Czas pogłosu po adaptacji jest obliczony, nie zmierzony. Sprawdzisz go, powtarzając badanie po montażu.<br>'+
+  'Raport wygenerowany przez '+esc(WERSJA)+' na podstawie pomiaru '+esc(ST.wersjaSilnika||'—')+'.</div>'+
+
+  '<button onclick="window.print()">Drukuj / Zapisz jako PDF</button>'+
+  '</body></html>';
+}
+
+/* Propozycja w postaci danych — do archiwum i do zapytania ofertowego.
+   Z interfejsu klienta zniknęła jako osobne pobranie: nic jej nie czytało,
+   a architekt nie miał z niej pożytku. Teraz jedzie w paczce i z zamówieniem. */
+function propozycjaJSON(){
+  const w=ST.wynik; if(!w)return null;
   const r3=x=>x==null?null:+x.toFixed(3);
-  const out={
-    wersja:'dobor-v3', czas:new Date().toISOString(),
+  return {
+    wersja:'dobor-v4', czas:new Date().toISOString(),
     zrodlo_pomiaru:{charakter:ST.pogladowy?'pogladowy':'pelny', Tmid:r3(ST.Tmid),
       V:+ST.V.toFixed(2), pole_granic_m2:+ST.S.toFixed(2),
       wersja_silnika:ST.wersjaSilnika||null},
-    /* Ślad po bramce wiarygodności. Propozycja bez tego pola pochodzi z wersji
-       sprzed kontroli wejścia i nie wiadomo, na czym stała. */
     kontrola_wejscia:{przeszla:true,
       progi:{wersje_nieufne:WERSJE_NIEUFNE, max_rozrzut_pasm:MAX_ROZRZUT_PASM,
              max_rozjazd_mowy:MAX_ROZJAZD_MOWY},
@@ -1003,8 +1128,6 @@ $('bJson').onclick=()=>{
       rozjazd_mowy:ST.rozjazdMowy!=null?+ST.rozjazdMowy.toFixed(2):null,
       uwagi:(ST.kontrola&&ST.kontrola.uwagi)||[]},
     cel_Tmid_s:ST.cel,
-    /* Co program zalecil i co klient wybral. Rozbieznosc jest informacja
-       handlowa, nie bledem — dlatego idzie do zapytania, a nie znika. */
     rekomendacja:ST.rekom?{
       zalecana:ST.rekom.id, wybrana:ST.mont, zgodna:ST.mont===ST.rekom.id,
       podstawa:ST.rekom.typ,
@@ -1012,7 +1135,6 @@ $('bJson').onclick=()=>{
     panel:{wykonczenie:ST.wyk, wykonczenie_nazwa:wyk().nazwa,
       wariant:montaz().id, wariant_nazwa:montaz().n.replace(' · zalecane',''),
       format:format().n,
-
       zestaw_mieszany:!!format().mieszany,
       sklad:skladKartonow(w.bazowy.szt),
       panele_w_sztuce:(format().mieszany
@@ -1023,8 +1145,6 @@ $('bJson').onclick=()=>{
           pole_zewnetrzne_m2:+(x.dl*x.sz).toFixed(3)})),
       pole_czynne_sztuki_m2:+poleCzynne().toFixed(3),
       pole_zewnetrzne_sztuki_m2:+poleZewn().toFixed(3),
-      /* Boki i tyl lite; u tekstylnych ramka MDF 15 mm tez nie pochlania,
-         wiec pole czynne liczy sie z welny, a zewnetrzne z panelu. */
       montaz:'bezposrednio do sciany lub sufitu',
       rozmieszczenie:ST.gdzie},
     propozycja: ST.pogladowy
@@ -1043,11 +1163,97 @@ $('bJson').onclick=()=>{
       : 'model Mikiego, welna deklarowana 40-60 kg/m3, alfa najmniejsza z przedzialu '+
         'w kazdym pasmie — WARTOSCI TYMCZASOWE, do podmiany na tabele alfa_p od producenta welny'
   };
-  const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);
-  a.download='propozycja-adaptacji.json';a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+$('bWynik').onclick=async()=>{
+  const w=ST.wynik; if(!w)return;
+  const b=$('bWynik'), etykieta=b.textContent;
+  b.disabled=true; b.textContent='Pakuję…';
+  try{
+    const enc=new TextEncoder(), prop=propozycjaJSON();
+    const pliki=[
+      {nazwa:'raport.html', dane:enc.encode(raportHTML())},
+      {nazwa:'propozycja-adaptacji.json', dane:enc.encode(JSON.stringify(prop,null,2))}
+    ];
+    if(ST.pomiarZrodlo)
+      pliki.push({nazwa:'badanie-akustyczne.json',
+        dane:enc.encode(JSON.stringify(ST.pomiarZrodlo,null,2))});
+
+    /* Surowiec odłożony przez program pomiarowy. Gdy go nie ma — bo klient
+       wczytał plik zamiast przyjść wprost z badania, albo bo przeglądarka nie
+       pozwoliła na zapis — paczka powstaje bez niego i mówi o tym wprost. */
+    let ir=null;
+    try{ if(window.Paczka) ir=await Paczka.IR.wczytaj(); }catch(e){}
+    const pasuje = ir && ir.pomieszczenie &&
+      Math.round(ir.pomieszczenie.L*10)===Math.round(ST.L*10) &&
+      Math.round(ir.pomieszczenie.W*10)===Math.round(ST.W*10);
+    if(pasuje) ir.ir.forEach((x,i)=>{ if(x&&x.length)
+      pliki.push({nazwa:'ir-punkt-'+(i+1)+'.wav', dane:Paczka.wav(x,ir.fs||48000)}); });
+
+    pliki.push({nazwa:'czytaj-to.txt', dane:enc.encode(opisPaczki(prop,pasuje?ir:null))});
+
+    const nazwa='wynik-'+(slug(ST.typ)||'pomieszczenie')+'-'+slug(montaz().id)+
+      '-'+Paczka.stempel()+'.zip';
+    Paczka.dl(Paczka.zip(pliki),nazwa);
+    $('wynZapis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+pliki.length+
+      ' plików'+(pasuje?', z odpowiedziami impulsowymi':
+      ', <b>bez odpowiedzi impulsowych</b> — patrz czytaj-to.txt')+'.';
+  }catch(e){
+    $('wynZapis').innerHTML='<span class="r">Nie udało się spakować ('+esc(e.message)+').</span>';
+  }
+  b.disabled=false; b.textContent=etykieta;
 };
+
+function opisPaczki(prop,ir){
+  const L=[];
+  L.push('WYNIK BADANIA AKUSTYCZNEGO I DOBORU ADAPTACJI');
+  L.push('='.repeat(52),'');
+  L.push('Pomieszczenie: '+ST.L+' x '+ST.W+' x '+ST.H+' m, '+prop.zrodlo_pomiaru.V+' m3');
+  L.push('Charakter pomiaru: '+prop.zrodlo_pomiaru.charakter);
+  L.push('Czas poglosu Tmid: '+prop.zrodlo_pomiaru.Tmid+' s, cel: '+prop.cel_Tmid_s+' s');
+  L.push('Wybrane panele: '+prop.panel.wykonczenie_nazwa+', '+prop.panel.wariant_nazwa);
+  L.push('Ilosc: '+(prop.propozycja.typ==='widelki'
+    ? prop.propozycja.sztuk_od+'-'+prop.propozycja.sztuk_do+' szt. (widelki)'
+    : prop.propozycja.sztuk+' szt.'));
+  L.push('','ZAWARTOSC','');
+  L.push('raport.html                Dokument do czytania i wydruku. Otworz go');
+  L.push('                           w przegladarce; ma wlasny przycisk zapisu do PDF.');
+  L.push('');
+  L.push('propozycja-adaptacji.json  Dobor w postaci danych: wybrane panele, ilosc,');
+  L.push('                           uzyte alfa wraz ze zrodlem, przewidywany czas');
+  L.push('                           poglosu po adaptacji.');
+  L.push('');
+  if(ST.pomiarZrodlo){
+    L.push('badanie-akustyczne.json    Wyniki pomiaru. Ten plik wczytuje modul doboru,');
+    L.push('                           wiec mozna do niego wrocic i przeliczyc adaptacje');
+    L.push('                           na nowo, bez powtarzania badania.');
+    L.push('');
+  }
+  if(ir){
+    L.push('ir-punkt-N.wav             Odpowiedzi impulsowe z kazdego punktu pomiarowego,');
+    L.push('                           32-bit float, '+(ir.fs||48000)+' Hz. To jest surowiec:');
+    L.push('                           wynikaja z niego T20, T30, C50, D50 i STI.');
+    L.push('                           Pozwalaja przeliczyc wszystko na nowo albo sprawdzic');
+    L.push('                           wynik niezaleznym narzedziem (REW, ARTA, Audacity,');
+    L.push('                           Python) bez wracania do pomieszczenia.');
+  }else{
+    L.push('UWAGA: w paczce NIE MA odpowiedzi impulsowych.');
+    L.push('');
+    L.push('Powstaja one w programie pomiarowym i zyja tylko w pamieci tej strony.');
+    L.push('Brakuje ich, gdy dobor policzono z wczytanego pliku zamiast przejsc');
+    L.push('wprost z badania, albo gdy przegladarka nie pozwolila ich odlozyc');
+    L.push('(okno prywatne, brak miejsca, zablokowany zapis danych).');
+    L.push('');
+    L.push('Zeby miec komplet: wykonaj badanie i przejdz do doboru przyciskiem');
+    L.push('"Dobierz panele", bez zamykania karty przegladarki po drodze.');
+  }
+  L.push('');
+  L.push('Przewidywany czas poglosu po adaptacji jest OBLICZONY, nie zmierzony.');
+  L.push('Sprawdzisz go, powtarzajac badanie po montazu paneli — program porowna');
+  L.push('wynik z tym, co obiecal.');
+  L.push('');
+  return L.join('\r\n');
+}
 </script>
 </body>
 </html>
