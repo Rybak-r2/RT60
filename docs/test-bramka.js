@@ -186,37 +186,39 @@ const mieszany2=policz('tex','w100','k3');
 const w50 =policz('tex','w50','k1');
 const nuo =policz('nuo','n100','k1');
 const nuo50=policz('nuo','n50','k1');
-console.log('        tekstylny 100 mm, 1000×610 : '+w100.szt+' szt., '+w100.pow+' m²');
-console.log('        tekstylny  50 mm, 1000×610 : '+w50.szt +' szt., '+w50.pow +' m²');
+console.log('        tekstylny 100 mm, 1030×610 : '+w100.szt+' szt., '+w100.pow+' m²');
+console.log('        tekstylny  50 mm, 1030×610 : '+w50.szt +' szt., '+w50.pow +' m²');
 console.log('        NUO_WALL 100 mm, 950×950   : '+nuo.szt +' szt., '+nuo.pow +' m²');
 console.log('        NUO_WALL  50 mm, 950×950   : '+nuo50.szt+' szt., '+nuo50.pow+' m²');
 
 function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
   else {zle++;console.log('  BŁĄD  '+opis);} }
-sprawdz(w100.czynne===0.61&&nuo.czynne===0.61,
+sprawdz(w100.czynne===0.628&&nuo.czynne===0.628,
   'formaty są wspólne dla obu wykończeń — to samo pole czynne');
 /* Ramka MDF nie pochłania, ale zajmuje ścianę. Mylenie tych dwóch pól
    zaniżało zapotrzebowanie na miejsce o 8–13 %. */
-sprawdz(w100.zewn===0.659&&w100.czynne===0.61,
+sprawdz(w100.zewn===0.678&&w100.czynne===0.628,
   'panel tekstylny zajmuje więcej ściany, niż pochłania');
-/* NUO liczy się teraz z lica tak samo jak tekstylne. Przy formacie 1030 × 640
+/* NUO liczy się teraz z lica tak samo jak tekstylne. Przy formacie 1060 × 640
    rama zajmuje około 8 % powierzchni panelu, więc przypisanie jej α zmierzonego
    na próbce 2440 × 1220 obiecywałoby więcej, niż panel da. */
-sprawdz(nuo.zewn===0.659&&nuo.czynne===0.61,
+sprawdz(nuo.zewn===0.678&&nuo.czynne===0.628,
   'NUO liczy się z lica tak samo jak tekstylne — rama nie pochłania');
-/* Oba kartony to jedna płyta wełny pocięta bez odpadu, więc akustycznie
-   są niemal równoważne — wybór kartonu jest decyzją o wyglądzie. */
-sprawdz(mozaika.panele.length===2&&mozaika.czynne===w100.czynne&&mozaika.szt===w100.szt,
-  'komplet dzielony pochłania dokładnie tyle samo co panel pojedynczy');
-sprawdz(mozaika.zewn>w100.zewn,
-  'komplet dzielony zajmuje więcej ściany — dwie ramki zamiast jednej');
-/* Zestaw mieszany to kartony po połowie jednego i drugiego rodzaju. Skoro oba
-   mają identyczne pole czynne, przeplatanka nie może zmienić liczby kartonów. */
-sprawdz(mieszany2.czynne===w100.czynne&&mieszany2.szt===w100.szt,
-  'zestaw mieszany pochłania tyle samo i daje tę samą liczbę sztuk');
-sprawdz(mieszany2.zewn>w100.zewn&&mieszany2.zewn<mozaika.zewn,
-  'zestaw mieszany zajmuje ściany pomiędzy jednym a drugim formatem');
-sprawdz(mieszany2.sklad.indexOf('1030 × 640')>=0&&mieszany2.sklad.indexOf('640 × 420')>=0,
+/* Oba kartony to jedna płyta wełny pocięta bez odpadu, ale panel pojedynczy
+   jest teraz o 30 mm dłuższy (żeby zejść się z kompletem na ścianie), więc
+   pochłania nieco więcej — różnica ok. 3 %, akustycznie wciąż nieistotna. */
+sprawdz(mozaika.panele.length===2&&Math.abs(mozaika.czynne-w100.czynne)<0.02&&mozaika.szt===w100.szt,
+  'komplet dzielony pochłania w przybliżeniu tyle samo co panel pojedynczy (różnica < 0,02 m²)');
+sprawdz(mozaika.zewn===w100.zewn,
+  'komplet dzielony zajmuje na ścianie dokładnie tyle co panel pojedynczy — krawędzie się teraz zgadzają');
+/* Zestaw mieszany to kartony po połowie jednego i drugiego rodzaju. Ich pole
+   czynne różni się o ok. 3 %, więc średnia z obu jest bliska, ale nie
+   identyczna z żadnym z osobna — w praktyce wciąż nie zmienia liczby sztuk. */
+sprawdz(Math.abs(mieszany2.czynne-w100.czynne)<0.02&&mieszany2.szt===w100.szt,
+  'zestaw mieszany pochłania w przybliżeniu tyle samo i daje tę samą liczbę sztuk');
+sprawdz(mieszany2.zewn===w100.zewn&&mieszany2.zewn===mozaika.zewn,
+  'zestaw mieszany zajmuje na ścianie tyle samo co oba formaty z osobna — krawędzie się zgadzają');
+sprawdz(mieszany2.sklad.indexOf('1060 × 640')>=0&&mieszany2.sklad.indexOf('640 × 420')>=0,
   'skład zestawu mieszanego wymienia panele obu rodzajów');
 sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
   'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
@@ -236,7 +238,7 @@ sprawdz(nuo50.zrodlo.indexOf('NUO_WALL')>=0&&nuo.zrodlo.indexOf('SZACUNEK')>=0&&
 /* Format z poprzedniego wykończenia nie może wywrócić rachunku — wybór cofa
    się wtedy do pierwszego formatu wykończenia właśnie wybranego. */
 const mieszany=policz('nuo','n100','k1');
-sprawdz(mieszany.czynne===0.61&&mieszany.szt>0,
+sprawdz(mieszany.czynne===0.628&&mieszany.szt>0,
   'format wspólny dla obu wykończeń liczy się tak samo');
 
 console.log('\nRekomendacja wersji — ma wskazywać pomiar, nie cennik');
@@ -317,7 +319,7 @@ sprawdz(E('m2').innerHTML.indexOf('Wybierz rodzaj wnętrza')>=0,
 
 console.log('\nJednostka — sztuki, a przy panelu dzielonym komplet');
 const jedn=policz('tex','w100','k1'), kompl=policz('tex','w100','k2');
-sprawdz(jedn.sklad.indexOf('panel 1030 × 640')>=0&&jedn.sklad.indexOf('komplet')<0,
+sprawdz(jedn.sklad.indexOf('panel 1060 × 640')>=0&&jedn.sklad.indexOf('komplet')<0,
   'panel pojedynczy opisany jako panel');
 sprawdz(kompl.sklad.indexOf('komplet')>=0&&/\(\d+ panel/.test(kompl.sklad)&&
   kompl.szt===jedn.szt,

@@ -132,7 +132,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <p class="eyebrow">Krok 4 z 4 · propozycja</p>
   <h1>Ile paneli</h1>
   <div id="wynTryb"></div>
-  <div class="big"><div class="num" id="wynSzt">—</div><div class="cap" id="wynCap">paneli 1000 × 610 mm</div></div>
+  <div class="big"><div class="num" id="wynSzt">—</div><div class="cap" id="wynCap">paneli 1030 × 610 mm</div></div>
   <div id="wynGl"></div>
   <h2>Czas pogłosu po adaptacji</h2>
   <div id="wynTab"></div>
@@ -213,24 +213,33 @@ const PASMA=[125,250,500,1000,2000,4000];
 
    Jednostką jest SZTUKA. Przy panelu dzielonym jedna sztuka to KOMPLET dwóch
    paneli z jednej płyty przeciętej wzdłuż na 610 i 390 mm — dlatego panel
-   pojedynczy i komplet mają CO DO METRA to samo pole czynne. Wybór między
-   nimi jest decyzją o wyglądzie ściany, nie o pochłanianiu.
+   pojedynczy i komplet mają W PRZYBLIŻENIU to samo pole czynne (różnica
+   ok. 3 %, patrz niżej). Wybór między nimi jest przede wszystkim decyzją
+   o wyglądzie ściany, nie o pochłanianiu.
+
+   Panel pojedynczy ma zewnętrzny wymiar 1060 × 640 mm — o 30 mm dłuższy niż
+   we wcześniejszej wersji (1030 mm) — żeby przy montażu obok kompletu
+   (640 + 420 = 1060 mm) obie ściany paneli schodziły się co do milimetra,
+   zamiast rozjeżdżać się o jedną grubość ramki. Lico rośnie razem z ramą
+   (1030 × 610 mm), więc pole czynne panelu rośnie z 0,610 do 0,628 m² —
+   to jest realny, nieco większy kawałek wełny, nie tylko inny zapis.
 
    Ramka nie pochłania, więc pole czynne liczy się z lica, a pole zewnętrzne
    z całego panelu — bo tyle miejsca zajmuje on na ścianie. */
 const FORMATY=[
-  {id:'k1', n:'Panel 1030 × 640 mm',
-   o:'Jedna sztuka, lico czynne 1000 × 610 mm.',
-   panele:[{n:'1030 × 640', dl:1.030, sz:0.640, wdl:1.000, wsz:0.610}]},
+  {id:'k1', n:'Panel 1060 × 640 mm',
+   o:'Jedna sztuka, lico czynne 1030 × 610 mm.',
+   panele:[{n:'1060 × 640', dl:1.060, sz:0.640, wdl:1.030, wsz:0.610}]},
   {id:'k2', n:'Komplet 640 × 640 i 640 × 420 mm',
    o:'Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie.',
    panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
            {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]},
-  /* Zestaw mieszany: sztuki po połowie jednego i drugiego rodzaju. Skoro oba
-     mają identyczne pole czynne, przeplatanka NIE ZMIENIA ani liczby sztuk,
-     ani powierzchni pochłaniającej — daje wyłącznie trzy formaty paneli do
-     układania zamiast jednego lub dwóch. Różni się miejscem na ścianie,
-     i to o promile. */
+  /* Zestaw mieszany: sztuki po połowie jednego i drugiego rodzaju. Pole czynne
+     obu formatów różni się o ok. 3 % (0,628 wobec 0,610 m²), więc przeplatanka
+     w praktyce nie zmienia ani liczby sztuk, ani powierzchni pochłaniającej —
+     daje wyłącznie trzy formaty paneli do układania zamiast jednego lub
+     dwóch. Pole zewnętrzne obu formatów jest teraz identyczne (0,6784 m²
+     każdy), więc zestaw mieszany nie zmienia też zapotrzebowania na ścianę. */
   {id:'k3', n:'Zestaw mieszany — po połowie',
    o:'Połowa sztuk to panel duży, połowa to komplet mozaikowy. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania dokładnie tyle samo.',
    mieszany:['k1','k2']}
@@ -258,7 +267,7 @@ const WYK={
        Wcześniej NUO miał własne, duże formaty ram producenta i pole czynne
        równe zewnętrznemu, bo α pochodzi z badania komorowego gotowego panelu.
        Przy naszym formacie to przestaje być bezpieczne: w próbce 2440 × 1220
-       rama zajmowała ułamek powierzchni, a w panelu 1030 × 640 jest to już
+       rama zajmowała ułamek powierzchni, a w panelu 1060 × 640 jest to już
        około 8 %. Liczenie z lica zaniża wynik o tyle samo — czyli w stronę
        bezpieczną. Do sprawdzenia, gdy producent poda szerokość profilu. */
     formaty:FORMATY,
@@ -284,15 +293,16 @@ const format=()=>wyk().formaty.find(f=>f.id===ST.format)||wyk().formaty[0];
    nic poza licem nie wchodzi.
 
    POLE ZEWNĘTRZNE — tyle miejsca panel faktycznie zajmuje na ścianie. Sprawdzenie
-   „czy się zmieści" musi iść z niego, nie z pola czynnego: panel 1030 × 640
+   „czy się zmieści" musi iść z niego, nie z pola czynnego: panel 1060 × 640
    zajmuje o 8 % więcej niż jego wełna, a 640 × 420 aż o 13 %. Liczenie miejsca
    polem czynnym zaniżało zapotrzebowanie na powierzchnię. */
 /* Zestaw mieszany opisuje przeplatankę dwóch rodzajów kartonu po połowie, więc
-   jego pola to średnia z obu. Pole czynne wychodzi identyczne — oba kartony to
-   jedna płyta wełny — a zewnętrzne różni się o promile, bo karton mozaikowy ma
-   dwie ramki zamiast jednej. Przy nieparzystej liczbie kartonów średnia myli
-   się o ułamek jednej ramki; to mniej niż dokładność samego sprawdzenia
-   miejsca, które i tak szacuje dostępną ścianę współczynnikiem. */
+   jego pola to średnia z obu. Pole czynne różni się o ok. 3 % (panel większy
+   o 30 mm ma teraz więcej wełny niż pojedynczy karton kompletu) — przy
+   nieparzystej liczbie kartonów średnia myli się dodatkowo o ułamek jednej
+   sztuki, co razem wciąż jest mniej niż dokładność samego szacunku. Pole
+   zewnętrzne wychodzi identyczne (640 + 420 = 1060 mm = długość panelu), więc
+   zestaw mieszany nie zmienia zapotrzebowania na ścianę. */
 function polaFormatu(f){
   if(f.mieszany){
     const skl=f.mieszany.map(id=>wyk().formaty.find(x=>x.id===id));

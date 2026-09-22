@@ -353,7 +353,7 @@ ile paneli faktycznie dostanie: od tego zależy, co da się ułożyć na ściani
 
 | sztuka | zawartość | wełna czynna | pole czynne | pole zewnętrzne |
 |---|---|---|---|---|
-| **panel pojedynczy** | 1030 × 640 | 1000 × 610 | 0,610 m² | 0,659 m² |
+| **panel pojedynczy** | 1060 × 640 | 1030 × 610 | 0,628 m² | 0,678 m² |
 | **komplet dzielony** | 640 × 640 | 610 × 610 | 0,372 m² | 0,410 m² |
 | | 640 × 420 | 610 × 390 | 0,238 m² | 0,269 m² |
 | | **razem komplet** | | **0,610 m²** | **0,678 m²** |
@@ -362,32 +362,43 @@ Komplet powstaje z przecięcia płyty wzdłuż na 610 i 390 mm, a służy
 **architekturze**: dwa formaty pozwalają układać na ścianie i suficie mozaikę,
 zamiast rytmu opartego na jednym prostokącie.
 
+**Panel pojedynczy ma 1060 mm, nie 1030 mm.** Wcześniejsza wersja miała
+1030 mm i to tworzyło niewidoczny na pierwszy rzut oka problem montażowy:
+komplet ustawiony jeden kawałek pod drugim ma długość 640 + 420 = 1060 mm,
+czyli o 30 mm więcej niż miał wtedy panel pojedynczy. Przy łączeniu obu
+formatów na jednej ścianie (rząd obok kolumny) krawędzie się rozjeżdżały —
+nie o błąd rachunku, tylko o realną, fizyczną różnicę wynikającą z tego, że
+komplet to dwa oddzielnie oprawione kawałki, każdy z własną ramką na styku,
+podczas gdy panel pojedynczy miał tam ciągłą wełnę bez przerwy. Wydłużenie
+panelu do 1060 mm (z liciem rosnącym razem z ramą, do 1030 × 610 mm) usuwa
+tę niezgodność: **pole zewnętrzne obu formatów jest teraz identyczne, 0,678 m²
+każdy** — 640 + 420 mm faktycznie zestawia się w linii z 1060 mm.
+
 Do wyboru jest jeszcze **zestaw mieszany** — sztuki po połowie jednego
 i drugiego rodzaju, przy nieparzystej liczbie z nadwyżką po stronie panelu
-pojedynczego. Skoro oba mają identyczne pole czynne, przeplatanka **nie zmienia
-ani liczby sztuk, ani powierzchni pochłaniającej**: daje wyłącznie trzy formaty
-paneli na ścianie zamiast jednego lub dwóch. Zajmuje ściany pomiędzy jednym
-a drugim, co przy sprawdzeniu miejsca liczymy średnią — nieparzystość myli ją
-o ułamek jednej ramki, czyli mniej niż wynosi dokładność samego szacunku
-dostępnej powierzchni.
+pojedynczego. Pole zewnętrzne obu formatów jest identyczne, więc przeplatanka
+**nie zmienia zapotrzebowania na ścianę**. Pole czynne różni się o ok. 3 %
+(patrz niżej), więc też **nie zmienia w praktyce liczby sztuk potrzebnych do
+celu** — średnia z obu jest bliska każdemu z osobna.
 
 **Te same trzy formaty obowiązują dla obu wykończeń.** Panele drewniane miały
 wcześniej własne, duże formaty ram producenta (950 × 950, 2480 × 950,
 2440 × 1220) i pole czynne równe zewnętrznemu, bo ich α pochodzi z badania
 komorowego gotowego panelu. **Przy naszym formacie to przestaje być
 bezpieczne:** w próbce 2440 × 1220 rama zajmowała ułamek powierzchni,
-a w panelu 1030 × 640 jest to już około 8 %. Dlatego NUO liczy się teraz
+a w panelu 1060 × 640 jest to już około 8 %. Dlatego NUO liczy się teraz
 z lica, tak samo jak tekstylne — zaniża wynik o mniej więcej tyle, ile wynosi
 udział ramy, czyli w stronę bezpieczną. Do sprawdzenia, gdy producent poda
 szerokość profilu.
 
-**Akustycznie obie sztuki są identyczne — 0,610 m² co do metra.** Jedna płyta
-wełny, jedna sztuka, to samo pochłanianie. Wybór formatu jest więc wyłącznie
-decyzją o wyglądzie i tak trzeba go klientowi przedstawiać.
-
-Różnią się jedynie **miejscem na ścianie**: komplet dzielony zajmuje 0,678
-wobec 0,659 m², bo ma dwie ramki zamiast jednej. Trzy procent — bez znaczenia
-poza pomieszczeniem naprawdę ciasnym, ale rachunek to uwzględnia.
+**Akustycznie obie sztuki są w przybliżeniu takie same — 0,628 wobec
+0,610 m², różnica ok. 3 %.** Panel pojedynczy jest teraz nieco większy (żeby
+zejść się z kompletem na ścianie), więc pochłania odrobinę więcej wełny —
+to jest realna, choć drobna różnica, nie tylko inny zapis tej samej rzeczy.
+Trzy procent to dużo mniej niż niepewność samego pomiaru telefonem (20–30 %,
+patrz 1.5), więc dla klienta wybór formatu **wciąż jest przede wszystkim**
+decyzją o wyglądzie ściany, a nie o pochłanianiu — tylko już nie dosłownie
+co do metra.
 
 #### Dwa różne pola, i mylenie ich było błędem
 
@@ -444,8 +455,8 @@ Punkt odniesienia z testu regresyjnego (salon 39,75 m³, Tmid 0,353 s, cel
 
 | wariant | powierzchnia | sztuk |
 |---|---|---|
-| tekstylny, wełna 100 mm, 1000 × 610 | 2,66 m² | 5 |
-| tekstylny, wełna 50 mm, 1000 × 610 | 2,87 m² | 5 |
+| tekstylny, wełna 100 mm, 1030 × 610 | 2,66 m² | 5 |
+| tekstylny, wełna 50 mm, 1030 × 610 | 2,87 m² | 5 |
 | NUO_WALL 950 × 950 | 2,28 m² | 3 |
 
 NUO wypada powierzchniowo najoszczędniej, bo w pasmach mowy ma α ≈ 1,00.
@@ -543,6 +554,14 @@ odczyt liczy.**
    dowodu, że jest prawdziwe.
 5. **Drugie pomieszczenie** — różnica 32 % pochodzi z jednego salonu o krótkim
    pogłosie. Kierunek pewny, skala niekoniecznie.
+6. **Wełna do panelu 1030 × 610 mm** — 3.4 opisuje płytę wełny jako 1000 × 610 mm,
+   a po powiększeniu panelu pojedynczego (3.6, do 1060 mm zewnętrznie, żeby
+   zejść się z kompletem na ścianie) lico potrzebuje 1030 × 610 mm, czyli
+   30 mm więcej w jednym wymiarze. Nie wiadomo, czy 1000 × 610 to sztywny,
+   katalogowy rozmiar płyty (i wtedy trzeba innego cięcia albo łączenia dwóch
+   kawałków wewnątrz panelu), czy to tylko rozmiar, jaki dotąd zamawialiśmy
+   od producenta na cięcie (i wtedy zmiana zamówienia jest formalnością). Do
+   potwierdzenia u dostawcy wełny, zanim ten wymiar trafi na produkcję.
 
 ---
 
