@@ -164,7 +164,12 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
     <label class="opt" id="oPhone"><input type="radio" name="src" value="phone">
       <b>Głośnik telefonu · tylko poglądowo</b><span>Gdy nie masz pod ręką żadnego głośnika. Mikrofon leży na tej samej obudowie co źródło, więc dociera do niego znikoma część pogłosu: pasma 250 i 500 Hz zwykle nie wychodzą, a czas pogłosu bywa zaniżony o 20–30 %. Do zgrubnego rozeznania, nie do projektu.</span></label>
     <div id="extHint" class="msg info">Postaw głośnik w rogu, na wysokości około 1 m, zwrócony w głąb wnętrza. Odsuń się od niego na co najmniej 2 metry.</div>
-    <div id="phoneHint" class="msg warn hide"><b>Wynik będzie wyłącznie poglądowy.</b> Ograniczenie jest konstrukcyjne — mikrofon i głośnik są w jednym urządzeniu, więc nie da się go obejść ustawieniem ani oprogramowaniem. Jeżeli wynik ma posłużyć do doboru adaptacji, wróć tu z dowolnym głośnikiem Bluetooth.</div>
+<!-- Pierwsze zdanie dotyczy CZEGO INNEGO niż drugie i dlatego stoi przed nim:
+     mówi, co zrobić teraz, zanim cokolwiek zagra. Program nie steruje wyjściem
+     dźwięku — Web Audio gra tam, gdzie wskazuje system, a telefon z podłączonym
+     Bluetoothem wskazuje głośnik zewnętrzny. Wybór na tym ekranie jest więc
+     DEKLARACJĄ, nie przełącznikiem, i dopóki nią jest, musi o tym mówić wprost. -->
+    <div id="phoneHint" class="msg warn hide"><b>Rozłącz najpierw głośnik Bluetooth.</b> Program nie przełącza wyjścia dźwięku — robi to system. Przy podłączonym głośniku sygnał wyjdzie przez niego, mimo że wybrałeś telefon, a wynik dostanie korektę, której nie potrzebuje.<br><br><b>Wynik będzie wyłącznie poglądowy.</b> Ograniczenie jest konstrukcyjne — mikrofon i głośnik są w jednym urządzeniu, więc nie da się go obejść ustawieniem ani oprogramowaniem. Jeżeli wynik ma posłużyć do doboru adaptacji, wróć tu z dowolnym głośnikiem Bluetooth.</div>
     <button id="b3a" style="margin-top:14px">Włącz mikrofon</button><div id="m3a"></div>
   </div>
   <div id="lvlBox" class="hide">
@@ -542,8 +547,12 @@ document.querySelectorAll('input[name=src]').forEach(r=>r.onchange=()=>{
     $('gAbs').textContent='—';$('b3c').classList.add('hide');
     S($('m3b'),'info',t('Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika.'));
   }});
+/* Przypomnienie o Bluetoocie wraca TUTAJ, a nie tylko przy wyborze źródła.
+   Panel przy wyborze czyta się raz i szybko; ten napis stoi nad przyciskiem,
+   który za chwilę zagra dźwięk — czyli dokładnie tam, gdzie pomyłka wychodzi. */
 function hintPoziomu(){return ST.src==='phone'
   ? t('Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.')
+    +' '+t('Jeśli masz podłączony głośnik Bluetooth, rozłącz go — inaczej to przez niego wyjdzie sygnał.')
   : t('Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.');}
 
 $('b3a').onclick=async()=>{

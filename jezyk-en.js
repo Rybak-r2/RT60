@@ -44,6 +44,8 @@
   S["Głośnik telefonu · tylko poglądowo"]="Phone speaker · indicative only";
   S["Gdy nie masz pod ręką żadnego głośnika. Mikrofon leży na tej samej obudowie co źródło, więc dociera do niego znikoma część pogłosu: pasma 250 i 500 Hz zwykle nie wychodzą, a czas pogłosu bywa zaniżony o 20–30 %. Do zgrubnego rozeznania, nie do projektu."]="For when no speaker is at hand. The microphone sits in the same housing as the source, so only a fraction of the reverberant field reaches it: the 250 and 500 Hz bands usually fail, and reverberation time comes out 20–30 % too short. For a rough idea, not for a design.";
   S["Postaw głośnik w rogu, na wysokości około 1 m, zwrócony w głąb wnętrza. Odsuń się od niego na co najmniej 2 metry."]="Place the speaker in a corner, about 1 m high, facing into the room. Move at least 2 metres away from it.";
+  S["Rozłącz najpierw głośnik Bluetooth."]="Disconnect the Bluetooth speaker first.";
+  S["Program nie przełącza wyjścia dźwięku — robi to system. Przy podłączonym głośniku sygnał wyjdzie przez niego, mimo że wybrałeś telefon, a wynik dostanie korektę, której nie potrzebuje."]="The app does not switch the audio output — the system does. With a speaker connected the signal will come out of it even though you chose the phone, and the result will be given a correction it does not need.";
   S["Wynik będzie wyłącznie poglądowy."]="The result will be indicative only.";
   S["Ograniczenie jest konstrukcyjne — mikrofon i głośnik są w jednym urządzeniu, więc nie da się go obejść ustawieniem ani oprogramowaniem. Jeżeli wynik ma posłużyć do doboru adaptacji, wróć tu z dowolnym głośnikiem Bluetooth."]="The limitation is physical — microphone and speaker are in one device, so no setting or software can work around it. If the result is to inform an acoustic treatment, come back with any Bluetooth speaker.";
   S["Włącz mikrofon"]="Enable microphone";
@@ -86,6 +88,7 @@
   S["Poza sensownym zakresem: {co}. Dozwolone: długość i szerokość {lmin}–{lmax} m, wysokość {hmin}–{hmax} m. Sprawdź, czy separator dziesiętny trafił we właściwe miejsce."]="Outside a sensible range: {co}. Allowed: length and width {lmin}–{lmax} m, height {hmin}–{hmax} m. Check that the decimal separator is in the right place.";
   S["Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika."]="The sound source has changed. Check the level again — the previous check applied to a different speaker.";
   S["Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę."]="Hold the volume-up button until it stops, hold the phone at arm's length and press Check level. Keep quiet.";
+  S["Jeśli masz podłączony głośnik Bluetooth, rozłącz go — inaczej to przez niego wyjdzie sygnał."]="If a Bluetooth speaker is connected, disconnect it — otherwise the signal will come out of that instead.";
   S["Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę."]="Set the speaker to about three quarters of its volume range, move 2 m away from it and press Check level. Keep quiet.";
   S["Łączę…"]="Connecting…";
   S["Brak dostępu do mikrofonu ({blad}). Strona musi działać przez HTTPS."]="No microphone access ({blad}). The page must be served over HTTPS.";

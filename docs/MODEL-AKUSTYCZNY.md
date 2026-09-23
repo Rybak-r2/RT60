@@ -933,3 +933,50 @@ chodzi po węzłach tekstowych raz, przy starcie, i podmienia zawartość.
 przejrzeć native speaker znający akustykę — zwłaszcza niemieckie, gdzie
 terminologia normowa (*Nachhallzeit*, *Absorptionsgrad*, *Diffusfeld*) jest
 ustalona i rozjazd z nią będzie widoczny dla projektanta.
+
+### 6.8 Wybór źródła jest deklaracją, nie przełącznikiem
+
+Ekran „Wybierz źródło dźwięku" nie przełącza wyjścia i nigdy nie przełączał.
+Web Audio gra tam, gdzie wskazuje system operacyjny; `ST.src` wpływa wyłącznie
+na dolną granicę sweepu (200 Hz dla telefonu, 80 Hz dla zewnętrznego), na
+rysunek planu, na treść komunikatów i na pole `charakter_pomiaru` w pliku.
+Telefon z podłączonym głośnikiem Bluetooth wskazuje ten głośnik — więc po
+wybraniu „głośnik telefonu" sygnał i tak wychodzi przez Bluetooth, a program
+opisuje ograniczenia, których w tym pomiarze nie ma.
+
+**Dlaczego nie da się tego naprawić routingiem.** `AudioContext.setSinkId()`
+nie istnieje w Safari (czyli na całym iOS), na Androidzie jest w praktyce
+niedostępne, a nawet tam, gdzie działa, system nie wystawia stronie wbudowanego
+głośnika telefonu jako osobnego wyjścia przy podłączonym Bluetoothie. Na
+urządzeniu docelowym ta droga jest zamknięta. Jedyne, co program może zrobić,
+to poprosić o rozłączenie — i to robi, w dwóch miejscach: w panelu po wyborze
+telefonu i w podpowiedzi nad przyciskiem kontroli poziomu.
+
+**Ile kosztuje fałszywa deklaracja.** Kierunki nie są symetryczne:
+
+| deklaracja | co gra naprawdę | skutek |
+|---|---|---|
+| telefon | głośnik Bluetooth | pomiar dobry, ale dostaje korektę ×1,15–1,45 → **za dużo paneli** i widełki, których nie powinno być |
+| zewnętrzny | głośnik telefonu | pomiar zaniżony o 20–30 % i **bez korekty** → za mało paneli, cel nieosiągnięty po montażu |
+
+Druga jest groźna i **jest już wykrywana**: udział pola późnego poniżej
+`POZNE_MIN = 0,25` oznacza mikrofon leżący na obudowie źródła i program o tym
+ostrzega. Pierwsza nie jest wykrywana, choć ten sam wskaźnik by ją złapał —
+prawdziwy pomiar telefonem praktycznie zawsze wypada poniżej progu, więc
+**zadeklarowany telefon przy normalnym udziale pola późnego jest podejrzany**.
+To ta sama liczba i ten sam próg, tylko druga strona nierówności.
+
+**Do zrobienia, w tej kolejności.** Ostrzeżenie tekstowe jest wdrożone. Drugim
+krokiem jest sprawdzenie w kontroli poziomu — ostrzegające, nie blokujące,
+z opóźnieniem toru (`ST.lat`, typowo 130–260 ms dla Bluetootha wobec poniżej
+30 ms dla własnego głośnika) jako potwierdzeniem, zgodnie z rolą, jaką
+przypisuje mu komentarz przy `runSweep`. Wymaga kalibracji na realnych
+telefonach, bo sama latencja ma ±85 ms niepewności z bufora ScriptProcessora,
+a głośnik przewodowy ma opóźnienie bliskie zeru — dlatego głównym sędzią
+zostaje udział pola późnego, a latencja tylko go potwierdza.
+
+Docelowo deklaracja powinna zniknąć: kontrola poziomu i tak gra sweep i liczy
+wszystko, co potrzebne do rozstrzygnięcia. Wystarczy zagrać ją zawsze od 200 Hz
+(bezpieczne dla obu przypadków), rozpoznać źródło z wyniku, a właściwy pomiar
+puścić od 80 Hz dopiero wtedy, gdy wyszło, że to głośnik zewnętrzny. Wtedy plik
+opisuje to, co się wydarzyło, a nie to, co ktoś kliknął.
