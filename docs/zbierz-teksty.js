@@ -76,7 +76,7 @@ const DYNAMICZNE=[
   'dobry','orient.','brak pobudzenia','za mały zakres','zanik nieliniowy','odstaje od sąsiadów',
   'pole charakter_pomiaru','tor.zrodlo = phone (plik ze starszego silnika)',
   'tor.zrodlo = ext (plik ze starszego silnika)','nie ustalono — przyjęto poglądowy',
-  'pomieszczenie','Cel własny','zalecane',
+  'pomieszczenie','Cel własny',
   'Pomiar z tego badania','Wczytaj inny plik','Wybierz plik z badania'
 ];
 DYNAMICZNE.forEach(s=>{ if(teksty.indexOf(s)<0) teksty.push(s); });

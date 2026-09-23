@@ -745,7 +745,7 @@ function rysujWariantIFormat(){
   wybor('mont', wyk().montaze, ST.mont, id=>{
     ST.mont=id; ST.montRecznie=true; S($('m3'),''); pokazRekom();});
   pokazRekom();
-  $('hFormat').textContent='Wybierz format';
+  $('hFormat').textContent=t('Wybierz format');
   wybor('format', wyk().formaty.map(f=>({id:f.id,n:f.n,o:opisFormatu(f)})), ST.format,
     id=>{ST.format=id; S($('m3'),'');});
 }
@@ -962,7 +962,7 @@ function pokazWynik(dolny,gorny,bazowy){
     [t('pole granic'), pl(ST.S,1)+' m²'],
     [t('cel Tmid'), pl(ST.cel)+' s'],
     [t('wykończenie'), t(wyk().nazwa)],
-    [t('wariant'), t(montaz().n).replace(' · '+t('zalecane'),'')],
+    [t('wariant'), t(montaz().n)],
     [t('format'), t(format().n)],
     [t('pole czynne sztuki'), pl(poleCzynne())+' m²'],
     [t('pole zajmowane na ścianie'), pl(poleZewn())+' m² '+t('na sztukę')],
@@ -991,7 +991,7 @@ function pokazWynik(dolny,gorny,bazowy){
         cel_Tmid_s:ST.cel,
         charakter_pomiaru:ST.pogladowy?'pogladowy':'pelny',
         Tmid_przed:ST.Tmid!=null?+ST.Tmid.toFixed(3):null,
-        wykonczenie:wyk().nazwa, wariant:montaz().n.replace(' · zalecane',''),
+        wykonczenie:wyk().nazwa, wariant:montaz().n,
         format:format().n,
         sztuk:ST.pogladowy?null:bazowy.szt,
         sztuk_od:ST.pogladowy?dolny.szt:null, sztuk_do:ST.pogladowy?gorny.szt:null,
@@ -1123,7 +1123,7 @@ function raportHTML(){
   '<p class="duze">'+ile+'</p>'+
   '<table><tr><td>'+esc(t('Wykończenie'))+'</td><td colspan="3">'+esc(t(wyk().nazwa))+'</td></tr>'+
   '<tr><td>'+esc(t('Wersja'))+'</td><td colspan="3">'+
-    esc(t(montaz().n).replace(' · '+t('zalecane'),''))+'</td></tr>'+
+    esc(t(montaz().n))+'</td></tr>'+
   '<tr><td>'+esc(t('Format'))+'</td><td colspan="3">'+esc(t(format().n))+'</td></tr>'+
   '<tr><td>'+esc(t('Skład'))+'</td><td colspan="3">'+
     esc(skladKartonow(ST.pogladowy?w.dolny.szt:b.szt))+'</td></tr>'+
@@ -1184,7 +1184,7 @@ function propozycjaJSON(){
       podstawa:ST.rekom.typ,
       uzasadnienie:ST.rekom.tekst.replace(/<[^>]+>/g,'')}:null,
     panel:{wykonczenie:ST.wyk, wykonczenie_nazwa:wyk().nazwa,
-      wariant:montaz().id, wariant_nazwa:montaz().n.replace(' · zalecane',''),
+      wariant:montaz().id, wariant_nazwa:montaz().n,
       format:format().n,
       zestaw_mieszany:!!format().mieszany,
       sklad:skladKartonow(w.bazowy.szt),

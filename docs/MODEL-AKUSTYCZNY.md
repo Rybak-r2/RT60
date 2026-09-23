@@ -983,10 +983,44 @@ w trakcie wpisywania nie kasowało danych.
 | `jezyk-en.js`, `jezyk-de.js` | słowniki, po jednym na język — generowane, ale poprawki wpisuje się wprost w nich |
 | `docs/zbierz-teksty.js` | zbiera teksty z wywołań `t()`, ze znaczników i z tablic definicyjnych; `--brakujace` wypisuje nieprzetłumaczone |
 | `docs/test-jezyki.js` | kompletność, hasła osierocone, podstawienia, znaczniki HTML, polskie znaki w obcym tłumaczeniu |
+| `docs/test-przecieki.js` | napisy, które nigdy nie przechodzą przez `t()` — sklejane w kodzie albo używane jako klucz bez wywołania |
 
 Statyczne znaczniki nie wymagały żadnej zmiany: skoro kluczem jest polski
 tekst, to ten, który już stoi w HTML, jest gotowym kluczem. `Jezyk.tlumaczDOM()`
 chodzi po węzłach tekstowych raz, przy starcie, i podmienia zawartość.
+
+**Dwie klasy usterek, dwa testy.** `test-jezyki.js` pilnuje, żeby każdy ZNANY
+tekst miał tłumaczenie. Nie zobaczy zdania, które nigdy nie trafiło na listę,
+bo powstaje przez sklejanie w kodzie:
+
+```js
+$('sl3').textContent='dobrze (od '+SNR_AC_GOOD+' dB)';
+```
+
+Ekstraktor takiego napisu nie widzi, więc nie ma go w słowniku, więc nie ma
+czego zgłosić jako brakujące — a na ekranie zostaje po polsku we wszystkich
+językach. Tak przeciekł podpis skali poziomu.
+
+Pierwszy skan szukał polskich znaków diakrytycznych i dlatego go przepuścił:
+„dobrze (od 26 dB)" nie ma ani jednego ogonka. `test-przecieki.js` nie szuka
+ogonków i nie ma ręcznej listy polskich słów — **wyprowadza ją ze słowników**.
+Bierze wszystkie słowa z polskich kluczy i odejmuje wszystkie słowa
+występujące w tłumaczeniach; zostają słowa wyłącznie polskie (1065 z 1171).
+Nazwy własne (ALACER, NUO_WALL, REW, Bluetooth), jednostki i liczby odpadają
+same, bo stoją po obu stronach. Lista buduje się z projektu i starzeje razem
+z nim.
+
+Reguła: **każdy napis w kodzie zawierający słowo wyłącznie polskie musi albo
+przechodzić przez `t()`, albo stać w tablicy definicyjnej, albo być wymieniony
+jako polski z założenia** (kontrakt danych, identyfikatory, nazwy plików, klasy
+CSS). Sama obecność w słowniku nie wystarcza — klucz użyty bez `t()` to
+dokładnie ten przeciek, o który chodzi. Tak znalazł się nagłówek „Wybierz
+format", który tłumaczył się przy starcie strony, a potem wracał do polskiego
+przy każdym przerysowaniu listy wariantów.
+
+Lista wyjątków ma pozostać krótka; test pilnuje i tego. Gdyby puchła,
+znaczyłoby to, że kontrakt danych rozlewa się na treść widzianą przez
+użytkownika.
 
 **Do weryfikacji:** tłumaczenia są techniczne i przed produkcją powinien je
 przejrzeć native speaker znający akustykę — zwłaszcza niemieckie, gdzie

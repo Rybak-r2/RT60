@@ -227,6 +227,7 @@
   S["   albo sprawdzic wynik niezaleznym narzedziem (REW, ARTA,"]="   oder das Ergebnis mit einem unabhaengigen Werkzeug pruefen (REW, ARTA,";
   S["   Audacity, Python) bez wracania do pomieszczenia."]="   Audacity, Python), ohne in den Raum zurueckzukehren.";
   S["Plik przeznaczony do przeslania do ALACER."]="Diese Datei ist zur Uebersendung an ALACER bestimmt.";
+  S["Zapisano <b>{nazwa}</b>"]="Gespeichert: <b>{nazwa}</b>";
   S["{ile} plików: wyniki, {ir} odpowiedzi impulsowe i opis zawartości."]="{ile} Dateien: Ergebnisse, {ir} Impulsantworten und eine Inhaltsbeschreibung.";
   S["Nie udało się spakować ({blad})."]="Das Packen ist fehlgeschlagen ({blad}).";
   S["Dobór adaptacji akustycznej · ALACER"]="Auswahl der Akustikelemente · ALACER";
@@ -352,7 +353,6 @@
   S["cel Tmid"]="Ziel Tmid";
   S["wykończenie"]="Ausführung";
   S["wariant"]="Variante";
-  S["zalecane"]="empfohlen";
   S["format"]="Format";
   S["pole czynne sztuki"]="wirksame Fläche je Stück";
   S["pole zajmowane na ścianie"]="belegte Wandfläche";
@@ -407,7 +407,6 @@
   S["Wartości α paneli są tymczasowe do czasu otrzymania tabel od producentów; kierunek ewentualnego błędu jest bezpieczny — model zaniża pochłanianie. Czas pogłosu po adaptacji jest obliczony, nie zmierzony. Sprawdzisz go, powtarzając badanie po montażu."]="Die α-Werte der Elemente sind vorläufig, bis die Tabellen der Hersteller vorliegen; die Richtung eines möglichen Fehlers liegt auf der sicheren Seite — das Modell gibt die Absorption zu niedrig an. Die Nachhallzeit nach der Ertüchtigung ist berechnet, nicht gemessen. Sie prüfen sie, indem Sie die Messung nach der Montage wiederholen.";
   S["Raport wygenerowany przez {wersja} na podstawie pomiaru {silnik}."]="Bericht erstellt von {wersja} auf Grundlage einer Messung mit {silnik}.";
   S["Drukuj / Zapisz jako PDF"]="Drucken / Als PDF speichern";
-  S["Zapisano <b>{nazwa}</b>"]="Gespeichert: <b>{nazwa}</b>";
   S["{ile} plików, z odpowiedziami impulsowymi."]="{ile} Dateien, mit Impulsantworten.";
   S["{ile} plików, <b>bez odpowiedzi impulsowych</b> — patrz czytaj-to.txt."]="{ile} Dateien, <b>ohne Impulsantworten</b> — siehe czytaj-to.txt.";
   S["WYNIK BADANIA AKUSTYCZNEGO I DOBORU ADAPTACJI"]="ERGEBNIS DER AKUSTIKMESSUNG UND DER AUSWAHL";

@@ -1175,7 +1175,7 @@ $('bZapisz').onclick=(ev)=>{
     ].join('\r\n'))});
     const nazwa='badanie-akustyczne-'+Paczka.stempel()+'.zip';
     Paczka.dl(Paczka.zip(pliki),nazwa);
-    $('zapisOpis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+
+    $('zapisOpis').innerHTML='<span class="g">'+t('Zapisano <b>{nazwa}</b>',{nazwa:nazwa})+'</span> — '+
       t('{ile} plików: wyniki, {ir} odpowiedzi impulsowe i opis zawartości.',
         {ile:pliki.length, ir:ST.irs.filter(Boolean).length});
   }catch(e){
