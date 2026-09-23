@@ -158,6 +158,8 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 </div>
 
 <script src="jezyki.js"></script>
+<script src="jezyk-en.js"></script>
+<script src="jezyk-de.js"></script>
 <script src="paczka.js"></script>
 <script src="karta.js"></script>
 <script>
@@ -735,7 +737,7 @@ function rekomendujWersje(){
 }
 
 function rysujWariantIFormat(){
-  $('hMont').textContent=wyk().etykieta;
+  $('hMont').textContent=t(wyk().etykieta);
   /* Rekomendacja jest DOMYŚLNYM wyborem, nie tylko komentarzem — dopóki
      użytkownik sam czegoś nie kliknie. */
   ST.rekom=rekomendujWersje();
@@ -877,15 +879,15 @@ function pokazWynik(dolny,gorny,bazowy){
   /* nagłówek: widełki albo liczba */
   if(ST.pogladowy){
     $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
-    $('wynCap').textContent='szt.  ·  '+format().n;
+    $('wynCap').textContent=t('szt.')+'  ·  '+t(format().n);
     $('wynTryb').innerHTML='<div class="msg warn"><b>'+t('Widełki, nie liczba — pomiar był poglądowy.')+'</b><br>'+
       t('Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. Dokładną liczbę da pomiar z głośnikiem zewnętrznym.')+'</div>';
     $('wynGl').innerHTML='<div class="msg info"><b>'+t('Zacznij od {ile} szt.',{ile:dolny.szt})+'</b><br>'+
       t('Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, a nie nowym projektem. Górna granica przedziału to {max} szt.',
         {max:gorny.szt})+'</div>';
   } else {
-    $('wynSzt').innerHTML=bazowy.szt+'<small> szt.</small>';
-    $('wynCap').textContent=format().n+'  ·  '+skladKartonow(bazowy.szt);
+    $('wynSzt').innerHTML=bazowy.szt+'<small> '+t('szt.')+'</small>';
+    $('wynCap').textContent=t(format().n)+'  ·  '+skladKartonow(bazowy.szt);
     $('wynTryb').innerHTML='';
     $('wynGl').innerHTML='<div class="msg good">'+
       t('Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.')+'</div>';
@@ -1041,6 +1043,14 @@ const slug=x=>Jezyk.slug(x);
 /* Raport jako samodzielna strona HTML. Otwiera się w każdej przeglądarce, bez
    sieci, i ma własny przycisk drukowania — stąd PDF, bez wciągania do projektu
    obcej biblioteki. Jasny motyw, bo to dokument do wydruku, nie ekran. */
+/* Nazwa rodzaju wnętrza do czytania przez człowieka. W pliku badania stoi
+   identyfikator ('biuro'), który jest częścią kontraktu danych i musi zostać
+   po polsku — etykieta do pokazania leży w CELE i przechodzi przez t(). */
+function nazwaTypu(){
+  const c=CELE.find(x=>x.id===ST.typ);
+  return t(c?c.n:'pomieszczenie');
+}
+
 function raportHTML(){
   const w=ST.wynik, b=w.bazowy, p=ST.pomiarZrodlo||{};
   const data=Jezyk.data(new Date().toISOString())||'';
@@ -1074,9 +1084,9 @@ function raportHTML(){
     [t('Kontrola wejścia'), ST.kontrola&&ST.kontrola.przeszla?t('przeszła'):'—']
   ].map(x=>'<tr><td>'+x[0]+'</td><td colspan="3">'+x[1]+'</td></tr>').join('');
 
-  return '<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8">'+
+  return '<!DOCTYPE html><html lang="'+Jezyk.biezacy()+'"><head><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-  '<title>'+esc(t('Raport akustyczny'))+' — '+esc(t(ST.typ||'pomieszczenie'))+'</title><style>'+
+  '<title>'+esc(t('Raport akustyczny'))+' — '+esc(nazwaTypu())+'</title><style>'+
   'body{font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#15202B;'+
   'background:#fff;max-width:760px;margin:0 auto;padding:28px 20px 60px}'+
   'h1{font-size:25px;margin:0 0 4px;letter-spacing:-.02em}'+
@@ -1099,7 +1109,7 @@ function raportHTML(){
   '</style></head><body>'+
 
   '<h1>'+esc(t('Raport akustyczny'))+'</h1>'+
-  '<p class="pod">'+esc(t(ST.typ||'pomieszczenie'))+' · '+pl(ST.L,1)+' × '+pl(ST.W,1)+' × '+pl(ST.H,1)+' m'+
+  '<p class="pod">'+esc(nazwaTypu())+' · '+pl(ST.L,1)+' × '+pl(ST.W,1)+' × '+pl(ST.H,1)+' m'+
   ' · '+pl(ST.V,1)+' m³ · '+data+'<br>'+esc(t('Pomiar: {czym}',{czym:tor}))+'</p>'+
 
   '<h2>'+esc(t('Stan teraz i po adaptacji'))+'</h2>'+

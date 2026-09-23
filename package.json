@@ -5,6 +5,6 @@
   "private": true,
   "scripts": {
     "build": "echo 'Static site'",
-    "test": "node docs/test-bramka.js && node docs/test-karta.js && node docs/test-paczka.js"
+    "test": "node docs/test-bramka.js && node docs/test-karta.js && node docs/test-paczka.js && node docs/test-jezyki.js"
   }
 }

@@ -574,7 +574,7 @@ Stan na 31 sierpnia 2026, po wdrożeniu bramki wiarygodności wejścia.
 | gałąź | zawartość |
 |---|---|
 | `main` | **produkcja** — silnik pomiarowy `v15`, `dobor.html` w wersji `dobór v1` |
-| `claude/rt60-model-akustyczny-5-4-xgg0qk` | gałąź robocza: `v15` + bramka wiarygodności + przekazanie pomiaru do doboru + dwa wykończenia (`dobór v3`) |
+| `claude/rt60-model-akustyczny-5-4-xgg0qk` | gałąź robocza: `v15` + bramka wiarygodności + przekazanie pomiaru do doboru + dwa wykończenia (`dobór v4`) + wersje językowa EN/DE (6.7) |
 
 `main` nie jest ruszany. Wszystko idzie na gałąź roboczą i tam podlega
 sprawdzeniu; przeniesienie na produkcję to osobna, świadoma decyzja.
@@ -868,3 +868,67 @@ wpływa na liczbę paneli** — oba warianty mają α 1,00 w pasmach mowy, z kt�
 liczy się Tmid. Przy panelach tekstylnych Premium potrzeba nieco **mniej**.
 Handlowiec musi znać tę asymetrię, bo zdanie „grubszy pochłania więcej, więc
 sztuk mniej" jest prawdziwe tylko dla tekstylnych.
+
+### 6.7 Wersje językowe — polski, angielski, niemiecki
+
+Wybór języka stoi na pierwszym ekranie obu programów, jako **nazwy języków**,
+nie flagi. Flaga oznacza kraj, nie język: angielski to nie tylko Wielka
+Brytania, a niemiecki to też Austria i Szwajcaria. Domyślny jest polski —
+świadomie, bez zgadywania po ustawieniach przeglądarki; wybór zapamiętuje się
+w `localStorage` i obowiązuje w obu programach, bo przejście z pomiaru do
+doboru nie może gubić języka.
+
+**Kluczem słownika jest polskie zdanie.** Nie `btn.save.title`, tylko
+`t('Zapisz wynik')`. Trzy powody:
+
+1. Słownik wygląda jak `{'Zapisz wynik': 'Save the result'}` — czyta go i
+   poprawia tłumacz, bez zaglądania w kod.
+2. Klucz nie może rozjechać się z tekstem, bo **jest** tekstem.
+3. Brak tłumaczenia pokazuje polski oryginał, a nie pustkę ani identyfikator.
+   Usterka jest widoczna, ale nieszkodliwa — program nigdy się nie rozsypie
+   przez brakujące hasło.
+
+Cena: zmiana polskiego zdania unieważnia jego tłumaczenia. To jest cecha, nie
+wada — `docs/test-jezyki.js` wypisuje wtedy nowy tekst jako nieprzetłumaczony,
+a stary jako osierocony.
+
+**Podstawienia zamiast sklejania.** Zdanie z liczbą jest jednym napisem
+z miejscem na wstawkę: `t('Zacznij od {ile} szt.', {ile:20})`. Sklejka
+`'Zacznij od '+n+' szt.'` jest nieprzetłumaczalna na niemiecki, gdzie szyk
+zdania bywa inny. Test pilnuje, żeby zbiór podstawień w tłumaczeniu zgadzał
+się ze zbiorem w oryginale — zgubione `{ile}` to zniknięta liczba, dopisane
+to surowe „{ile}" na ekranie.
+
+**Czego nie tłumaczymy: kontraktu danych.** Klucze i wartości w JSON —
+`charakter_pomiaru`, `"pogladowy"`, `T_srednie`, kody powodów odrzucenia pasma —
+czyta moduł doboru i leżą w każdej zapisanej paczce. Tłumaczymy to, co czyta
+człowiek; format danych zostaje jeden, niezależnie od języka. Tak samo nazwy
+plików w paczce (`raport.html`, `czytaj-to.txt`, `ir-punkt-N.wav`): odwołuje
+się do nich `czytaj-to.txt` i moduł doboru.
+
+Identyfikator rodzaju wnętrza (`biuro`) należy do kontraktu danych, więc
+zostaje po polsku. Etykieta do czytania bierze się z tablicy `CELE`
+(`nazwaTypu()`) i przechodzi przez `t()`.
+
+**Liczby.** Polski i niemiecki mają przecinek dziesiętny, angielski kropkę —
+i dotyczy to także tego, co użytkownik **wpisuje**. `Jezyk.naLiczbe()`
+przyjmuje oba separatory niezależnie od języka, żeby przełączenie języka
+w trakcie wpisywania nie kasowało danych.
+
+**Co stoi gdzie**
+
+| plik | zawartość |
+|---|---|
+| `jezyki.js` | silnik: `t()`, liczby, daty, odmiana przez liczbę, przełącznik, tłumaczenie statycznych znaczników |
+| `jezyk-en.js`, `jezyk-de.js` | słowniki, po jednym na język — generowane, ale poprawki wpisuje się wprost w nich |
+| `docs/zbierz-teksty.js` | zbiera teksty z wywołań `t()`, ze znaczników i z tablic definicyjnych; `--brakujace` wypisuje nieprzetłumaczone |
+| `docs/test-jezyki.js` | kompletność, hasła osierocone, podstawienia, znaczniki HTML, polskie znaki w obcym tłumaczeniu |
+
+Statyczne znaczniki nie wymagały żadnej zmiany: skoro kluczem jest polski
+tekst, to ten, który już stoi w HTML, jest gotowym kluczem. `Jezyk.tlumaczDOM()`
+chodzi po węzłach tekstowych raz, przy starcie, i podmienia zawartość.
+
+**Do weryfikacji:** tłumaczenia są techniczne i przed produkcją powinien je
+przejrzeć native speaker znający akustykę — zwłaszcza niemieckie, gdzie
+terminologia normowa (*Nachhallzeit*, *Absorptionsgrad*, *Diffusfeld*) jest
+ustalona i rozjazd z nią będzie widoczny dla projektanta.
