@@ -573,11 +573,12 @@ Stan na 31 sierpnia 2026, po wdrożeniu bramki wiarygodności wejścia.
 
 | gałąź | zawartość |
 |---|---|
-| `main` | **produkcja** — silnik pomiarowy `v15`, `dobor.html` w wersji `dobór v1` |
-| `claude/rt60-model-akustyczny-5-4-xgg0qk` | gałąź robocza: `v15` + bramka wiarygodności + przekazanie pomiaru do doboru + dwa wykończenia (`dobór v4`) + wersje językowa EN/DE (6.7) |
+| `main` | **produkcja** — silnik pomiarowy `v15`, `dobór v4`, trzy wersje językowe (6.7) |
+| `claude/rt60-model-akustyczny-5-4-xgg0qk` | gałąź robocza; po przeniesieniu na produkcję zrównana z `main` |
 
-`main` nie jest ruszany. Wszystko idzie na gałąź roboczą i tam podlega
-sprawdzeniu; przeniesienie na produkcję to osobna, świadoma decyzja.
+Kolejność jest stała i nie skraca się jej: wszystko powstaje na gałęzi
+roboczej, jest sprawdzane na linku podglądowym, a przeniesienie na produkcję
+to osobna decyzja podejmowana po sprawdzeniu, nigdy razem z nim.
 
 **Zasada obowiązująca:** `dobor.html` powstał jako **osobny plik**, żeby
 rozbudowa nie mogła zepsuć działającego pomiaru. Zmiany w `index.html`
