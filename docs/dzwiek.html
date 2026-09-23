@@ -1,0 +1,274 @@
+<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnostyka toru dźwięku · ALACER</title>
+<!--
+  Po co ta strona.
+
+  Zgłoszenie brzmi: „kontrola poziomu dochodzi do końca, ale impulsu nie
+  słychać". Z samego programu pomiarowego nie da się rozstrzygnąć, czy
+  milczy WYJŚCIE (sweep nie trafia do głośnika), czy WEJŚCIE (mikrofon nic
+  nie nagrywa) — objaw jest ten sam: „za mały zapas nad tłem".
+
+  Ta strona rozdziela te przypadki, bo gra sweep DWA razy: raz bez mikrofonu
+  i raz z mikrofonem otwartym dokładnie tak, jak robi to program. Jeżeli
+  słychać tylko pierwszy, winne jest przełączenie toru przez system po
+  otwarciu mikrofonu — tak zachowuje się iOS i tak zachowuje się głośnik
+  Bluetooth, który przy włączonym mikrofonie przechodzi w tryb zestawu
+  głośnomówiącego.
+
+  Sweep jest TEN SAM co w programie — ta sama funkcja, te same częstotliwości,
+  ta sama amplituda. Inaczej test nie dowodziłby niczego o programie.
+-->
+<style>
+:root{--bg:#141A1F;--panel:#1B232A;--line:#2C3740;--text:#E7ECF0;--muted:#8B98A2;
+      --good:#7FC96B;--warn:#FFB020;--bad:#E5484D}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  max-width:720px;margin:0 auto;padding:22px 16px 60px}
+h1{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:15px;margin:26px 0 8px;color:var(--muted);font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em}
+p.note{color:var(--muted);font-size:13.5px;margin:6px 0 0}
+button{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);
+  border-radius:3px;padding:13px 14px;font-size:15px;font-weight:550;cursor:pointer;
+  margin-top:10px}
+button:hover:not(:disabled){border-color:var(--warn);color:var(--warn)}
+button:disabled{opacity:.5;cursor:default}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  padding:13px 14px;margin-top:12px}
+.msg{border-radius:3px;padding:10px 12px;margin-top:10px;font-size:14px}
+.good{background:rgba(127,201,107,.10);border:1px solid rgba(127,201,107,.45)}
+.warn{background:rgba(255,176,32,.10);border:1px solid rgba(255,176,32,.45)}
+.bad{background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.45)}
+.gauge{height:12px;background:#10161B;border:1px solid var(--line);border-radius:2px;
+  overflow:hidden;margin-top:8px}
+.gauge div{height:100%;width:0;background:var(--good);transition:width .08s linear}
+table{width:100%;border-collapse:collapse;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+  margin-top:8px}
+td{padding:3px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted);white-space:nowrap;padding-right:14px}
+pre{background:#10161B;border:1px solid var(--line);border-radius:3px;padding:11px;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;
+  word-break:break-word;margin-top:10px;max-height:260px;overflow:auto}
+</style></head><body>
+
+<h1>Diagnostyka toru dźwięku</h1>
+<p class="note">Rozstrzyga, czy milczy wyjście, czy wejście. Zrób oba testy po
+kolei, przy włączonych głośnikach, i odeślij raport z dołu strony.</p>
+
+<h2>Test 1 · sweep bez mikrofonu</h2>
+<div class="box">
+  <p>Zagram 1,5-sekundowy sweep 80 Hz → 16 kHz — dokładnie ten, którego używa
+  program. Mikrofon pozostaje <b>wyłączony</b>.</p>
+  <button id="b1">Zagraj sweep (bez mikrofonu)</button>
+  <div id="m1"></div>
+</div>
+
+<h2>Test 2 · sweep z otwartym mikrofonem</h2>
+<div class="box">
+  <p>To samo, ale z mikrofonem otwartym tak jak w programie. Najpierw zobaczysz
+  miernik wejścia — powiedz „raz, dwa, trzy" i sprawdź, czy pasek drgnie.</p>
+  <button id="b2">Włącz mikrofon</button>
+  <div class="gauge"><div id="lvl"></div></div>
+  <p class="note" id="lvlTxt">mikrofon wyłączony</p>
+  <button id="b3" disabled>Zagraj sweep (z mikrofonem)</button>
+  <div id="m2"></div>
+</div>
+
+<h2>Raport</h2>
+<div class="box">
+  <table id="tab"></table>
+  <button id="bKop">Skopiuj raport do schowka</button>
+  <pre id="log"></pre>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const dane={};          /* wszystko, co trafia do raportu */
+const dziennik=[];
+function zapisz(k,v){ dane[k]=v; rysujTabele(); }
+function loguj(s){ dziennik.push(new Date().toISOString().slice(11,19)+'  '+s);
+  $('log').textContent=dziennik.join('\n'); }
+function rysujTabele(){
+  $('tab').innerHTML=Object.keys(dane).map(k=>
+    '<tr><td>'+k+'</td><td>'+String(dane[k])+'</td></tr>').join('');
+}
+function msg(gdzie,typ,tekst){ $(gdzie).innerHTML='<div class="msg '+typ+'">'+tekst+'</div>'; }
+
+/* Sweep — przepisany bez zmian z index.html, żeby test dotyczył tego samego
+   sygnału co pomiar. Każda różnica tutaj unieważniałaby wniosek. */
+function makeSweep(fs,dur,f1,f2){
+  const N=Math.round(fs*dur),s=new Float64Array(N),R=Math.log(f2/f1),L=dur/R;
+  const fi=Math.round(.02*fs),fo=Math.round(.06*fs);
+  for(let i=0;i<N;i++){const t=i/fs;let v=Math.sin(2*Math.PI*f1*L*(Math.exp(t/L)-1));
+    if(i<fi)v*=.5-.5*Math.cos(Math.PI*i/fi);
+    if(i>N-fo)v*=.5-.5*Math.cos(Math.PI*(N-i)/fo);s[i]=v;}
+  return{sweep:s,N:N};
+}
+
+zapisz('przeglądarka', navigator.userAgent);
+zapisz('adres', location.origin);
+/* localhost też jest kontekstem bezpiecznym, mimo że to nie HTTPS —
+   nazwanie go „HTTPS" myliłoby przy testach lokalnych. */
+zapisz('bezpieczny kontekst', window.isSecureContext
+  ? 'tak'+(location.protocol==='https:'?' (HTTPS)':' (localhost)')
+  : 'NIE — getUserMedia będzie odmawiać');
+
+let ctx=null;
+function kontekst(){
+  if(!ctx){
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    zapisz('AudioContext', 'utworzony');
+    zapisz('częstotliwość próbkowania', ctx.sampleRate+' Hz');
+    loguj('AudioContext utworzony, stan: '+ctx.state);
+  }
+  return ctx;
+}
+
+/* Gra sweep i JEDNOCZEŚNIE mierzy, ile z niego faktycznie wychodzi na wyjście.
+   Pomiar robi się na odgałęzieniu do MediaStreamDestination — to ten sam
+   sygnał, który idzie do głośnika, więc jeśli tu jest cisza, to znaczy, że
+   program naprawdę nic nie wysyła, a nie że coś zjadł system. */
+async function graj(gdzie){
+  const c=kontekst();
+  loguj('stan kontekstu przed odtworzeniem: '+c.state);
+  if(c.state!=='running'){ await c.resume(); loguj('po resume(): '+c.state); }
+
+  const sw=makeSweep(c.sampleRate,1.5,80,Math.min(16000,c.sampleRate*.45));
+  const buf=c.createBuffer(1,sw.N,c.sampleRate), ch=buf.getChannelData(0);
+  for(let i=0;i<sw.N;i++) ch[i]=sw.sweep[i]*.85;
+
+  const zrodlo=c.createBufferSource(); zrodlo.buffer=buf;
+  zrodlo.connect(c.destination);
+
+  /* Odgałęzienie kontrolne. */
+  const kontrola=c.createAnalyser(); kontrola.fftSize=2048;
+  zrodlo.connect(kontrola);
+  const probka=new Float32Array(kontrola.fftSize);
+  let szczyt=0;
+  const licz=setInterval(()=>{
+    kontrola.getFloatTimeDomainData(probka);
+    for(let i=0;i<probka.length;i++){const a=Math.abs(probka[i]); if(a>szczyt)szczyt=a;}
+  },30);
+
+  zrodlo.start();
+  msg(gdzie,'warn','Gram… słuchaj uważnie przez 1,5 sekundy.');
+  await new Promise(r=>setTimeout(r,2000));
+  clearInterval(licz);
+
+  const dB=20*Math.log10(Math.max(szczyt,1e-12));
+  loguj('szczyt na wyjściu: '+dB.toFixed(1)+' dBFS');
+  return {szczyt:szczyt, dB:dB, stan:c.state};
+}
+
+$('b1').onclick=async()=>{
+  $('b1').disabled=true;
+  const w=await graj('m1');
+  zapisz('test 1 — szczyt na wyjściu', w.dB.toFixed(1)+' dBFS');
+  zapisz('test 1 — stan kontekstu', w.stan);
+  if(w.szczyt<0.01){
+    msg('m1','bad','<b>Program nic nie wysyła.</b> Sweep nie dociera nawet do '+
+      'wyjścia karty — problem jest w przeglądarce, nie w głośniku.');
+  } else {
+    msg('m1','good','<b>Sygnał wychodzi na pełnym poziomie ('+w.dB.toFixed(0)+
+      ' dBFS).</b> Jeśli nic nie było słychać, dźwięk zjada system albo '+
+      'głośnik — sprawdź wyjście wybrane w systemie i czy karta tej przeglądarki '+
+      'nie jest wyciszona.');
+  }
+  $('b1').disabled=false;
+};
+
+let strumien=null, proc=null;
+$('b2').onclick=async()=>{
+  const b=$('b2'); b.disabled=true; b.textContent='Łączę…';
+  try{
+    /* Te same ograniczenia co w programie — z wyłączoną automatyką, bo to
+       ona bywa powodem, dla którego system przełącza tor. */
+    try{ strumien=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,
+      noiseSuppression:false, autoGainControl:false, channelCount:1}}); }
+    catch(e){ loguj('surowy mikrofon odrzucony ('+e.name+'), próbuję zwykłego');
+      strumien=await navigator.mediaDevices.getUserMedia({audio:true}); }
+
+    const c=kontekst(); await c.resume();
+    const tr=strumien.getAudioTracks()[0];
+    const ust=tr.getSettings?tr.getSettings():{};
+    zapisz('mikrofon', tr.label||'(bez nazwy)');
+    zapisz('mikrofon — ustawienia', JSON.stringify(ust));
+    loguj('mikrofon otwarty: '+(tr.label||'(bez nazwy)'));
+
+    const zr=c.createMediaStreamSource(strumien);
+    proc=c.createScriptProcessor(4096,1,1);
+    proc.onaudioprocess=ev=>{
+      const d=ev.inputBuffer.getChannelData(0); let p=0;
+      for(let i=0;i<d.length;i++){const a=Math.abs(d[i]); if(a>p)p=a;}
+      $('lvl').style.width=Math.min(100,p*140)+'%';
+      $('lvlTxt').textContent='wejście: '+(20*Math.log10(Math.max(p,1e-12))).toFixed(0)+' dBFS';
+      if(p>szczytWejscia)szczytWejscia=p;
+    };
+    const cisza=c.createGain(); cisza.gain.value=0;
+    zr.connect(proc); proc.connect(cisza); cisza.connect(c.destination);
+
+    /* Lista wyjść — dostępna dopiero po zgodzie na mikrofon. Jeżeli aktywne
+       wyjście to zestaw słuchawkowy Bluetooth, mamy odpowiedź. */
+    try{
+      const urz=await navigator.mediaDevices.enumerateDevices();
+      zapisz('wyjścia audio', urz.filter(u=>u.kind==='audiooutput')
+        .map(u=>u.label||'(bez nazwy)').join(' | ')||'(brak)');
+      zapisz('wejścia audio', urz.filter(u=>u.kind==='audioinput')
+        .map(u=>u.label||'(bez nazwy)').join(' | ')||'(brak)');
+    }catch(e){ loguj('enumerateDevices: '+e.name); }
+
+    b.textContent='Mikrofon włączony';
+    $('b3').disabled=false;
+    msg('m2','good','Mikrofon działa. Powiedz coś — pasek powyżej powinien drgnąć. '+
+      'Potem zagraj sweep.');
+  }catch(e){
+    b.disabled=false; b.textContent='Włącz mikrofon';
+    zapisz('mikrofon — błąd', e.name+': '+e.message);
+    msg('m2','bad','Brak dostępu do mikrofonu ('+e.name+').');
+  }
+};
+
+let szczytWejscia=0;
+$('b3').onclick=async()=>{
+  $('b3').disabled=true;
+  szczytWejscia=0;
+  await new Promise(r=>setTimeout(r,600));      /* chwila na zmierzenie tła */
+  const tlo=szczytWejscia; szczytWejscia=0;
+  const w=await graj('m2');
+  const uslyszane=szczytWejscia;
+  zapisz('test 2 — szczyt na wyjściu', w.dB.toFixed(1)+' dBFS');
+  zapisz('test 2 — stan kontekstu', w.stan);
+  zapisz('test 2 — tło na wejściu', (20*Math.log10(Math.max(tlo,1e-12))).toFixed(1)+' dBFS');
+  zapisz('test 2 — sweep na wejściu', (20*Math.log10(Math.max(uslyszane,1e-12))).toFixed(1)+' dBFS');
+  const zapas=20*Math.log10(Math.max(uslyszane,1e-12))-20*Math.log10(Math.max(tlo,1e-12));
+  zapisz('test 2 — zapas nad tłem', zapas.toFixed(1)+' dB');
+
+  if(w.szczyt<0.01){
+    msg('m2','bad','<b>Przy otwartym mikrofonie program przestaje wysyłać sygnał.</b> '+
+      'To jest przyczyna — nie mikrofon i nie pomieszczenie.');
+  } else if(zapas<6){
+    msg('m2','warn','<b>Sygnał wychodzi ('+w.dB.toFixed(0)+' dBFS), ale mikrofon go nie '+
+      'słyszy — zapas nad tłem to zaledwie '+zapas.toFixed(0)+' dB.</b> Albo dźwięk nie '+
+      'dociera do głośnika (system przełączył tor po otwarciu mikrofonu), albo mikrofon '+
+      'i głośnik to dwa różne urządzenia stojące daleko od siebie.');
+  } else {
+    msg('m2','good','<b>Tor działa w obie strony: sygnał wychodzi i wraca z zapasem '+
+      zapas.toFixed(0)+' dB nad tłem.</b> Przy takim wyniku program pomiarowy też '+
+      'powinien działać.');
+  }
+  $('b3').disabled=false;
+};
+
+$('bKop').onclick=async()=>{
+  const txt='RAPORT DIAGNOSTYCZNY\n====================\n'+
+    Object.keys(dane).map(k=>k+': '+dane[k]).join('\n')+
+    '\n\nDZIENNIK\n'+dziennik.join('\n');
+  try{ await navigator.clipboard.writeText(txt); $('bKop').textContent='Skopiowano'; }
+  catch(e){ $('log').textContent=txt; $('bKop').textContent='Schowek niedostępny — zaznacz tekst poniżej'; }
+};
+
+rysujTabele();
+</script></body></html>
