@@ -460,7 +460,7 @@ $('ver').textContent='silnik '+WERSJA;
   $('sl1').style.flex='0 0 '+a+'%';
   $('sl2').style.flex='0 0 '+(b-a)+'%';
   $('sl3').style.flex='1';
-  $('sl1').textContent='za mało';
+  $('sl1').textContent=t('za mało');
   $('sl2').textContent=SNR_AC_MIN+'–'+SNR_AC_GOOD;
   $('sl3').textContent='dobrze (od '+SNR_AC_GOOD+' dB)';
 })();
@@ -503,19 +503,25 @@ $('b2').onclick=()=>{
      za długie, w dodatku bez żadnego sygnału dla użytkownika. Klawiatura
      numeryczna na telefonie bierze się teraz z inputmode="decimal". */
   const L=wym('fL'),W=wym('fW'),H=wym('fH');
-  const puste=[['fL','długość'],['fW','szerokość'],['fH','wysokość']].filter(([id])=>!($(id).value||'').trim());
-  if(puste.length){S($('m2'),'err','Uzupełnij '+(puste.length===3?'wszystkie trzy wymiary':puste.map(p=>p[1]).join(' i '))+'.');return;}
+  const puste=[['fL','długość'],['fW','szerokość'],['fH','wysokość']]
+    .filter(([id])=>!($(id).value||'').trim());
+  if(puste.length){
+    S($('m2'),'err', puste.length===3
+      ? t('Uzupełnij wszystkie trzy wymiary.')
+      : t('Uzupełnij: {czego}.',{czego:puste.map(x=>t(x[1])).join(t(' i '))}));return;}
   if([L,W,H].some(v=>!isFinite(v))){
-    S($('m2'),'err','Któryś wymiar nie jest liczbą. Wpisz same cyfry z przecinkiem lub kropką, na przykład 5,2.');return;}
+    S($('m2'),'err',t('Któryś wymiar nie jest liczbą. Wpisz same cyfry z separatorem dziesiętnym, na przykład {przyklad}.',
+      {przyklad:lb(5.2,1)}));return;}
   /* Górna granica jest równie potrzebna, co dolna: bez niej literówka albo
      zgubiony przecinek dawały objętość tysiąc razy za dużą, a błąd ujawniał się
      dopiero w chłonności A, gdzie nikt by go nie rozpoznał. */
-  const zle=[],pl=v=>lb(v,1);
-  if(!(L>=1.5&&L<=60))zle.push('długość '+pl(L)+' m');
-  if(!(W>=1.5&&W<=60))zle.push('szerokość '+pl(W)+' m');
-  if(!(H>=1.8&&H<=20))zle.push('wysokość '+pl(H)+' m');
+  const zle=[];
+  if(!(L>=1.5&&L<=60))zle.push(t('długość')+' '+lb(L,1)+' m');
+  if(!(W>=1.5&&W<=60))zle.push(t('szerokość')+' '+lb(W,1)+' m');
+  if(!(H>=1.8&&H<=20))zle.push(t('wysokość')+' '+lb(H,1)+' m');
   if(zle.length){
-    S($('m2'),'err','Poza sensownym zakresem: '+zle.join(', ')+'. Dozwolone: długość i szerokość 1,5–60 m, wysokość 1,8–20 m. Sprawdź, czy przecinek trafił we właściwe miejsce.');return;}
+    S($('m2'),'err',t('Poza sensownym zakresem: {co}. Dozwolone: długość i szerokość {lmin}–{lmax} m, wysokość {hmin}–{hmax} m. Sprawdź, czy separator dziesiętny trafił we właściwe miejsce.',
+      {co:zle.join(', '), lmin:lb(1.5,1), lmax:'60', hmin:lb(1.8,1), hmax:'20'}));return;}
   ST.L=L;ST.W=W;ST.H=H;ST.V=L*W*H;ST.type=$('fType').value;S($('m2'),'');
   ST.Test=Math.max(.35,Math.min(2.5,.35+ST.V/450));
   drawPlan();go(3);
@@ -532,14 +538,14 @@ document.querySelectorAll('input[name=src]').forEach(r=>r.onchange=()=>{
     $('lvlHint').textContent=hintPoziomu();
     $('gb').style.width='0';$('gb').className='bar';$('gv').textContent='—';
     $('gAbs').textContent='—';$('b3c').classList.add('hide');
-    S($('m3b'),'info','Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika.');
+    S($('m3b'),'info',t('Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika.'));
   }});
 function hintPoziomu(){return ST.src==='phone'
-  ? 'Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.'
-  : 'Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.';}
+  ? t('Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.')
+  : t('Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.');}
 
 $('b3a').onclick=async()=>{
-  const b=$('b3a');b.disabled=true;b.textContent='Łączę…';
+  const b=$('b3a');b.disabled=true;b.textContent=t('Łączę…');
   try{
     try{ST.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});}
     catch(e){ST.stream=await navigator.mediaDevices.getUserMedia({audio:true});}
@@ -559,8 +565,8 @@ $('b3a').onclick=async()=>{
        wyglądały normalnie, ale nie dało się ich przełączyć. */
     b.classList.add('hide');S($('m3a'),'');$('lvlBox').classList.remove('hide');
     $('lvlHint').textContent=hintPoziomu();
-  }catch(e){b.disabled=false;b.textContent='Włącz mikrofon';
-    S($('m3a'),'err','Brak dostępu do mikrofonu ('+e.name+'). Strona musi działać przez HTTPS.');}
+  }catch(e){b.disabled=false;b.textContent=t('Włącz mikrofon');
+    S($('m3a'),'err',t('Brak dostępu do mikrofonu ({blad}). Strona musi działać przez HTTPS.',{blad:e.name}));}
 };
 function record(ms){return new Promise(r=>{ST.chunks=[];ST.clip=false;ST.rec=true;
   setTimeout(()=>{ST.rec=false;let n=0;ST.chunks.forEach(c=>n+=c.length);
@@ -607,7 +613,12 @@ async function runSweep(dur,tail,amp){
   let rp=0;for(let i=0;i<rec.length;i++){const a=Math.abs(rec[i]);if(a>rp)rp=a;}
   return{ir:ir,clip:ST.clip,snrAc:snrAc,lat:lat,peakDb:20*Math.log10(Math.max(rp,1e-12))};
 }
-/* ocena jednego pasma */
+/* Ocena jednego pasma.
+
+   POWODY ODRZUCENIA ZOSTAJĄ PO POLSKU — i to nie jest przeoczenie. Trafiają
+   do eksportu JSON jako `powod`, czyta je moduł doboru i leżą w zapisanych
+   paczkach. Gdyby zmieniały się z językiem, ten sam pomiar dawałby trzy różne
+   pliki. Tłumaczymy je dopiero przy WYŚWIETLANIU, przez t(). */
 function judge(d,snrAc){
   if(snrAc<SNR_AC_MIN)return{T:null,why:'brak pobudzenia'};
   let pick=null,q='',est=null;
@@ -617,7 +628,7 @@ function judge(d,snrAc){
   return{T:pick.T,xi:pick.xi,q:q,est:est,range:d.range};
 }
 $('b3b').onclick=async()=>{
-  const b=$('b3b');b.disabled=true;b.textContent='Sprawdzam…';S($('m3b'),'');
+  const b=$('b3b');b.disabled=true;b.textContent=t('Sprawdzam…');S($('m3b'),'');
   const bg=await record(1600);
   let s=0;for(let i=0;i<bg.length;i++)s+=bg[i]*bg[i];
   ST.bg=20*Math.log10(Math.max(Math.sqrt(s/bg.length),1e-12));
@@ -630,53 +641,65 @@ $('b3b').onclick=async()=>{
   const pct=Math.max(3,Math.min(100,sAc/SNR_SCALE*100));
   const gb=$('gb');gb.style.width=pct+'%';
   gb.className='bar'+(sAc>=SNR_AC_GOOD?' good':(sAc>=SNR_AC_MIN?' mid':''));
-  $('gv').textContent='zapas nad tłem '+sAc.toFixed(0)+' dB';
+  $('gv').textContent=t('zapas nad tłem {ile} dB',{ile:sAc.toFixed(0)});
   ST.peakDb=r.peakDb;
   $('gAbs').innerHTML=r.peakDb.toFixed(0)+' dBFS'+
-    (r.clip?' <span class="r">przester</span>'
-      :r.peakDb<PEAK_MIN_DBFS?' <span class="r">za cicho</span>'
-      :r.peakDb<PEAK_LOW_DBFS?' <span class="y">nisko</span>':' <span class="g">ok</span>');
-  b.disabled=false;b.textContent='Sprawdź ponownie';
+    (r.clip?' <span class="r">'+t('przester')+'</span>'
+      :r.peakDb<PEAK_MIN_DBFS?' <span class="r">'+t('za cicho')+'</span>'
+      :r.peakDb<PEAK_LOW_DBFS?' <span class="y">'+t('nisko')+'</span>':' <span class="g">'+t('ok')+'</span>');
+  b.disabled=false;b.textContent=t('Sprawdź ponownie');
   /* Liczby diagnostyczne do rozpoznania źródła. NIE służą jeszcze do podejmowania
      decyzji — pierwsza próba automatycznego rozpoznania po zapasie przy 125 Hz
      dawała fałszywy alarm na samym telefonie, bo mikrofon odbiera drgania wspólnej
      obudowy. Zbieramy je, pokazujemy w trybie technicznym i kalibrujemy na realnych
      urządzeniach, zanim cokolwiek na ich podstawie orzekniemy. */
   ST.lat=r.lat;ST.srcLo=r.snrAc[BANDS.indexOf(125)];
-  if(r.clip){S($('m3b'),'err','Przesterowanie. '+(ST.src==='phone'?'Odsuń telefon od twardych powierzchni.':'Przycisz głośnik o dwie kreski.'));
+  if(r.clip){S($('m3b'),'err', ST.src==='phone'
+      ? t('Przesterowanie. Odsuń telefon od twardych powierzchni.')
+      : t('Przesterowanie. Przycisz głośnik o dwie kreski.'));
     $('b3c').classList.add('hide');return;}
   if(sAc<SNR_AC_MIN){
     S($('m3b'),'err',ST.src==='phone'
-      ? 'Za mały zapas nad hałasem tła. Sprawdź, czy głośność jest na maksimum i czy w pomieszczeniu jest cicho. Jeśli to nie pomoże — podłącz głośnik zewnętrzny.'
-      : 'Za cicho. Podgłośnij głośnik i sprawdź ponownie.');
+      ? t('Za mały zapas nad hałasem tła. Sprawdź, czy głośność jest na maksimum i czy w pomieszczeniu jest cicho. Jeśli to nie pomoże — podłącz głośnik zewnętrzny.')
+      : t('Za cicho. Podgłośnij głośnik i sprawdź ponownie.'));
     $('b3c').classList.add('hide');return;}
   /* Zapas nad tłem jest STOSUNKIEM. W wyjątkowo cichym pokoju osiąga go nawet
      sygnał ledwie słyszalny — i taki pomiar przewróci się od jednego trzaśnięcia
      drzwiami. Dlatego obok stosunku sprawdzamy poziom bezwzględny. */
   if(r.peakDb<PEAK_MIN_DBFS){
-    S($('m3b'),'err','Zapas nad tłem wynosi '+sAc.toFixed(0)+' dB, ale sam sygnał jest skrajnie cichy ('+r.peakDb.toFixed(0)+' dBFS). Wychodzi na to wyłącznie dlatego, że w pomieszczeniu jest wyjątkowo cicho — pomiar przewróci się od pierwszego przypadkowego dźwięku. '+
-      (ST.src==='phone'?'Podgłośnij telefon do maksimum':'Podgłośnij głośnik')+' i sprawdź ponownie.');
+    S($('m3b'),'err',
+      t('Zapas nad tłem wynosi {zapas} dB, ale sam sygnał jest skrajnie cichy ({poziom} dBFS). Wychodzi na to wyłącznie dlatego, że w pomieszczeniu jest wyjątkowo cicho — pomiar przewróci się od pierwszego przypadkowego dźwięku.',
+        {zapas:sAc.toFixed(0), poziom:r.peakDb.toFixed(0)})+' '+
+      (ST.src==='phone'
+        ? t('Podgłośnij telefon do maksimum i sprawdź ponownie.')
+        : t('Podgłośnij głośnik i sprawdź ponownie.')));
     $('b3c').classList.add('hide');return;}
   const poznyKontrolny=udzialPozny(d1.D50,j.T||ST.Test);
   if(poznyKontrolny!=null&&poznyKontrolny<POZNE_MIN){
-    S($('m3b'),'warn',(ST.src==='phone'
-      ? 'Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu — do mikrofonu dociera '+Math.round(poznyKontrolny*100)+' % tego pola pogłosowego, które powinno tu być. Czas pogłosu zmierzysz mimo to, ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte: na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik.'
-      : 'Mikrofon jest za blisko głośnika — dociera do niego tylko '+Math.round(poznyKontrolny*100)+' % spodziewanego pola pogłosowego. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.'));
+    S($('m3b'),'warn', ST.src==='phone'
+      ? t('Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu — dociera do niego {proc} % tego pola pogłosowego, które powinno tu być. Czas pogłosu zmierzysz mimo to, ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte: na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik.',
+          {proc:Math.round(poznyKontrolny*100)})
+      : t('Mikrofon jest za blisko głośnika — dociera do niego tylko {proc} % spodziewanego pola pogłosowego. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.',
+          {proc:Math.round(poznyKontrolny*100)}));
     $('b3c').classList.remove('hide');return;}
   const cicho=r.peakDb<PEAK_LOW_DBFS
-    ? ' Sygnał jest przy tym nisko ('+r.peakDb.toFixed(0)+' dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar.' : '';
-  if(sAc<SNR_AC_GOOD){S($('m3b'),'warn','Zapas wystarcza na wynik orientacyjny.'+cicho+' '+(ST.src==='phone'?'Głośnik zewnętrzny dałby pewniejszy pomiar.':'Podgłośnij o kreskę.'));}
+    ? ' '+t('Sygnał jest przy tym nisko ({poziom} dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar.',
+        {poziom:r.peakDb.toFixed(0)}) : '';
+  if(sAc<SNR_AC_GOOD){S($('m3b'),'warn',t('Zapas wystarcza na wynik orientacyjny.')+cicho+' '+
+    (ST.src==='phone'?t('Głośnik zewnętrzny dałby pewniejszy pomiar.'):t('Podgłośnij o kreskę.')));}
   else{
     if(ST.src==='ext'){
       const q=await runSweep(1.5,Math.min(3,Math.max(1.6,ST.Test*2)),.28);
       const dq=decay(bandFilter(q.ir,ST.fs,1000),ST.fs);
       const jq=judge(dq,q.snrAc[k1]);
       if(jq.T&&j.T&&jq.T>j.T*1.18){
-        S($('m3b'),'warn','Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie.');
+        S($('m3b'),'warn',t('Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie.'));
         $('b3c').classList.remove('hide');return;}
     }
-    S($('m3b'),cicho?'warn':'good','Poziom prawidłowy. Nie zmieniaj już głośności.'+cicho+
-      (ST.active.length&&ST.active.length<BANDS.length?' Zakres badania: '+lbl(ST.active[0])+' – '+lbl(ST.active[ST.active.length-1])+'.':''));
+    S($('m3b'),cicho?'warn':'good',t('Poziom prawidłowy. Nie zmieniaj już głośności.')+cicho+
+      (ST.active.length&&ST.active.length<BANDS.length
+        ? ' '+t('Zakres badania: {od} – {do}.',
+            {od:lbl(ST.active[0]), 'do':lbl(ST.active[ST.active.length-1])}) : ''));
   }
   $('b3c').classList.remove('hide');
 };
@@ -695,7 +718,7 @@ function drawPlan(){
   if(ST.src==='ext'){const sx=x0+w*.06,sy=y0+h*.10;
     g+='<rect x="'+(sx-9)+'" y="'+(sy-9)+'" width="18" height="18" rx="2" fill="none" stroke="#58C0C8" stroke-width="1.5"/>';
     g+='<circle cx="'+sx+'" cy="'+sy+'" r="3.5" fill="#58C0C8"/>';
-    g+='<text x="'+(sx+15)+'" y="'+(sy+4)+'" fill="#58C0C8">głośnik</text>';}
+    g+='<text x="'+(sx+15)+'" y="'+(sy+4)+'" fill="#58C0C8">'+t('głośnik')+'</text>';}
   PTS.forEach((p,i)=>{
     const cx=x0+w*p[0],cy=y0+h*p[1];
     const st=ST.pos[i]?'ok':(i===ST.cur?'act':'idle');
@@ -708,9 +731,9 @@ function drawPlan(){
 $('b4').onclick=async()=>{
   const b=$('b4');b.disabled=true;S($('m4'),'');
   const T=ST.Test, dur=T<.7?3:(T<1.6?4:6), tail=Math.max(2,Math.min(8,T*2.2));
-  b.textContent='Sygnał — nie ruszaj się';
+  b.textContent=t('Sygnał — nie ruszaj się');
   const r=await runSweep(dur,tail,.85);
-  b.textContent='Liczę…';await new Promise(z=>setTimeout(z,20));
+  b.textContent=t('Liczę…');await new Promise(z=>setTimeout(z,20));
   const bands={},mtis=[],C=[],D=[];
   BANDS.forEach((fc,k)=>{
     if(r.snrAc[k]<SNR_AC_MIN){bands[fc]={T:null,why:'brak pobudzenia',snrAc:r.snrAc[k]};mtis[k]=null;return;}
@@ -729,9 +752,9 @@ $('b4').onclick=async()=>{
   }
   const D50m=D.length?D.reduce((a,x)=>a+x)/D.length:null;
   let ok=true,why='';
-  if(r.clip){ok=false;why='Przesterowanie w trakcie przebiegu. Odsuń telefon od twardych powierzchni i powtórz w tym punkcie.';}
+  if(r.clip){ok=false;why=t('Przesterowanie w trakcie przebiegu. Odsuń telefon od twardych powierzchni i powtórz w tym punkcie.');}
   else if(BANDS.filter(f=>bands[f].T).length<2){ok=false;
-    why='Za mało wiarygodnych pasm. Najczęstsza przyczyna to hałas w pomieszczeniu albo zbyt cichy sygnał. Powtórz w tym punkcie.';}
+    why=t('Za mało wiarygodnych pasm. Najczęstsza przyczyna to hałas w pomieszczeniu albo zbyt cichy sygnał. Powtórz w tym punkcie.');}
   const i=ST.cur;
   if(ok){
     ST.pos[i]={bands:bands,mtis:mtis,snrAc:r.snrAc,
@@ -746,27 +769,26 @@ $('b4').onclick=async()=>{
     /* PĘTLA ZERWANA: Test tylko z pasm, które przeszły walidację, i z ograniczeniem */
     const ref=bands[1000].T||bands[500].T||bands[2000].T;
     if(ref)ST.Test=Math.max(.2,Math.min(4,ref));
-    $('d'+(i+1)).className='ok';$('d'+(i+1)).textContent='PUNKT '+(i+1)+' ✓';
+    $('d'+(i+1)).className='ok';$('d'+(i+1)).textContent=t('PUNKT {nr}',{nr:i+1})+' ✓';
     ST.cur++;
     if(ST.cur>=3){finish();return;}
     $('d'+(ST.cur+1)).className='act';
-    $('mTitle').textContent='Punkt '+(ST.cur+1)+' z 3';
-    $('mHint').textContent='Przejdź do punktu '+(ST.cur+1)+' oznaczonego na rysunku i naciśnij START.';
-    S($('m4'),'good','Punkt '+(i+1)+' zmierzony. Przejdź do punktu '+(ST.cur+1)+'.');
+    $('mTitle').textContent=t('Punkt {nr} z 3',{nr:ST.cur+1});
+    $('mHint').textContent=t('Przejdź do punktu {nr} oznaczonego na rysunku i naciśnij START.',{nr:ST.cur+1});
+    S($('m4'),'good',t('Punkt {zrobiony} zmierzony. Przejdź do punktu {nastepny}.',
+      {zrobiony:i+1, nastepny:ST.cur+1}));
     drawPlan();
   }else{ST.tries[i]++;$('d'+(i+1)).className='warn';S($('m4'),'err',why);}
-  b.disabled=false;b.textContent='START';
+  b.disabled=false;b.textContent=t('START');
 };
 function finish(){
   /* Charakter pomiaru stoi nad wynikiem, a nie pod nim — żeby liczba nigdy nie
      została odczytana w oderwaniu od tego, czym została zmierzona. */
   $('rTryb').innerHTML=ST.src==='phone'
-    ? '<div class="msg warn"><b>Pomiar poglądowy — głośnik telefonu.</b><br>'+
-      'Mikrofon i głośnik są w jednej obudowie, więc do mikrofonu dociera znikoma część pola pogłosowego. '+
-      'Czas pogłosu wychodzi zwykle o 20–30 % za krótki, chłonność o tyle samo za wysoka, a pasma 250 i 500 Hz '+
-      'najczęściej w ogóle nie dają wyniku. Liczba poniżej służy do zgrubnego rozeznania.<br>'+
-      '<b>Do doboru paneli taki pomiar daje widełki od–do, nigdy konkretnej liczby.</b> '+
-      'Powtórzenie z dowolnym głośnikiem Bluetooth ustawionym w rogu pomieszczenia zamienia je w jedną liczbę.</div>'
+    ? '<div class="msg warn"><b>'+t('Pomiar poglądowy — głośnik telefonu.')+'</b><br>'+
+      t('Mikrofon i głośnik są w jednej obudowie, więc do mikrofonu dociera znikoma część pola pogłosowego. Czas pogłosu wychodzi zwykle o 20–30 % za krótki, chłonność o tyle samo za wysoka, a pasma 250 i 500 Hz najczęściej w ogóle nie dają wyniku. Liczba poniżej służy do zgrubnego rozeznania.')+'<br>'+
+      '<b>'+t('Do doboru paneli taki pomiar daje widełki od–do, nigdy konkretnej liczby.')+'</b> '+
+      t('Powtórzenie z dowolnym głośnikiem Bluetooth ustawionym w rogu pomieszczenia zamienia je w jedną liczbę.')+'</div>'
     : '';
   const P=ST.pos.filter(Boolean),avg={},spread={},qual={},cnt={};
   BANDS.forEach(f=>{
@@ -791,11 +813,11 @@ function finish(){
   const D50=D50m.length?D50m.reduce((a,x)=>a+x)/D50m.length:null;
   ST.D50=D50;
   if(!Tmid){
-    $('rFail').innerHTML='<div class="msg err"><b>Pomiar nieudany.</b><br>'+
-      'W pasmach mowy (500 Hz i 1 kHz) nie udało się uzyskać wiarygodnego zaniku. '+
+    $('rFail').innerHTML='<div class="msg err"><b>'+t('Pomiar nieudany.')+'</b><br>'+
+      t('W pasmach mowy (500 Hz i 1 kHz) nie udało się uzyskać wiarygodnego zaniku.')+' '+
       (ST.src==='phone'
-        ? 'Głośnik telefonu nie wypromieniował dość energii w tym zakresie. Podłącz głośnik zewnętrzny i powtórz badanie — to rozwiązuje problem w praktycznie każdym pomieszczeniu.'
-        : 'Podgłośnij głośnik, odsuń się od niego na co najmniej 2 metry i powtórz badanie w ciszy.')+
+        ? t('Głośnik telefonu nie wypromieniował dość energii w tym zakresie. Podłącz głośnik zewnętrzny i powtórz badanie — to rozwiązuje problem w praktycznie każdym pomieszczeniu.')
+        : t('Podgłośnij głośnik, odsuń się od niego na co najmniej 2 metry i powtórz badanie w ciszy.'))+
       '</div>';
     buildTable(avg,spread,qual,cnt);$('rOk').classList.remove('hide');
     $('rT').innerHTML='—';$('rVerdict').innerHTML='';
@@ -804,18 +826,18 @@ function finish(){
   }
   $('rT').innerHTML=lb(Tmid,2)+'<small>s</small>';
   let v;
-  if(Tmid<.45)v='<div class="msg good">Pomieszczenie wytłumione. Mowa jest wyraźna, dźwięk nie niesie się po wnętrzu.</div>';
-  else if(Tmid<.8)v='<div class="msg info">Akustyka umiarkowana. Rozmowa jest zrozumiała, ale przy większej liczbie osób hałas będzie narastał.</div>';
-  else if(Tmid<1.4)v='<div class="msg warn">Pogłos wyraźnie za długi. Mowa się zlewa, hałas kumuluje się przy większej liczbie osób. Wnętrze wymaga adaptacji.</div>';
-  else v='<div class="msg err">Bardzo długi pogłos. Rozmowa na dystans jest utrudniona, wnętrze męczy. Adaptacja przyniesie odczuwalną poprawę.</div>';
+  if(Tmid<.45)v='<div class="msg good">'+t('Pomieszczenie wytłumione. Mowa jest wyraźna, dźwięk nie niesie się po wnętrzu.')+'</div>';
+  else if(Tmid<.8)v='<div class="msg info">'+t('Akustyka umiarkowana. Rozmowa jest zrozumiała, ale przy większej liczbie osób hałas będzie narastał.')+'</div>';
+  else if(Tmid<1.4)v='<div class="msg warn">'+t('Pogłos wyraźnie za długi. Mowa się zlewa, hałas kumuluje się przy większej liczbie osób. Wnętrze wymaga adaptacji.')+'</div>';
+  else v='<div class="msg err">'+t('Bardzo długi pogłos. Rozmowa na dystans jest utrudniona, wnętrze męczy. Adaptacja przyniesie odczuwalną poprawę.')+'</div>';
   /* Werdykt nie może brzmieć pewniej, niż pozwala na to jakość pomiaru. */
   if(midF.length<2||ST.midQ.includes('orient.')){
-    v+='<div class="msg warn"><b>Wynik orientacyjny.</b> '+
+    v+='<div class="msg warn"><b>'+t('Wynik orientacyjny.')+'</b> '+
       (midF.length<2
-        ? 'Czas pogłosu opiera się na jednym paśmie mowy ('+lbl(midF[0])+') — drugie nie dało wiarygodnego zaniku. '
-        : 'Zanik w pasmach mowy był na granicy liniowości. ')+
-      'Traktuj tę liczbę jako rząd wielkości, nie jako pomiar.'+
-      (ST.src==='phone'?' Głośnik zewnętrzny zwykle to naprawia.':'')+'</div>';
+        ? t('Czas pogłosu opiera się na jednym paśmie mowy ({pasmo}) — drugie nie dało wiarygodnego zaniku.',{pasmo:lbl(midF[0])})
+        : t('Zanik w pasmach mowy był na granicy liniowości.'))+' '+
+      t('Traktuj tę liczbę jako rząd wielkości, nie jako pomiar.')+
+      (ST.src==='phone'?' '+t('Głośnik zewnętrzny zwykle to naprawia.'):'')+'</div>';
   }
   $('rVerdict').innerHTML=v;
   /* Metryki mowy tylko wtedy, gdy do mikrofonu dotarło realne pole pogłosowe —
@@ -824,26 +846,28 @@ function finish(){
   const pozny=udzialPozny(D50,Tmid);
   ST.pozny=pozny;
   if(pozny!=null&&pozny<POZNE_MIN){
-    $('rSpeech').innerHTML='<div class="msg warn"><b>Wskaźniki zrozumiałości pominięte.</b><br>'+
-      'Do mikrofonu dotarło zaledwie '+Math.round(pozny*100)+' % pola pogłosowego, którego należałoby się spodziewać przy czasie pogłosu '+
-      lb(Tmid,2)+' s (D50 = '+Math.round(D50)+' % wobec '+Math.round(d50Teoria(Tmid))+' % z samego zaniku). '+
-      'Mikrofon rejestrował niemal wyłącznie dźwięk bezpośredni, więc C50, D50 i STI byłyby zawyżone. '+
+    $('rSpeech').innerHTML='<div class="msg warn"><b>'+t('Wskaźniki zrozumiałości pominięte.')+'</b><br>'+
+      t('Do mikrofonu dotarło zaledwie {proc} % pola pogłosowego, którego należałoby się spodziewać przy czasie pogłosu {T} s (D50 = {d50} % wobec {teoria} % z samego zaniku).',
+        {proc:Math.round(pozny*100), T:lb(Tmid,2), d50:Math.round(D50), teoria:Math.round(d50Teoria(Tmid))})+' '+
+      t('Mikrofon rejestrował niemal wyłącznie dźwięk bezpośredni, więc C50, D50 i STI byłyby zawyżone.')+' '+
       (ST.src==='phone'
-        ? 'Głośnik zewnętrzny ustawiony w rogu, co najmniej 2 metry od telefonu, odblokowuje te wskaźniki.'
-        : 'Odsuń się od głośnika na co najmniej 2 metry i powtórz badanie.')+'</div>';
+        ? t('Głośnik zewnętrzny ustawiony w rogu, co najmniej 2 metry od telefonu, odblokowuje te wskaźniki.')
+        : t('Odsuń się od głośnika na co najmniej 2 metry i powtórz badanie.'))+'</div>';
   }else{
     const C=P.map(p=>p.C50).filter(x=>x!=null);
     const sv=P.map(p=>stiFrom(p.mtis)).filter(x=>x!=null);
     let h='<div class="metrics">'+
-      '<div><div class="m">'+(D50!=null?Math.round(D50)+' %':'—')+'</div><div class="l">D50 · wyrazistość</div>'+
-      '<div class="d">Udział energii z pierwszych 50 ms. Poniżej 50 % mowa się zlewa.</div></div>'+
+      '<div><div class="m">'+(D50!=null?Math.round(D50)+' %':'—')+'</div><div class="l">'+t('D50 · wyrazistość')+'</div>'+
+      '<div class="d">'+t('Udział energii z pierwszych 50 ms. Poniżej 50 % mowa się zlewa.')+'</div></div>'+
       '<div><div class="m">'+(C.length?lb(C.reduce((a,x)=>a+x)/C.length,1)+' dB':'—')+'</div>'+
-      '<div class="l">C50 · przejrzystość</div><div class="d">Przewaga dźwięku bezpośredniego nad pogłosem. Dla mowy pożądane powyżej 0 dB.</div></div></div>';
+      '<div class="l">'+t('C50 · przejrzystość')+'</div><div class="d">'+
+      t('Przewaga dźwięku bezpośredniego nad pogłosem. Dla mowy pożądane powyżej 0 dB.')+'</div></div></div>';
     if(sv.length){
       const sti=sv.reduce((a,x)=>a+x)/sv.length;
-      const q=sti>=.75?'znakomita':sti>=.6?'dobra':sti>=.45?'dostateczna':sti>=.3?'słaba':'zła';
-      h+='<div class="msg info"><b>STI '+lb(sti,2)+'</b> — zrozumiałość mowy '+q+'.<br>'+
-        'Wartość orientacyjna, wyznaczona z odpowiedzi impulsowej przy założeniu cichego tła. To górna granica tego wnętrza — rzeczywisty hałas ją obniża.</div>';
+      const q=sti>=.75?t('znakomita'):sti>=.6?t('dobra'):sti>=.45?t('dostateczna'):sti>=.3?t('słaba'):t('zła');
+      h+='<div class="msg info"><b>STI '+lb(sti,2)+'</b> — '+
+        t('zrozumiałość mowy {ocena}.',{ocena:q})+'<br>'+
+        t('Wartość orientacyjna, wyznaczona z odpowiedzi impulsowej przy założeniu cichego tła. To górna granica tego wnętrza — rzeczywisty hałas ją obniża.')+'</div>';
     }
     $('rSpeech').innerHTML=h;
   }
@@ -855,13 +879,17 @@ function finish(){
   if(cmp.length){
     const m=Math.max(...cmp.map(f=>spread[f]));
     const nMin=Math.min(...cmp.map(f=>cnt[f]));
-    const ile=cmp.length===3?'Wszystkie trzy pasma mowy':(cmp.length===2?'Dwa pasma mowy':'Jedno pasmo mowy ('+lbl(cmp[0])+')');
+    const ile=cmp.length===3?t('Wszystkie trzy pasma mowy')
+      :(cmp.length===2?t('Dwa pasma mowy'):t('Jedno pasmo mowy ({pasmo})',{pasmo:lbl(cmp[0])}));
     $('rStab').innerHTML=(m<.12
-      ?'<div class="msg good">Pomiar powtarzalny. '+ile+' dało zgodne wyniki w '+nMin+' punktach (rozrzut do '+Math.round(m*100)+' %).</div>'
-      :m<.25?'<div class="msg warn">Umiarkowany rozrzut między punktami (do '+Math.round(m*100)+' %). Akustyka zmienia się w zależności od miejsca.</div>'
-      :'<div class="msg err">Duży rozrzut między punktami (do '+Math.round(m*100)+' %). Wnętrze zachowuje się bardzo różnie w różnych miejscach — wynik traktuj jako zgrubny.</div>');
+      ?'<div class="msg good">'+t('Pomiar powtarzalny. {ile} dało zgodne wyniki w {punkty} punktach (rozrzut do {proc} %).',
+         {ile:ile, punkty:nMin, proc:Math.round(m*100)})+'</div>'
+      :m<.25?'<div class="msg warn">'+t('Umiarkowany rozrzut między punktami (do {proc} %). Akustyka zmienia się w zależności od miejsca.',
+         {proc:Math.round(m*100)})+'</div>'
+      :'<div class="msg err">'+t('Duży rozrzut między punktami (do {proc} %). Wnętrze zachowuje się bardzo różnie w różnych miejscach — wynik traktuj jako zgrubny.',
+         {proc:Math.round(m*100)})+'</div>');
   }else{
-    $('rStab').innerHTML='<div class="msg warn">Nie da się ocenić powtarzalności — żadne pasmo mowy nie wyszło w co najmniej dwóch punktach.</div>';
+    $('rStab').innerHTML='<div class="msg warn">'+t('Nie da się ocenić powtarzalności — żadne pasmo mowy nie wyszło w co najmniej dwóch punktach.')+'</div>';
   }
   $('rOk').classList.remove('hide');
   /* Zapis do karty PRZED pokazaniem wyniku — zwraca stan sprzed dopisania,
@@ -872,37 +900,43 @@ function finish(){
 }
 function buildTable(avg,spread,qual,cnt){
   const n=ST.nPos||3;
-  let t='<table><thead><tr><th>pasmo</th><th>T [s]</th><th>punkty</th><th>rozrzut</th><th>jakość</th></tr></thead><tbody>';
+  /* Oceny i powody są KODAMI z warstwy pomiarowej — w eksporcie zostają po
+     polsku, bo to dane. Tłumaczymy je wyłącznie tutaj, przy wyświetlaniu. */
+  let w='<table><thead><tr><th>'+t('pasmo')+'</th><th>'+t('T [s]')+'</th><th>'+t('punkty')+
+    '</th><th>'+t('rozrzut')+'</th><th>'+t('jakość')+'</th></tr></thead><tbody>';
   BANDS.forEach(f=>{
-    if(avg[f]==null){t+='<tr class="weak"><td>'+lbl(f)+'</td><td colspan="4" class="q">'+qual[f]+'</td></tr>';return;}
+    if(avg[f]==null){w+='<tr class="weak"><td>'+lbl(f)+'</td><td colspan="4" class="q">'+
+      t(qual[f])+'</td></tr>';return;}
     /* Brak rozrzutu to brak danych, nie zgodność — stąd kreska zamiast ±0 %. */
     const sp=spread[f]==null?'<span style="color:var(--dim)">—</span>':'±'+Math.round(spread[f]*100)+' %';
-    t+='<tr><td>'+lbl(f)+'</td><td>'+lb(avg[f],2)+'</td><td'+
+    w+='<tr><td>'+lbl(f)+'</td><td>'+lb(avg[f],2)+'</td><td'+
       (cnt[f]<n?' style="color:var(--signal)"':'')+'>'+cnt[f]+'/'+n+'</td><td>'+sp+
-      '</td><td class="q" style="color:'+(qual[f]==='dobry'?'#7FC96B':'#FFB020')+'">'+qual[f]+'</td></tr>';});
-  $('rTbl').innerHTML=t+'</tbody></table>';
+      '</td><td class="q" style="color:'+(qual[f]==='dobry'?'#7FC96B':'#FFB020')+'">'+t(qual[f])+'</td></tr>';});
+  $('rTbl').innerHTML=w+'</tbody></table>';
 }
 function diag(){
-  const s=ST.set,yn=x=>x===undefined?'<span style="color:#5F6C76">n/d</span>':x?'<span class="r">WŁ.</span>':'<span class="g">wył.</span>';
+  const s=ST.set,yn=x=>x===undefined?'<span style="color:#5F6C76">'+t('n/d')+'</span>'
+    :x?'<span class="r">'+t('WŁ.')+'</span>':'<span class="g">'+t('wył.')+'</span>';
   $('rDiag').innerHTML=
-    '<span>próbkowanie</span><span>'+ST.fs+' Hz</span>'+
+    '<span>'+t('próbkowanie')+'</span><span>'+ST.fs+' Hz</span>'+
     '<span>AEC</span><span>'+yn(s.echoCancellation)+'</span>'+
     '<span>AGC</span><span>'+yn(s.autoGainControl)+'</span>'+
-    '<span>redukcja szumu</span><span>'+yn(s.noiseSuppression)+'</span>'+
-    '<span>tło</span><span>'+(ST.bg?ST.bg.toFixed(1):'—')+' dBFS</span>'+
-    '<span>szczyt sygnału</span><span>'+(ST.peakDb!=null?ST.peakDb.toFixed(1)+' dBFS':'—')+'</span>'+
-    '<span>źródło</span><span>'+(ST.src==='ext'?'zewnętrzne':'telefon')+' (deklarowane)</span>'+
-    '<span>zapas przy 125 Hz</span><span>'+(ST.srcLo!=null?ST.srcLo.toFixed(1)+' dB':'—')+'</span>'+
-    '<span>opóźnienie toru</span><span>'+(ST.lat!=null?'≈ '+Math.round(ST.lat*1000)+' ms':'—')+'</span>'+
-    '<span>D50 średnie</span><span>'+(ST.D50!=null?ST.D50.toFixed(1)+' %':'—')+
-      (ST.Tmid?' <span style="color:#5F6C76">(z zaniku '+Math.round(d50Teoria(ST.Tmid))+' %)</span>':'')+'</span>'+
-    '<span>udział pola późnego</span><span>'+(ST.pozny!=null
-      ? '<span class="'+(ST.pozny<POZNE_MIN?'r':'g')+'">'+ST.pozny.toFixed(2)+'</span> (próg '+POZNE_MIN+')':'—')+'</span>'+
-    '<span>kubatura</span><span>'+ST.V.toFixed(1)+' m³</span>'+
-    '<span>A (Sabine)</span><span>'+(ST.Tmid?(0.161*ST.V/ST.Tmid).toFixed(1):'—')+' m² Sab</span>'+
-    '<span>powtórki</span><span>'+ST.tries.join(' / ')+'</span>';
+    '<span>'+t('redukcja szumu')+'</span><span>'+yn(s.noiseSuppression)+'</span>'+
+    '<span>'+t('tło')+'</span><span>'+(ST.bg?lb(ST.bg,1):'—')+' dBFS</span>'+
+    '<span>'+t('szczyt sygnału')+'</span><span>'+(ST.peakDb!=null?lb(ST.peakDb,1)+' dBFS':'—')+'</span>'+
+    '<span>'+t('źródło')+'</span><span>'+(ST.src==='ext'?t('zewnętrzne'):t('telefon'))+' '+t('(deklarowane)')+'</span>'+
+    '<span>'+t('zapas przy 125 Hz')+'</span><span>'+(ST.srcLo!=null?lb(ST.srcLo,1)+' dB':'—')+'</span>'+
+    '<span>'+t('opóźnienie toru')+'</span><span>'+(ST.lat!=null?'≈ '+Math.round(ST.lat*1000)+' ms':'—')+'</span>'+
+    '<span>'+t('D50 średnie')+'</span><span>'+(ST.D50!=null?lb(ST.D50,1)+' %':'—')+
+      (ST.Tmid?' <span style="color:#5F6C76">'+t('(z zaniku {ile} %)',{ile:Math.round(d50Teoria(ST.Tmid))})+'</span>':'')+'</span>'+
+    '<span>'+t('udział pola późnego')+'</span><span>'+(ST.pozny!=null
+      ? '<span class="'+(ST.pozny<POZNE_MIN?'r':'g')+'">'+lb(ST.pozny,2)+'</span> '+
+        t('(próg {prog})',{prog:lb(POZNE_MIN,2)}):'—')+'</span>'+
+    '<span>'+t('kubatura')+'</span><span>'+lb(ST.V,1)+' m³</span>'+
+    '<span>A (Sabine)</span><span>'+(ST.Tmid?lb(0.161*ST.V/ST.Tmid,1):'—')+' m² Sab</span>'+
+    '<span>'+t('powtórki')+'</span><span>'+ST.tries.join(' / ')+'</span>';
   if(s.autoGainControl===true||s.echoCancellation===true)
-    S($('rDiagMsg'),'warn','Przeglądarka nie oddała surowego sygnału — automatyka mikrofonu pozostała aktywna.');
+    S($('rDiagMsg'),'warn',t('Przeglądarka nie oddała surowego sygnału — automatyka mikrofonu pozostała aktywna.'));
 }
 function budujJSON(){
   const P=ST.pos.filter(Boolean);
@@ -1003,31 +1037,31 @@ function pokazPrzedPo(przed){
      o 20–30 %, więc „poprawa" mogłaby być samą zmianą sposobu pomiaru. */
   const rozneTory = p0.charakter && p0.charakter!==(ST.src==='phone'?'pogladowy':'pelny');
 
-  let t='<h2>Porównanie z wcześniejszym badaniem</h2>';
-  t+='<div class="msg '+(zm<-5?'good':'info')+'"><b>Tmid '+pl2(p0.Tmid)+' → '+pl2(ST.Tmid)+' s'+
+  let h='<h2>'+t('Porównanie z wcześniejszym badaniem')+'</h2>';
+  h+='<div class="msg '+(zm<-5?'good':'info')+'"><b>Tmid '+pl2(p0.Tmid)+' → '+pl2(ST.Tmid)+' s'+
      (isFinite(zm)?' ('+(zm>0?'+':'')+Math.round(zm)+' %)':'')+'</b><br>'+
-     'Wcześniejsze badanie tego pomieszczenia'+(data?' z '+data:'')+
-     '. Dopasowane po wymiarach i przeznaczeniu — jeśli to inne wnętrze, pomiń porównanie.</div>';
+     (data?t('Wcześniejsze badanie tego pomieszczenia z {data}.',{data:data})
+          :t('Wcześniejsze badanie tego pomieszczenia.'))+' '+
+     t('Dopasowane po wymiarach i przeznaczeniu — jeśli to inne wnętrze, pomiń porównanie.')+'</div>';
 
   if(rozneTory)
-    t+='<div class="msg warn"><b>Oba pomiary zrobiono innym źródłem dźwięku.</b> '+
-       'Telefon zaniża czas pogłosu o 20–30 %, więc ta różnica może pochodzić z samej zmiany '+
-       'sposobu pomiaru, a nie ze zmiany w pomieszczeniu. Porównywać wolno tylko pomiary tego samego rodzaju.</div>';
+    h+='<div class="msg warn"><b>'+t('Oba pomiary zrobiono innym źródłem dźwięku.')+'</b> '+
+       t('Telefon zaniża czas pogłosu o 20–30 %, więc ta różnica może pochodzić z samej zmiany sposobu pomiaru, a nie ze zmiany w pomieszczeniu. Porównywać wolno tylko pomiary tego samego rodzaju.')+'</div>';
   else if(cel>0)
-    t+= ST.Tmid<=cel
-      ? '<div class="msg good"><b>Cel '+pl2(cel)+' s osiągnięty.</b> Adaptacja zrobiła to, '+
-        'co obiecywała — i jest to zmierzone, nie policzone.</div>'
-      : '<div class="msg warn"><b>Cel '+pl2(cel)+' s jeszcze nieosiągnięty</b> — brakuje '+
-        pl2(ST.Tmid-cel)+' s. Przelicz uzupełnienie w doborze paneli: policzy je z tego '+
-        'nowego pomiaru, czyli z tego, co w pomieszczeniu jest teraz.</div>';
+    h+= ST.Tmid<=cel
+      ? '<div class="msg good"><b>'+t('Cel {cel} s osiągnięty.',{cel:pl2(cel)})+'</b> '+
+        t('Adaptacja zrobiła to, co obiecywała — i jest to zmierzone, nie policzone.')+'</div>'
+      : '<div class="msg warn"><b>'+t('Cel {cel} s jeszcze nieosiągnięty',{cel:pl2(cel)})+'</b> — '+
+        t('brakuje {ile} s. Przelicz uzupełnienie w doborze paneli: policzy je z tego nowego pomiaru, czyli z tego, co w pomieszczeniu jest teraz.',
+          {ile:pl2(ST.Tmid-cel)})+'</div>';
 
-  t+='<p class="note" style="font-size:12px"><a href="#" id="rZapomnij" style="color:var(--muted)">'+
-     'To nie jest to samo pomieszczenie — usuń historię</a></p>';
-  box.innerHTML=t;
+  h+='<p class="note" style="font-size:12px"><a href="#" id="rZapomnij" style="color:var(--muted)">'+
+     t('To nie jest to samo pomieszczenie — usuń historię')+'</a></p>';
+  box.innerHTML=h;
   const z=$('rZapomnij');
   if(z) z.onclick=e=>{ e.preventDefault();
     try{ window.Karta.zapomnij({L:ST.L,W:ST.W,H:ST.H,typ:ST.type}); }catch(err){}
-    box.innerHTML='<p class="note">Historia tego pomieszczenia usunięta.</p>'; };
+    box.innerHTML='<p class="note">'+t('Historia tego pomieszczenia usunięta.')+'</p>'; };
 }
 
 function pokazDalej(){
@@ -1038,14 +1072,12 @@ function pokazDalej(){
   /* Klasa ghost niesie hierarchię działań. Bez niej trzy przyciski krzyczą
      równie głośno i nie widać, co jest zalecane. */
   P.classList.toggle('ghost',udany);
-  P.textContent=tel?'Powtórz z głośnikiem zewnętrznym':'Powtórz badanie';
+  P.textContent=tel?t('Powtórz z głośnikiem zewnętrznym'):t('Powtórz badanie');
   $('dalejOpis').innerHTML = !udany
-    ? 'Bez czasu pogłosu w pasmach mowy nie ma czego dobierać — powierzchnia paneli liczy się właśnie z nich. '+
-      'Zapis danych zostaje: w paczce są odpowiedzi impulsowe, więc pomiar da się przejrzeć niezależnym narzędziem.'
+    ? t('Bez czasu pogłosu w pasmach mowy nie ma czego dobierać — powierzchnia paneli liczy się właśnie z nich. Zapis danych zostaje: w paczce są odpowiedzi impulsowe, więc pomiar da się przejrzeć niezależnym narzędziem.')
     : tel
-      ? 'Dobór policzy z tego <b>widełki od–do</b> wraz z zaleceniem, od ilu paneli zacząć. '+
-        'Powtórzenie z głośnikiem zewnętrznym zamienia widełki w jedną liczbę.'
-      : 'Wynik nadaje się jako podstawa doboru — dostaniesz konkretną liczbę paneli.';
+      ? t('Dobór policzy z tego <b>widełki od–do</b> wraz z zaleceniem, od ilu paneli zacząć. Powtórzenie z głośnikiem zewnętrznym zamienia widełki w jedną liczbę.')
+      : t('Wynik nadaje się jako podstawa doboru — dostaniesz konkretną liczbę paneli.');
 }
 
 $('bDobor').onclick=()=>{
@@ -1056,8 +1088,9 @@ $('bDobor').onclick=()=>{
      samo jak plik wrzucony ręcznie; przekazanie nie jest wejściem bocznym. */
   try{ sessionStorage.setItem(KLUCZ_POMIARU,JSON.stringify(budujJSON())); }
   catch(e){
-    $('dalejOpis').innerHTML='<span class="r">Nie udało się przekazać wyniku ('+e.message+'). '+
-      'Zapisz dane badania i wczytaj plik ręcznie w module doboru.</span>'; return; }
+    $('dalejOpis').innerHTML='<span class="r">'+
+      t('Nie udało się przekazać wyniku ({blad}). Zapisz dane badania i wczytaj plik ręcznie w module doboru.',
+        {blad:e.message})+'</span>'; return; }
   location.href='dobor.html';
 };
 
@@ -1087,7 +1120,7 @@ $('bPowtorz').onclick=()=>{
 
 $('bZapisz').onclick=(ev)=>{
   if(ev&&ev.preventDefault)ev.preventDefault();
-  const b=$('bZapisz'); const etykieta=b.textContent; b.textContent='Pakuję…';
+  const b=$('bZapisz'); const etykieta=b.textContent; b.textContent=t('Pakuję…');
   try{
     const out=budujJSON();
     const enc=new TextEncoder();
@@ -1095,32 +1128,38 @@ $('bZapisz').onclick=(ev)=>{
                   dane:enc.encode(JSON.stringify(out,null,2))}];
     ST.irs.forEach((ir,i)=>{ if(ir&&ir.length)
       pliki.push({nazwa:'ir-punkt-'+(i+1)+'.wav', dane:Paczka.wav(ir,ST.fs)}); });
-    pliki.push({nazwa:'czytaj-to.txt', dane:enc.encode(
-      'BADANIE AKUSTYCZNE POMIESZCZENIA — komplet danych\r\n'+
-      '='.repeat(52)+'\r\n\r\n'+
-      'Data pomiaru: '+out.czas+'\r\n'+
-      'Silnik: '+out.wersja+'\r\n'+
-      'Pomieszczenie: '+ST.L+' x '+ST.W+' x '+ST.H+' m, '+out.pomieszczenie.V+' m3\r\n'+
-      'Charakter pomiaru: '+out.charakter_pomiaru+'\r\n'+
-      'Czas poglosu Tmid: '+(out.Tmid!=null?out.Tmid+' s':'nie wyznaczono')+'\r\n\r\n'+
-      'ZAWARTOSC\r\n\r\n'+
-      'badanie-akustyczne.json   wyniki: czas poglosu w pasmach, chlonnosc,\r\n'+
-      '                          wskazniki mowy, dane toru pomiarowego\r\n\r\n'+
-      'ir-punkt-N.wav            odpowiedzi impulsowe z kazdego z punktow\r\n'+
-      '                          pomiarowych, 32-bit float, '+ST.fs+' Hz.\r\n'+
-      '                          To jest surowiec: wynikaja z niego T20, T30,\r\n'+
-      '                          C50, D50 i STI. Pozwalaja przeliczyc wszystko\r\n'+
-      '                          na nowo albo sprawdzic wynik niezaleznym\r\n'+
-      '                          narzedziem (REW, ARTA, Audacity, Python)\r\n'+
-      '                          bez wracania do pomieszczenia.\r\n\r\n'+
-      'Plik przeznaczony do przeslania do ALACER.\r\n')});
+    /* Opis paczki idzie w języku, w którym klient pracował — trafia do niego
+       i do nas, a nie do maszyny. Bez znaków diakrytycznych, bo plik tekstowy
+       bywa otwierany w programach, które nie zgadną kodowania. */
+    pliki.push({nazwa:'czytaj-to.txt', dane:enc.encode([
+      t('BADANIE AKUSTYCZNE POMIESZCZENIA - komplet danych'),
+      '='.repeat(52), '',
+      t('Data pomiaru: {czas}',{czas:out.czas}),
+      t('Silnik: {wersja}',{wersja:out.wersja}),
+      t('Pomieszczenie: {L} x {W} x {H} m, {V} m3',
+        {L:ST.L, W:ST.W, H:ST.H, V:out.pomieszczenie.V}),
+      t('Charakter pomiaru: {jaki}',{jaki:out.charakter_pomiaru}),
+      t('Czas poglosu Tmid: {T}',{T:out.Tmid!=null?out.Tmid+' s':t('nie wyznaczono')}),
+      '', t('ZAWARTOSC'), '',
+      'badanie-akustyczne.json',
+      t('   wyniki: czas poglosu w pasmach, chlonnosc, wskazniki mowy,'),
+      t('   dane toru pomiarowego'),
+      '',
+      'ir-punkt-N.wav',
+      t('   odpowiedzi impulsowe z kazdego z punktow pomiarowych,'),
+      t('   32-bit float, {fs} Hz. To jest surowiec: wynikaja z niego',{fs:ST.fs}),
+      t('   T20, T30, C50, D50 i STI. Pozwalaja przeliczyc wszystko na nowo'),
+      t('   albo sprawdzic wynik niezaleznym narzedziem (REW, ARTA,'),
+      t('   Audacity, Python) bez wracania do pomieszczenia.'),
+      '', t('Plik przeznaczony do przeslania do ALACER.'), ''
+    ].join('\r\n'))});
     const nazwa='badanie-akustyczne-'+Paczka.stempel()+'.zip';
     Paczka.dl(Paczka.zip(pliki),nazwa);
     $('zapisOpis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+
-      pliki.length+' plików: wyniki, '+ST.irs.filter(Boolean).length+
-      ' odpowiedzi impulsowe i opis zawartości.';
+      t('{ile} plików: wyniki, {ir} odpowiedzi impulsowe i opis zawartości.',
+        {ile:pliki.length, ir:ST.irs.filter(Boolean).length});
   }catch(e){
-    $('zapisOpis').innerHTML='<span class="r">Nie udało się spakować ('+e.message+').</span>';
+    $('zapisOpis').innerHTML='<span class="r">'+t('Nie udało się spakować ({blad}).',{blad:e.message})+'</span>';
   }
   b.textContent=etykieta;
 };
