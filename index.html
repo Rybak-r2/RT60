@@ -103,6 +103,13 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 .diag{display:grid;grid-template-columns:1fr auto;gap:3px 14px;font-family:var(--mono);font-size:12.5px;margin-top:12px}
 .diag span:nth-child(odd){color:var(--muted)} .diag span:nth-child(even){text-align:right}
 .g{color:var(--ok)}.r{color:var(--bad)}.y{color:var(--signal)}
+/* Przełącznik języka: nazwy, nie flagi. Flaga to kraj, nie język — angielski
+   to nie tylko Wielka Brytania, niemiecki to też Austria i Szwajcaria. */
+.jezyki{display:flex;gap:6px;justify-content:flex-end;padding:14px 0 0}
+.jezyki button.jez{width:auto;flex:0 0 auto;background:transparent;color:var(--muted);
+  border:1px solid var(--line);border-radius:2px;padding:6px 11px;font-size:12.5px;font-weight:480}
+.jezyki button.jez:hover:not(.sel){background:var(--panel2);color:var(--text);filter:none}
+.jezyki button.jez.sel{border-color:var(--signal);color:var(--signal);background:rgba(255,176,32,.07)}
 .hide{display:none!important}
 .ver{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);text-align:center;margin:18px 0 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -110,6 +117,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 </head>
 <body>
 <div class="wrap">
+<div class="jezyki" id="jezyki"></div>
 <div class="steps"><i id="p1" class="on"></i><i id="p2"></i><i id="p3"></i><i id="p4"></i><i id="p5"></i></div>
 
 <div id="v1">
@@ -217,6 +225,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <details><summary>Tryb techniczny</summary><div class="diag" id="rDiag"></div><div id="rDiagMsg"></div></details>
 </div>
 </div>
+<script src="jezyki.js"></script>
 <script src="paczka.js"></script>
 <script src="karta.js"></script>
 <script>
@@ -430,6 +439,12 @@ const SNR_AC_GOOD=26, SNR_SCALE=45, PEAK_LOW_DBFS=-40, PEAK_MIN_DBFS=-50;
 const ST={fs:48000,set:{},src:'ext',bg:null,bgE:null,Test:.7,pos:[],cur:0,ir:null,irs:[],
   tries:[0,0,0],peak:0,clip:false,rec:false,chunks:[]};
 const $=id=>document.getElementById(id);
+/* Wersja językowa ustawia się PRZED czymkolwiek innym: statyczne znaczniki
+   tłumaczą się w miejscu, a separator dziesiętny i format daty idą za językiem,
+   nie za polszczyzną. */
+const t=(s,p)=>Jezyk.t(s,p);
+const lb=(v,n)=>Jezyk.liczba(v,n);
+Jezyk.start(); Jezyk.tlumaczDOM(); Jezyk.przelacznik('jezyki');
 const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
 function go(n){for(let i=1;i<=5;i++){$('v'+i).classList.toggle('hide',i!==n);
   $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
@@ -461,9 +476,7 @@ $('ver').textContent='silnik '+WERSJA;
   const el=$(id);
   el.addEventListener('input',()=>{
     const przed=el.value,poz=el.selectionStart;
-    let s=przed.replace(/[.·˙٫․‧]/g,',').replace(/[^0-9,]/g,'');
-    const i=s.indexOf(',');
-    if(i>=0)s=s.slice(0,i+1)+s.slice(i+1).replace(/,/g,'');
+    let s=Jezyk.normalizuj(przed);
     if(s!==przed){
       el.value=s;
       const d=s.length-przed.length;
@@ -475,14 +488,13 @@ $('ver').textContent='silnik '+WERSJA;
 function pokazKubature(){
   const v=[wym('fL'),wym('fW'),wym('fH')];
   $('dimV').innerHTML=v.every(x=>isFinite(x)&&x>0)
-    ? '<span class="g">'+(v[0]*v[1]*v[2]).toFixed(1).replace('.',',')+' m³</span>'
+    ? '<span class="g">'+lb(v[0]*v[1]*v[2],1)+' m³</span>'
     : '—';
 }
 /* Wspólny parser wymiaru: przecinek i kropka są równoważne, wszystko inne
    odrzucamy jawnie zamiast pozwalać parseFloat zgadywać. */
 function wym(id){
-  const s=($(id).value||'').trim().replace(/\s/g,'').replace(',','.');
-  return /^\d*\.?\d+$/.test(s)?parseFloat(s):NaN;
+  return Jezyk.naLiczbe($(id).value);
 }
 $('b2').onclick=()=>{
   /* Pola wymiarów są type="text", nie type="number". Przy type="number"
@@ -498,7 +510,7 @@ $('b2').onclick=()=>{
   /* Górna granica jest równie potrzebna, co dolna: bez niej literówka albo
      zgubiony przecinek dawały objętość tysiąc razy za dużą, a błąd ujawniał się
      dopiero w chłonności A, gdzie nikt by go nie rozpoznał. */
-  const zle=[],pl=v=>v.toFixed(1).replace('.',',');
+  const zle=[],pl=v=>lb(v,1);
   if(!(L>=1.5&&L<=60))zle.push('długość '+pl(L)+' m');
   if(!(W>=1.5&&W<=60))zle.push('szerokość '+pl(W)+' m');
   if(!(H>=1.8&&H<=20))zle.push('wysokość '+pl(H)+' m');
@@ -790,7 +802,7 @@ function finish(){
     document.querySelector('#rOk .big').classList.add('hide');
     pokazDalej();diag();go(5);return;
   }
-  $('rT').innerHTML=Tmid.toFixed(2).replace('.',',')+'<small>s</small>';
+  $('rT').innerHTML=lb(Tmid,2)+'<small>s</small>';
   let v;
   if(Tmid<.45)v='<div class="msg good">Pomieszczenie wytłumione. Mowa jest wyraźna, dźwięk nie niesie się po wnętrzu.</div>';
   else if(Tmid<.8)v='<div class="msg info">Akustyka umiarkowana. Rozmowa jest zrozumiała, ale przy większej liczbie osób hałas będzie narastał.</div>';
@@ -814,7 +826,7 @@ function finish(){
   if(pozny!=null&&pozny<POZNE_MIN){
     $('rSpeech').innerHTML='<div class="msg warn"><b>Wskaźniki zrozumiałości pominięte.</b><br>'+
       'Do mikrofonu dotarło zaledwie '+Math.round(pozny*100)+' % pola pogłosowego, którego należałoby się spodziewać przy czasie pogłosu '+
-      Tmid.toFixed(2).replace('.',',')+' s (D50 = '+Math.round(D50)+' % wobec '+Math.round(d50Teoria(Tmid))+' % z samego zaniku). '+
+      lb(Tmid,2)+' s (D50 = '+Math.round(D50)+' % wobec '+Math.round(d50Teoria(Tmid))+' % z samego zaniku). '+
       'Mikrofon rejestrował niemal wyłącznie dźwięk bezpośredni, więc C50, D50 i STI byłyby zawyżone. '+
       (ST.src==='phone'
         ? 'Głośnik zewnętrzny ustawiony w rogu, co najmniej 2 metry od telefonu, odblokowuje te wskaźniki.'
@@ -825,12 +837,12 @@ function finish(){
     let h='<div class="metrics">'+
       '<div><div class="m">'+(D50!=null?Math.round(D50)+' %':'—')+'</div><div class="l">D50 · wyrazistość</div>'+
       '<div class="d">Udział energii z pierwszych 50 ms. Poniżej 50 % mowa się zlewa.</div></div>'+
-      '<div><div class="m">'+(C.length?(C.reduce((a,x)=>a+x)/C.length).toFixed(1).replace('.',',')+' dB':'—')+'</div>'+
+      '<div><div class="m">'+(C.length?lb(C.reduce((a,x)=>a+x)/C.length,1)+' dB':'—')+'</div>'+
       '<div class="l">C50 · przejrzystość</div><div class="d">Przewaga dźwięku bezpośredniego nad pogłosem. Dla mowy pożądane powyżej 0 dB.</div></div></div>';
     if(sv.length){
       const sti=sv.reduce((a,x)=>a+x)/sv.length;
       const q=sti>=.75?'znakomita':sti>=.6?'dobra':sti>=.45?'dostateczna':sti>=.3?'słaba':'zła';
-      h+='<div class="msg info"><b>STI '+sti.toFixed(2).replace('.',',')+'</b> — zrozumiałość mowy '+q+'.<br>'+
+      h+='<div class="msg info"><b>STI '+lb(sti,2)+'</b> — zrozumiałość mowy '+q+'.<br>'+
         'Wartość orientacyjna, wyznaczona z odpowiedzi impulsowej przy założeniu cichego tła. To górna granica tego wnętrza — rzeczywisty hałas ją obniża.</div>';
     }
     $('rSpeech').innerHTML=h;
@@ -865,7 +877,7 @@ function buildTable(avg,spread,qual,cnt){
     if(avg[f]==null){t+='<tr class="weak"><td>'+lbl(f)+'</td><td colspan="4" class="q">'+qual[f]+'</td></tr>';return;}
     /* Brak rozrzutu to brak danych, nie zgodność — stąd kreska zamiast ±0 %. */
     const sp=spread[f]==null?'<span style="color:var(--dim)">—</span>':'±'+Math.round(spread[f]*100)+' %';
-    t+='<tr><td>'+lbl(f)+'</td><td>'+avg[f].toFixed(2).replace('.',',')+'</td><td'+
+    t+='<tr><td>'+lbl(f)+'</td><td>'+lb(avg[f],2)+'</td><td'+
       (cnt[f]<n?' style="color:var(--signal)"':'')+'>'+cnt[f]+'/'+n+'</td><td>'+sp+
       '</td><td class="q" style="color:'+(qual[f]==='dobry'?'#7FC96B':'#FFB020')+'">'+qual[f]+'</td></tr>';});
   $('rTbl').innerHTML=t+'</tbody></table>';
@@ -956,8 +968,8 @@ const KLUCZ_POMIARU='rt60-pomiar', KLUCZ_WYMIAROW='rt60-wymiary';
   Karta jest DODATKIEM: gdy jej nie ma — prywatne okno, wyczyszczone dane,
   przeglądarka z zablokowanym zapisem — pomiar działa dokładnie jak wcześniej.
   Stąd sprawdzenie window.Karta przy każdym wejściu. */
-const pl2=v=>v==null?'—':v.toFixed(2).replace('.',',');
-const dataPl=t=>{ try{ return new Date(t).toLocaleDateString('pl-PL'); }catch(e){ return null; } };
+const pl2=v=>lb(v,2);
+const dataPl=x=>Jezyk.data(x);
 
 /* Odpowiedzi impulsowe do IndexedDB, żeby komplet dało się spakować dopiero
    na końcu doboru — tam, gdzie wiadomo, jakie panele wybrano. Tu żyją tylko
@@ -1067,7 +1079,7 @@ $('bPowtorz').onclick=()=>{
   try{ w=JSON.parse(sessionStorage.getItem(KLUCZ_WYMIAROW)||'null');
        sessionStorage.removeItem(KLUCZ_WYMIAROW); }catch(e){}
   if(!w||!(w.L>0))return;
-  const tekst=v=>String(v).replace('.',',');
+  const tekst=v=>String(v).replace('.',Jezyk.separator());
   $('fL').value=tekst(w.L); $('fW').value=tekst(w.W); $('fH').value=tekst(w.H);
   if(w.typ)$('fType').value=w.typ;
   pokazKubature();

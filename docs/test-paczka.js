@@ -52,8 +52,14 @@ function swiat(){
      globalny node'a — w przeglądarce to jedno i to samo. */
   win.URL=global.URL; win.Blob=global.Blob;
   try{ Object.defineProperty(global,'navigator',{value:{},configurable:true}); }catch(e){}
-  delete require.cache[require.resolve(path.join(KAT,'paczka.js'))];
-  require(path.join(KAT,'paczka.js'));
+  /* Strony ładują moduły znacznikami <script>; w teście dociągamy je tak samo
+     i odwzorowujemy na obiekcie globalnym — w przeglądarce window JEST globalny. */
+  ['jezyki.js','paczka.js','karta.js'].forEach(function(f){
+    const sc=path.join(KAT,f);
+    delete require.cache[require.resolve(sc)];
+    require(sc);
+  });
+  global.Jezyk=win.Jezyk; global.Paczka=win.Paczka;
   /* W przeglądarce window JEST obiektem globalnym, więc strona woła po prostu
      Paczka.zip(...). W node to dwa różne obiekty — odwzorowujemy tamto. */
   global.Paczka=win.Paczka;

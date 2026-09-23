@@ -70,6 +70,13 @@ td:first-child{text-align:left;color:var(--muted)}
 details{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
 summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer}
 .g{color:var(--ok)}.r{color:var(--bad)}.y{color:var(--signal)}
+/* Przełącznik języka: nazwy, nie flagi. Flaga to kraj, nie język — angielski
+   to nie tylko Wielka Brytania, niemiecki to też Austria i Szwajcaria. */
+.jezyki{display:flex;gap:6px;justify-content:flex-end;padding:14px 0 0}
+.jezyki button.jez{width:auto;flex:0 0 auto;background:transparent;color:var(--muted);
+  border:1px solid var(--line);border-radius:2px;padding:6px 11px;font-size:12.5px;font-weight:480}
+.jezyki button.jez:hover:not(.sel){background:var(--panel2);color:var(--text);filter:none}
+.jezyki button.jez.sel{border-color:var(--signal);color:var(--signal);background:rgba(255,176,32,.07)}
 .hide{display:none!important}
 .ver{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);text-align:center;margin:18px 0 0}
 .prov{font-family:var(--mono);font-size:10.5px;color:var(--dim);border-top:1px solid var(--line);margin-top:22px;padding-top:12px}
@@ -77,6 +84,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 </head>
 <body>
 <div class="wrap">
+<div class="jezyki" id="jezyki"></div>
 <div class="steps"><i id="p1" class="on"></i><i id="p2"></i><i id="p3"></i><i id="p4"></i></div>
 
 <!-- ── 1. wczytanie pomiaru ─────────────────────────────────────────── -->
@@ -149,6 +157,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 </div>
 </div>
 
+<script src="jezyki.js"></script>
 <script src="paczka.js"></script>
 <script src="karta.js"></script>
 <script>
@@ -366,8 +375,10 @@ const CELE=[
 ];
 
 const $=id=>document.getElementById(id);
+const t=(s,p)=>Jezyk.t(s,p);
+Jezyk.start(); Jezyk.tlumaczDOM(); Jezyk.przelacznik('jezyki');
 const S=(el,t,x)=>{el.innerHTML=x?'<div class="msg '+t+'">'+x+'</div>':'';};
-const pl=(v,n)=>v==null?'—':v.toFixed(n==null?2:n).replace('.',',');
+const pl=(v,n)=>Jezyk.liczba(v,n);
 const lbl=f=>f>=1000?(f/1000)+' kHz':f+' Hz';
 /* Odmiana rzeczownika przez liczbę: 1 panel, 2–4 panele, 5+ paneli — z wyjątkiem
    nastek (12–14 paneli). Bez tego w podpisach wychodziło „4 paneli". */
@@ -614,9 +625,9 @@ function rysujCele(){
   $('celWlBox').classList.toggle('hide', ST.celId!=='wlasny');
 }
 $('celWl').addEventListener('input',()=>{
-  const s=$('celWl').value.replace(/[.]/g,',').replace(/[^0-9,]/g,'');
+  const s=Jezyk.normalizuj($('celWl').value);
   $('celWl').value=s;
-  const v=parseFloat(s.replace(',','.'));
+  const v=Jezyk.naLiczbe(s);
   ST.cel=v>0?v:null;
 });
 $('b2').onclick=()=>{
@@ -838,7 +849,7 @@ $('b3').onclick=()=>{
   if(ST.pogladowy && dolny.szt>0 && gorny.szt/dolny.szt>WIDELKI_MAX_KROTNOSC){
     S($('m3'),'err','<b>Widełki wyszłyby zbyt szerokie, żeby były do czegoś przydatne.</b><br>'+
       'Przy tym celu wychodzi od '+dolny.szt+' do '+gorny.szt+' szt. — '+
-      (gorny.szt/dolny.szt).toFixed(1).replace('.',',')+'-krotna różnica. Powodem jest to, że cel '+
+      pl(gorny.szt/dolny.szt,1)+'-krotna różnica. Powodem jest to, że cel '+
       pl(ST.cel)+' s leży blisko granicy szacunku dla pomiaru telefonem. '+
       'Powtórz badanie z głośnikiem zewnętrznym albo wybierz mniej ambitny cel.');
     return;

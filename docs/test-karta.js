@@ -48,8 +48,14 @@ function swiat(mag){
   global.URL={createObjectURL:()=>'blob:test',revokeObjectURL(){}};
   /* navigator w nowszym node jest tylko do odczytu — podstawiamy przez definiowanie. */
   try{ Object.defineProperty(global,'navigator',{value:{},configurable:true}); }catch(e){}
-  delete require.cache[require.resolve(path.join(KAT,'karta.js'))];
-  require(path.join(KAT,'karta.js'));
+  /* Strony ładują moduły znacznikami <script>; w teście dociągamy je tak samo
+     i odwzorowujemy na obiekcie globalnym — w przeglądarce window JEST globalny. */
+  ['jezyki.js','paczka.js','karta.js'].forEach(function(f){
+    const sc=path.join(KAT,f);
+    delete require.cache[require.resolve(sc)];
+    require(sc);
+  });
+  global.Jezyk=win.Jezyk; global.Paczka=win.Paczka;
   return {cache, win, E:id=>doc.getElementById(id)};
 }
 

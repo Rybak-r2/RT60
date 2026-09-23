@@ -48,6 +48,20 @@ function klik(pojemnik,id){
    Bez tego handlery przycisków zostawały przy poprzednim egzemplarzu stanu ST,
    a test ustawiał pola na obiekcie, którego nikt już nie czytał — i przechodził
    albo padał z powodu, który nie miał nic wspólnego ze stroną. */
+/* Strona ładuje jezyki.js i paczka.js znacznikami <script>; w teście
+   dociągamy je tak samo i odwzorowujemy na obiekcie globalnym, bo
+   w przeglądarce window JEST globalny, a w node to dwa różne obiekty. */
+function wczytajModuly(){
+  global.window.document=global.document;
+  global.window.localStorage=global.localStorage;
+  ['jezyki.js','paczka.js'].forEach(function(f){
+    const sc=require('path').join(__dirname,'..',f);
+    delete require.cache[require.resolve(sc)];
+    require(sc);
+  });
+  global.Jezyk=global.window.Jezyk; global.Paczka=global.window.Paczka;
+}
+
 let api;
 function uruchom(pomiar){
   const mem={};
@@ -55,6 +69,7 @@ function uruchom(pomiar){
     setItem:(k,v)=>{mem[k]=String(v);}, removeItem:k=>{delete mem[k];}};
   if(pomiar) mem['rt60-pomiar']=JSON.stringify(pomiar);
   for(const k in cache) delete cache[k];
+  wczytajModuly();
   api=new Function(src+'\n;return {przyjmij:przyjmij,ST:ST,propozycjaJSON:propozycjaJSON};')();
   return api;
 }
