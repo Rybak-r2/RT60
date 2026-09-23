@@ -382,10 +382,7 @@ const pl=(v,n)=>Jezyk.liczba(v,n);
 const lbl=f=>f>=1000?(f/1000)+' kHz':f+' Hz';
 /* Odmiana rzeczownika przez liczbę: 1 panel, 2–4 panele, 5+ paneli — z wyjątkiem
    nastek (12–14 paneli). Bez tego w podpisach wychodziło „4 paneli". */
-function ilu(n,poj,mno,dop){
-  const d=n%10, s=n%100;
-  return n===1?poj:(d>=2&&d<=4&&!(s>=12&&s<=14)?mno:dop);
-}
+const ilu=(n,poj,mno,dop)=>Jezyk.ilu(n,poj,mno,dop);
 function idz(n){for(let i=1;i<=4;i++){$('v'+i).classList.toggle('hide',i!==n);
   $('p'+i).className=i<n?'past':(i===n?'on':'');}window.scrollTo(0,0);}
 $('ver').textContent=WERSJA;
@@ -393,10 +390,10 @@ $('ver').textContent=WERSJA;
 function opisPodstawy(){
   return (ST.wyk==='nuo'
     ? (ST.mont==='n100'
-        ? 'α dla absorbera 100 mm — szacunek z krzywej producenta przeliczonej na głębszy wariant; wartość tymczasowa do czasu otrzymania tabeli α_p.'
-        : 'α odczytane z wykresu α_p w ulotce producenta (10.2021) — odczyt z obrazka, nie tabela.')
-    : 'α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.')+
-    ' Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają.';
+        ? t('α dla absorbera 100 mm — szacunek z krzywej producenta przeliczonej na głębszy wariant; wartość tymczasowa do czasu otrzymania tabeli α_p.')
+        : t('α odczytane z wykresu α_p w ulotce producenta (10.2021) — odczyt z obrazka, nie tabela.'))
+    : t('α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.'))+
+    ' '+t('Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają.');
 }
 
 const ST={};
@@ -408,11 +405,13 @@ const ST={};
 function rysujZrodlo(){
   const o=[];
   if(ST.jPomiaru) o.push({id:'pomiar', n:'Pomiar z tego badania',
-    o:'Przejęty wprost z badania'+(ST.godzPomiaru?', godz. '+ST.godzPomiaru:'')+
-      '. Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki.'});
+    o:(ST.godzPomiaru
+        ? t('Przejęty wprost z badania, godz. {godz}.',{godz:ST.godzPomiaru})
+        : t('Przejęty wprost z badania.'))+' '+
+      t('Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki.')});
   o.push({id:'plik', n:ST.jPomiaru?'Wczytaj inny plik':'Wybierz plik z badania',
-    o:(ST.jPomiaru?'Jeśli chcesz policzyć dla wcześniejszego badania. ':'badanie-akustyczne.json. ')+
-      'Kliknij albo przeciągnij plik tutaj.'});
+    o:(ST.jPomiaru?t('Jeśli chcesz policzyć dla wcześniejszego badania.'):'badanie-akustyczne.json.')+' '+
+      t('Kliknij albo przeciągnij plik tutaj.')});
   wybor('zrodloWej', o, ST.zrodloWej, id=>{
     if(id==='plik'){ $('plik').click(); rysujZrodlo(); return; }
     ST.zrodloWej='pomiar'; przyjmij(ST.jPomiaru); rysujZrodlo();
@@ -433,7 +432,7 @@ function czytaj(f){
   r.onload=()=>{
     let j;
     try{j=JSON.parse(r.result);}
-    catch(e){S($('m1'),'err','Nie udało się odczytać pliku — to nie jest poprawny JSON.');return;}
+    catch(e){S($('m1'),'err',t('Nie udało się odczytać pliku — to nie jest poprawny JSON.'));return;}
     przyjmij(j);
   };
   r.readAsText(f);
@@ -456,14 +455,12 @@ function kontrolaWejscia(j){
   const nr=w&&/^silnik-v(\d+)$/.test(w)?parseInt(w.replace(/^silnik-v/,''),10):null;
   ST.wersjaSilnika=w;
   if(w&&(WERSJE_NIEUFNE.indexOf(w)>=0||(nr!=null&&nr<=3))){
-    uw.push({blok:true, tyt:'Plik pochodzi ze starej wersji silnika pomiarowego ('+w+').',
-      tresc:'Do wersji <b>silnik-v3</b> zakres dynamiki zaniku liczył się błędnie, więc progi ISO 3382 '+
-        'nie odrzucały złych pomiarów — plik może podawać czasy pogłosu, których w rzeczywistości nikt nie zmierzył. '+
-        'Powtórz badanie w bieżącej wersji; sam plik nie da się naprawić.'});
+    uw.push({blok:true,
+      tyt:t('Plik pochodzi ze starej wersji silnika pomiarowego ({wersja}).',{wersja:w}),
+      tresc:t('Do wersji <b>silnik-v3</b> zakres dynamiki zaniku liczył się błędnie, więc progi ISO 3382 nie odrzucały złych pomiarów — plik może podawać czasy pogłosu, których w rzeczywistości nikt nie zmierzył. Powtórz badanie w bieżącej wersji; sam plik nie da się naprawić.')});
   }else if(!w){
-    uw.push({blok:false, tyt:'Plik nie podaje wersji silnika pomiarowego.',
-      tresc:'Nie da się sprawdzić, czy powstał po naprawie zakresu dynamiki. Kontrole liczbowe poniżej '+
-        'przeszedł, ale jeśli to plik sprzed sierpnia 2026, wynik lepiej potwierdzić nowym badaniem.'});
+    uw.push({blok:false, tyt:t('Plik nie podaje wersji silnika pomiarowego.'),
+      tresc:t('Nie da się sprawdzić, czy powstał po naprawie zakresu dynamiki. Kontrole liczbowe poniżej przeszedł, ale jeśli to plik sprzed sierpnia 2026, wynik lepiej potwierdzić nowym badaniem.')});
   }
 
   /* 2. Rozrzut międzypasmowy. W jednym pomieszczeniu chłonność zmienia się z
@@ -476,17 +473,16 @@ function kontrolaWejscia(j){
     const k=ST.T[fHi]/ST.T[fLo];
     ST.rozrzutPasm=k;
     if(k>MAX_ROZRZUT_PASM){
-      uw.push({blok:true, tyt:'Wyniki pasmowe rozjeżdżają się '+pl(k,1)+'-krotnie.',
-        tresc:'Najdłuższy zanik ('+lbl(fHi)+': '+pl(ST.T[fHi])+' s) jest '+pl(k,1)+' razy dłuższy od najkrótszego ('+
-          lbl(fLo)+': '+pl(ST.T[fLo])+' s). Na poprawnych pomiarach krotność mieści się w 1,2–1,4, tolerancja to '+
-          MAX_ROZRZUT_PASM+'. Taki rozjazd nie opisuje pomieszczenia — oznacza, że co najmniej jedno pasmo '+
-          'zostało wyliczone z szumu, a nie zmierzone.'});
+      uw.push({blok:true,
+        tyt:t('Wyniki pasmowe rozjeżdżają się {krotnosc}-krotnie.',{krotnosc:pl(k,1)}),
+        tresc:t('Najdłuższy zanik ({pasmoHi}: {THi} s) jest {krotnosc} razy dłuższy od najkrótszego ({pasmoLo}: {TLo} s). Na poprawnych pomiarach krotność mieści się w 1,2–1,4, tolerancja to {prog}. Taki rozjazd nie opisuje pomieszczenia — oznacza, że co najmniej jedno pasmo zostało wyliczone z szumu, a nie zmierzone.',
+          {pasmoHi:lbl(fHi), THi:pl(ST.T[fHi]), krotnosc:pl(k,1),
+           pasmoLo:lbl(fLo), TLo:pl(ST.T[fLo]), prog:MAX_ROZRZUT_PASM})});
     }
   }else{
-    uw.push({blok:false, tyt:'Za mało pasm do sprawdzenia spójności pomiaru.',
-      tresc:'W zakresie 250–4000 Hz wiarygodny wynik dało '+(mier.length?'tylko jedno pasmo':'żadne pasmo')+
-        ', więc rozjazdu między pasmami nie ma z czym porównać. Brak sprzeczności w danych, których nie ma, '+
-        'nie jest dowodem poprawności — propozycja stoi wtedy w istocie na jednym odczycie.'});
+    uw.push({blok:false, tyt:t('Za mało pasm do sprawdzenia spójności pomiaru.'),
+      tresc:t('W zakresie 250–4000 Hz wiarygodny wynik dało {ile}, więc rozjazdu między pasmami nie ma z czym porównać. Brak sprzeczności w danych, których nie ma, nie jest dowodem poprawności — propozycja stoi wtedy w istocie na jednym odczycie.',
+        {ile:mier.length?t('tylko jedno pasmo'):t('żadne pasmo')})});
   }
 
   /* 3. Rozjazd pasm mowy. 500 Hz i 1 kHz wchodzą wprost do Tmid, czyli do
@@ -496,10 +492,10 @@ function kontrolaWejscia(j){
     const k=Math.max(ST.T[500],ST.T[1000])/Math.min(ST.T[500],ST.T[1000]);
     ST.rozjazdMowy=k;
     if(k>MAX_ROZJAZD_MOWY){
-      uw.push({blok:true, tyt:'Pasma mowy rozjeżdżają się '+pl(k,1)+'-krotnie.',
-        tresc:'500 Hz daje '+pl(ST.T[500])+' s, a 1 kHz '+pl(ST.T[1000])+' s. Z tych dwóch pasm liczy się Tmid, '+
-          'czyli cała powierzchnia paneli — przy rozjeździe powyżej '+MAX_ROZJAZD_MOWY+
-          '-krotnego ich średnia nie opisuje niczego rzeczywistego.'});
+      uw.push({blok:true,
+        tyt:t('Pasma mowy rozjeżdżają się {krotnosc}-krotnie.',{krotnosc:pl(k,1)}),
+        tresc:t('500 Hz daje {T500} s, a 1 kHz {T1k} s. Z tych dwóch pasm liczy się Tmid, czyli cała powierzchnia paneli — przy rozjeździe powyżej {prog}-krotnego ich średnia nie opisuje niczego rzeczywistego.',
+          {T500:pl(ST.T[500]), T1k:pl(ST.T[1000]), prog:MAX_ROZJAZD_MOWY})});
     }
   }
   return uw;
@@ -515,9 +511,9 @@ function przyjmij(j){
   ST.rekom=null; ST.montRecznie=false;
   const p=j.pomieszczenie;
   if(!p||!(p.L>0)||!(p.W>0)||!(p.H>0)){
-    S($('m1'),'err','W pliku brakuje wymiarów pomieszczenia. Czy to na pewno wynik badania czasu pogłosu?');return;}
+    S($('m1'),'err',t('W pliku brakuje wymiarów pomieszczenia. Czy to na pewno wynik badania czasu pogłosu?'));return;}
   if(!j.pasma||!j.pasma.length){
-    S($('m1'),'err','W pliku brakuje wyników pasmowych.');return;}
+    S($('m1'),'err',t('W pliku brakuje wyników pasmowych.'));return;}
 
   ST.pomiarZrodlo=j;          // surowy plik badania — wchodzi do paczki wyniku
   ST.L=p.L; ST.W=p.W; ST.H=p.H; ST.V=p.V||p.L*p.W*p.H; ST.typ=p.typ;
@@ -551,15 +547,14 @@ function przyjmij(j){
     const m=[500,1000].map(f=>ST.T[f]).filter(x=>x>0);
     ST.Tmid=m.length?m.reduce((a,x)=>a+x)/m.length:null;}
   if(!(ST.Tmid>0)){
-    S($('m1'),'err','Plik nie zawiera wiarygodnego czasu pogłosu w pasmach mowy — nie ma na czym oprzeć doboru.');return;}
+    S($('m1'),'err',t('Plik nie zawiera wiarygodnego czasu pogłosu w pasmach mowy — nie ma na czym oprzeć doboru.'));return;}
   /* Bramka wiarygodności — przed uzupełnieniem braków, patrz kontrolaWejscia(). */
   const kont=kontrolaWejscia(j);
   const blok=kont.filter(u=>u.blok);
   ST.kontrola={przeszla:!blok.length, uwagi:kont.map(u=>u.tyt)};
   if(blok.length){
     $('m1').innerHTML=blok.map(u=>'<div class="msg err"><b>'+u.tyt+'</b><br>'+u.tresc+'</div>').join('')+
-      '<div class="msg info">Z tego pliku nie policzymy paneli. Liczba by się policzyła — i byłaby '+
-      'poprawnie wyliczona z danych, którym nie można ufać. Potrzebne jest nowe badanie.</div>';
+      '<div class="msg info">'+t('Z tego pliku nie policzymy paneli. Liczba by się policzyła — i byłaby poprawnie wyliczona z danych, którym nie można ufać. Potrzebne jest nowe badanie.')+'</div>';
     return;
   }
 
@@ -572,26 +567,27 @@ function przyjmij(j){
   ST.Thi = ST.pogladowy ? ST.Tmid*KOR_MAX : ST.Tmid;
 
   const kv=[
-    ['wymiary', pl(p.L,1)+' × '+pl(p.W,1)+' × '+pl(p.H,1)+' m'],
-    ['kubatura', pl(ST.V,1)+' m³'],
-    ['pole granic', pl(ST.S,1)+' m²'],
-    ['czas pogłosu Tmid', ST.pogladowy
-      ? pl(ST.Tmid)+' s <span style="color:var(--dim)">zmierzone</span>'
+    [t('wymiary'), pl(p.L,1)+' × '+pl(p.W,1)+' × '+pl(p.H,1)+' m'],
+    [t('kubatura'), pl(ST.V,1)+' m³'],
+    [t('pole granic'), pl(ST.S,1)+' m²'],
+    [t('czas pogłosu Tmid'), ST.pogladowy
+      ? pl(ST.Tmid)+' s <span style="color:var(--dim)">'+t('zmierzone')+'</span>'
       : pl(ST.Tmid)+' s'],
-    ST.pogladowy ? ['rzeczywisty, szacunek', '<span class="y">'+pl(ST.Tlo)+'–'+pl(ST.Thi)+' s</span>'] : null,
-    ['chłonność własna', ST.pogladowy
+    ST.pogladowy ? [t('rzeczywisty, szacunek'), '<span class="y">'+pl(ST.Tlo)+'–'+pl(ST.Thi)+' s</span>'] : null,
+    [t('chłonność własna'), ST.pogladowy
       ? pl(0.161*ST.V/ST.Thi,1)+'–'+pl(0.161*ST.V/ST.Tlo,1)+' m² Sab'
       : pl(0.161*ST.V/ST.Tmid,1)+' m² Sab'],
-    ['charakter pomiaru', ST.pogladowy
-      ? '<span class="y">poglądowy</span>' : '<span class="g">pełny</span>'],
-    ['rozpoznano z', '<span style="color:var(--dim)">'+ST.skad+'</span>'],
-    ['wersja silnika', '<span style="color:var(--dim)">'+(ST.wersjaSilnika||'nie podano')+'</span>']
+    [t('charakter pomiaru'), ST.pogladowy
+      ? '<span class="y">'+t('poglądowy')+'</span>' : '<span class="g">'+t('pełny')+'</span>'],
+    [t('rozpoznano z'), '<span style="color:var(--dim)">'+t(ST.skad)+'</span>'],
+    [t('wersja silnika'), '<span style="color:var(--dim)">'+(ST.wersjaSilnika||t('nie podano'))+'</span>']
   ].filter(Boolean);
   $('kvWej').innerHTML=kv.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
 
   const glowny='<div class="msg '+(ST.pogladowy?'warn':'good')+'">'+(ST.pogladowy
-    ? '<b>Pomiar wykonany głośnikiem telefonu.</b> Chłonność wychodzi z niego zawyżona mniej więcej o jedną trzecią, więc dokładnej liczby paneli nie da się podać. Dostaniesz <b>widełki od–do</b> oraz zalecenie, od ilu zacząć.'
-    : 'Pomiar pełny — wynik nadaje się jako podstawa doboru.')+'</div>';
+    ? '<b>'+t('Pomiar wykonany głośnikiem telefonu.')+'</b> '+
+      t('Chłonność wychodzi z niego zawyżona mniej więcej o jedną trzecią, więc dokładnej liczby paneli nie da się podać. Dostaniesz <b>widełki od–do</b> oraz zalecenie, od ilu zacząć.')
+    : t('Pomiar pełny — wynik nadaje się jako podstawa doboru.'))+'</div>';
   $('m1').innerHTML=glowny+kont.map(u=>
     '<div class="msg warn"><b>'+u.tyt+'</b><br>'+u.tresc+'</div>').join('');
 
@@ -610,14 +606,14 @@ function rysujCele(){
   const dopasowany=(CELE.find(c=>c.id===ST.typ)||{}).id||null;
   ST.celId=dopasowany;
   ST.cel=dopasowany?CELE.find(c=>c.id===dopasowany).t:null;
-  const o=CELE.map(c=>({id:c.id, n:c.n, o:'zalecany czas pogłosu do '+pl(c.t)+' s'}));
+  const o=CELE.map(c=>({id:c.id, n:c.n, o:t('zalecany czas pogłosu do {T} s',{T:pl(c.t)})}));
   o.push({id:'wlasny', n:'Cel własny',
     o:'gdy wartość narzuca operat akustyczny, norma albo wymaganie klienta'});
   wybor('cele', o, ST.celId, id=>{
     ST.celId=id; S($('m2'),'');
     $('celWlBox').classList.toggle('hide', id!=='wlasny');
     if(id==='wlasny'){
-      const v=parseFloat(($('celWl').value||'').replace(',','.'));
+      const v=Jezyk.naLiczbe($('celWl').value);
       ST.cel=v>0?v:null;
       if($('celWl').focus)$('celWl').focus();
     }else ST.cel=(CELE.find(c=>c.id===id)||{}).t;
@@ -633,21 +629,24 @@ $('celWl').addEventListener('input',()=>{
 $('b2').onclick=()=>{
   if(ST.cel==null){
     S($('m2'),'err', ST.celId==='wlasny'
-      ? 'Wpisz docelowy czas pogłosu.'
-      : 'Wybierz rodzaj wnętrza albo podaj cel własny.');return;}
-  if(!(ST.cel>0.1&&ST.cel<3)){S($('m2'),'err','Cel poza sensownym zakresem (0,1–3 s).');return;}
+      ? t('Wpisz docelowy czas pogłosu.')
+      : t('Wybierz rodzaj wnętrza albo podaj cel własny.'));return;}
+  if(!(ST.cel>0.1&&ST.cel<3)){
+    S($('m2'),'err',t('Cel poza sensownym zakresem ({min}–{max} s).',
+      {min:pl(0.1,1), max:'3'}));return;}
   /* „Cel już spełniony" trzeba rozstrzygać na wartości SKORYGOWANEJ, nie na
      surowym odczycie. Przy pomiarze telefonem surowe 0,28 s wygląda na spełnienie
      celu 0,30 s, podczas gdy rzeczywisty pogłos wynosi ok. 0,39 s i panele są
      potrzebne. Ten błąd zaproponowałby klientowi zero paneli. */
   if(ST.cel>=ST.Thi){
-    S($('m2'),'warn','Cel '+pl(ST.cel)+' s jest wyższy niż '+
-      (ST.pogladowy?'górna granica szacunku ('+pl(ST.Thi)+' s)':'zmierzone '+pl(ST.Tmid)+' s')+
-      ' — to pomieszczenie już go spełnia. Adaptacja nie jest potrzebna; wybierz niższy cel, jeśli chcesz wyciszyć je bardziej.');return;}
+    S($('m2'),'warn',t('Cel {cel} s jest wyższy niż {wobec} — to pomieszczenie już go spełnia. Adaptacja nie jest potrzebna; wybierz niższy cel, jeśli chcesz wyciszyć je bardziej.',
+      {cel:pl(ST.cel), wobec: ST.pogladowy
+        ? t('górna granica szacunku ({T} s)',{T:pl(ST.Thi)})
+        : t('zmierzone {T} s',{T:pl(ST.Tmid)})}));return;}
   if(ST.pogladowy&&ST.cel>=ST.Tlo){
-    S($('m2'),'warn','<b>Nie da się rozstrzygnąć na tym pomiarze.</b> Rzeczywisty czas pogłosu leży między '+
-      pl(ST.Tlo)+' a '+pl(ST.Thi)+' s, a cel '+pl(ST.cel)+' s wypada w środku tego przedziału — pomieszczenie może już go spełniać albo nie. '+
-      'Powtórz badanie z głośnikiem zewnętrznym; przy tym celu widełki nie dałyby sensownej odpowiedzi.');return;}
+    S($('m2'),'warn','<b>'+t('Nie da się rozstrzygnąć na tym pomiarze.')+'</b> '+
+      t('Rzeczywisty czas pogłosu leży między {lo} a {hi} s, a cel {cel} s wypada w środku tego przedziału — pomieszczenie może już go spełniać albo nie. Powtórz badanie z głośnikiem zewnętrznym; przy tym celu widełki nie dałyby sensownej odpowiedzi.',
+        {lo:pl(ST.Tlo), hi:pl(ST.Thi), cel:pl(ST.cel)}));return;}
   S($('m2'),''); rysujPanele(); rysujGdzie(); idz(3);
 };
 
@@ -656,9 +655,11 @@ $('b2').onclick=()=>{
    Wcześniej każda z nich miała własną kopię tego samego kodu. */
 function wybor(gdzie, opcje, wybrane, przy){
   const box=$(gdzie);
+  /* Wszystkie listy wyboru przechodzą tędy, więc i tłumaczenie ich etykiet.
+     Definicje zostają po polsku i czytelne w miejscu, w którym opisują rzecz. */
   box.innerHTML=opcje.map(o=>
-    '<label class="opt'+(o.id===wybrane?' sel':'')+'" data-id="'+o.id+'"><b>'+o.n+'</b>'+
-    (o.o?'<span>'+o.o+'</span>':'')+'</label>').join('');
+    '<label class="opt'+(o.id===wybrane?' sel':'')+'" data-id="'+o.id+'"><b>'+t(o.n)+'</b>'+
+    (o.o?'<span>'+t(o.o)+'</span>':'')+'</label>').join('');
   box.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
     box.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
     el.classList.add('sel'); przy(el.dataset.id);});
@@ -672,7 +673,8 @@ function domyslneWykonczenia(){
 }
 function opisFormatu(f){
   const q=polaFormatu(f);
-  return (f.o?f.o+' ':'')+'Pochłania '+pl(q.czynne)+' m² na sztukę, zajmuje '+pl(q.zewn)+' m² ściany.';
+  return (f.o?t(f.o)+' ':'')+t('Pochłania {czynne} m² na sztukę, zajmuje {zewn} m² ściany.',
+    {czynne:pl(q.czynne), zewn:pl(q.zewn)});
 }
 /*═══════════════ REKOMENDACJA WERSJI ═══════════════
   Wersję wskazuje POMIAR, nie cennik. Program liczy równowagę tonalną po
@@ -696,36 +698,40 @@ function rekomendujWersje(){
      niczym nie ryzykuje. */
   if(!(ST.zmierzone[250]&&ST.zmierzone[1000]))
     return {id:prem.id, typ:'nieocenialna', tekst:
-      '<b>Nie da się wskazać wersji na tym pomiarze.</b> Pasmo '+
-      (!ST.zmierzone[250]?'250 Hz':'1 kHz')+' nie dało wiarygodnego wyniku, a bez niego '+
-      'nie wiadomo, czy dół pasma zostanie w tyle. Proponujemy Premium, bo w dole niczym nie ryzykuje.'};
+      '<b>'+t('Nie da się wskazać wersji na tym pomiarze.')+'</b> '+
+      t('Pasmo {pasmo} nie dało wiarygodnego wyniku, a bez niego nie wiadomo, czy dół pasma zostanie w tyle. Proponujemy Premium, bo w dole niczym nie ryzykuje.',
+        {pasmo:!ST.zmierzone[250]?'250 Hz':'1 kHz'})};
 
   const kor=ST.pogladowy?KOR_MAX:1.0;
   const rPrzed=ST.T[250]/ST.T[1000];
   const oc=m=>{const r=policzDla(kor,m.alfa);
     return {rPo:r.T_po[250]/r.T_po[1000], szt:r.szt};};
   const P=oc(prem), S_=oc(std);
-  const ile=(a,b)=>pl(a)+' na '+pl(b);
+  const ile=(a,b)=>t('{od} na {do}',{od:pl(a),'do':pl(b)});
 
   if(!zlyBilans(rPrzed,S_.rPo))
     return {id:std.id, typ:'standard', tekst:
-      '<b>W tym pomieszczeniu wystarczy wersja Standard.</b> Dół pasma nie zostaje w tyle: '+
-      'stosunek T(250 Hz) do T(1 kHz) zmienia się z '+ile(rPrzed,S_.rPo)+'. '+
-      'Premium nic tu nie zepsuje, ale nie jest potrzebne'+
-      (P.szt<S_.szt?' — poza tym, że potrzeba go o '+(S_.szt-P.szt)+' mniej':'')+'.'};
+      '<b>'+t('W tym pomieszczeniu wystarczy wersja Standard.')+'</b> '+
+      t('Dół pasma nie zostaje w tyle: stosunek T(250 Hz) do T(1 kHz) zmienia się z {zmiana}.',
+        {zmiana:ile(rPrzed,S_.rPo)})+' '+
+      (P.szt<S_.szt
+        ? t('Premium nic tu nie zepsuje, ale nie jest potrzebne — poza tym, że potrzeba go o {ile} mniej.',
+            {ile:S_.szt-P.szt})
+        : t('Premium nic tu nie zepsuje, ale nie jest potrzebne.'))};
 
   if(!zlyBilans(rPrzed,P.rPo))
     return {id:prem.id, typ:'premium', tekst:
-      '<b>To pomieszczenie potrzebuje wersji Premium.</b> Przy Standardzie stosunek '+
-      'T(250 Hz) do T(1 kHz) rośnie z '+ile(rPrzed,S_.rPo)+' — wnętrze wytłumiłoby się mocniej '+
-      'w górze pasma niż w dole i sprawiało wrażenie ciężkiego. Premium zatrzymuje go na '+
-      pl(P.rPo)+'.'};
+      '<b>'+t('To pomieszczenie potrzebuje wersji Premium.')+'</b> '+
+      t('Przy Standardzie stosunek T(250 Hz) do T(1 kHz) rośnie z {zmiana} — wnętrze wytłumiłoby się mocniej w górze pasma niż w dole i sprawiało wrażenie ciężkiego. Premium zatrzymuje go na {premium}.',
+        {zmiana:ile(rPrzed,S_.rPo), premium:pl(P.rPo)})};
 
   return {id:prem.id, typ:'obie-za-slabe', tekst:
-    '<b>Żadna z wersji nie utrzyma równowagi tonalnej.</b> Stosunek T(250 Hz) do T(1 kHz) '+
-    'rośnie z '+pl(rPrzed)+' na '+pl(S_.rPo)+' przy Standardzie i '+pl(P.rPo)+' przy Premium. '+
-    'Premium wypada lepiej i to je proponujemy, ale dudnienia w dole same panele nie naprawią'+
-    (ST.wyk==='nuo'?' — panele tekstylne z wełną 100 mm sięgają niżej niż jedno i drugie.':'.')};
+    '<b>'+t('Żadna z wersji nie utrzyma równowagi tonalnej.')+'</b> '+
+    t('Stosunek T(250 Hz) do T(1 kHz) rośnie z {przed} na {std} przy Standardzie i {prem} przy Premium.',
+      {przed:pl(rPrzed), std:pl(S_.rPo), prem:pl(P.rPo)})+' '+
+    (ST.wyk==='nuo'
+      ? t('Premium wypada lepiej i to je proponujemy, ale dudnienia w dole same panele nie naprawią — panele tekstylne z wełną 100 mm sięgają niżej niż jedno i drugie.')
+      : t('Premium wypada lepiej i to je proponujemy, ale dudnienia w dole same panele nie naprawią.'))};
 }
 
 function rysujWariantIFormat(){
@@ -750,9 +756,9 @@ function pokazRekom(){
   const zgodne=ST.mont===r.id;
   const nazwa=(wyk().montaze.find(m=>m.id===r.id)||{}).n||'';
   $('rekom').innerHTML='<div class="msg '+styl+'">'+r.tekst+'</div>'+
-    (zgodne?'':'<div class="msg info">Wybrałeś inną wersję niż zalecana '+
-      '(<b>'+nazwa.split(' · ')[0]+'</b>). Rachunek policzy się dla Twojego wyboru, '+
-      'a w zapytaniu pójdzie informacja o obu.</div>');
+    (zgodne?'':'<div class="msg info">'+
+      t('Wybrałeś inną wersję niż zalecana (<b>{zalecana}</b>). Rachunek policzy się dla Twojego wyboru, a w zapytaniu pójdzie informacja o obu.',
+        {zalecana:t(nazwa).split(' · ')[0]})+'</div>');
 }
 
 function rysujPanele(){
@@ -767,8 +773,10 @@ function rysujPanele(){
 
 function rysujGdzie(){
   const opcje=[
-    {id:'sciany', n:'Ściany', o:'dostępne około '+pl(ST.Sscian*0.6,1)+' m² po odjęciu okien, drzwi i mebli'},
-    {id:'sufit',  n:'Sufit',  o:'dostępne około '+pl(ST.Ssufit*0.8,1)+' m² po odjęciu opraw i instalacji'},
+    {id:'sciany', n:'Ściany',
+     o:t('dostępne około {pole} m² po odjęciu okien, drzwi i mebli',{pole:pl(ST.Sscian*0.6,1)})},
+    {id:'sufit',  n:'Sufit',
+     o:t('dostępne około {pole} m² po odjęciu opraw i instalacji',{pole:pl(ST.Ssufit*0.8,1)})},
     {id:'oba',    n:'Ściany i sufit', o:'najbardziej równomierny rozkład chłonności'}
   ];
   ST.gdzie='oba';
@@ -788,9 +796,10 @@ function skladFormatu(f,n){
     return skl.map((x,i)=>skladFormatu(x,ile[i])).filter((t,i)=>ile[i]>0).join('  +  ');
   }
   const p=f.panele;
-  if(p.length===1) return n+' × panel '+p[0].n+' mm';
-  return n+' × komplet '+p.map(x=>x.n).join(' + ')+' mm ('+
-    (n*p.length)+' '+ilu(n*p.length,'panel','panele','paneli')+')';
+  if(p.length===1) return t('{n} × panel {wymiar} mm',{n:n, wymiar:p[0].n});
+  return t('{n} × komplet {wymiary} mm ({ile} {slowo})',
+    {n:n, wymiary:p.map(x=>x.n).join(' + '), ile:n*p.length,
+     slowo:ilu(n*p.length,t('panel'),t('panele'),t('paneli'))});
 }
 
 /* Ile ściany zajmie propozycja — polem zewnętrznym paneli razy liczba kartonów. */
@@ -847,18 +856,16 @@ $('b3').onclick=()=>{
   const gorny = ST.pogladowy ? policzDla(KOR_MAX) : dolny;
 
   if(ST.pogladowy && dolny.szt>0 && gorny.szt/dolny.szt>WIDELKI_MAX_KROTNOSC){
-    S($('m3'),'err','<b>Widełki wyszłyby zbyt szerokie, żeby były do czegoś przydatne.</b><br>'+
-      'Przy tym celu wychodzi od '+dolny.szt+' do '+gorny.szt+' szt. — '+
-      pl(gorny.szt/dolny.szt,1)+'-krotna różnica. Powodem jest to, że cel '+
-      pl(ST.cel)+' s leży blisko granicy szacunku dla pomiaru telefonem. '+
-      'Powtórz badanie z głośnikiem zewnętrznym albo wybierz mniej ambitny cel.');
+    S($('m3'),'err','<b>'+t('Widełki wyszłyby zbyt szerokie, żeby były do czegoś przydatne.')+'</b><br>'+
+      t('Przy tym celu wychodzi od {od} do {do} szt. — {krotnosc}-krotna różnica. Powodem jest to, że cel {cel} s leży blisko granicy szacunku dla pomiaru telefonem. Powtórz badanie z głośnikiem zewnętrznym albo wybierz mniej ambitny cel.',
+        {od:dolny.szt, 'do':gorny.szt, krotnosc:pl(gorny.szt/dolny.szt,1), cel:pl(ST.cel)}));
     return;
   }
 
   const pods = ST.pogladowy ? gorny : dolny;   // tabela i sprawdzenie miejsca na wariancie pełnym
   if(zajmie(pods)>dostepne()){
-    S($('m3'),'warn','Panele zajmą około '+pl(zajmie(pods),1)+' m² ściany, a na wybranych powierzchniach mieści się około '+
-      pl(dostepne(),1)+' m². Wybierz ściany i sufit razem albo przyjmij mniej ambitny cel. Możesz też policzyć dalej — propozycja pokaże, ile brakuje.');
+    S($('m3'),'warn',t('Panele zajmą około {potrzeba} m² ściany, a na wybranych powierzchniach mieści się około {dostepne} m². Wybierz ściany i sufit razem albo przyjmij mniej ambitny cel. Możesz też policzyć dalej — propozycja pokaże, ile brakuje.',
+      {potrzeba:pl(zajmie(pods),1), dostepne:pl(dostepne(),1)}));
   } else S($('m3'),'');
   pokazWynik(dolny,gorny,pods);
   idz(4);
@@ -871,19 +878,17 @@ function pokazWynik(dolny,gorny,bazowy){
   if(ST.pogladowy){
     $('wynSzt').innerHTML=dolny.szt+'<small>–</small>'+gorny.szt;
     $('wynCap').textContent='szt.  ·  '+format().n;
-    $('wynTryb').innerHTML='<div class="msg warn"><b>Widełki, nie liczba — pomiar był poglądowy.</b><br>'+
-      'Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. '+
-      'Dokładną liczbę da pomiar z głośnikiem zewnętrznym.</div>';
-    $('wynGl').innerHTML='<div class="msg info"><b>Zacznij od '+dolny.szt+' szt.</b><br>'+
-      'Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — '+
-      'panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, '+
-      'a nie nowym projektem. Górna granica przedziału to '+gorny.szt+' szt.</div>';
+    $('wynTryb').innerHTML='<div class="msg warn"><b>'+t('Widełki, nie liczba — pomiar był poglądowy.')+'</b><br>'+
+      t('Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. Dokładną liczbę da pomiar z głośnikiem zewnętrznym.')+'</div>';
+    $('wynGl').innerHTML='<div class="msg info"><b>'+t('Zacznij od {ile} szt.',{ile:dolny.szt})+'</b><br>'+
+      t('Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, a nie nowym projektem. Górna granica przedziału to {max} szt.',
+        {max:gorny.szt})+'</div>';
   } else {
     $('wynSzt').innerHTML=bazowy.szt+'<small> szt.</small>';
     $('wynCap').textContent=format().n+'  ·  '+skladKartonow(bazowy.szt);
     $('wynTryb').innerHTML='';
-    $('wynGl').innerHTML='<div class="msg good">Pomiar pełny, więc liczba jest konkretna. '+
-      'Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.</div>';
+    $('wynGl').innerHTML='<div class="msg good">'+
+      t('Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.')+'</div>';
   }
 
   /* tabela T po adaptacji */
@@ -891,26 +896,31 @@ function pokazWynik(dolny,gorny,bazowy){
      poglądowym „po" liczy się z chłonności skorygowanej, więc stan wyjściowy też
      trzeba pokazać skorygowany — inaczej wychodzą bzdury w rodzaju wzrostu
      czasu pogłosu po dodaniu pochłaniania. */
-  let t='<table><thead><tr><th>pasmo</th><th>'+(bazowy.kor!==1?'teraz *':'teraz')+
-        '</th><th>po</th><th>zmiana</th></tr></thead><tbody>';
+  let tab='<table><thead><tr><th>'+t('pasmo')+'</th><th>'+
+        (bazowy.kor!==1?t('teraz')+' *':t('teraz'))+
+        '</th><th>'+t('po')+'</th><th>'+t('zmiana')+'</th></tr></thead><tbody>';
   PASMA.forEach(f=>{
     const przed=ST.T[f]*bazowy.kor, po=bazowy.T_po[f], d=100*(po-przed)/przed;
     const sz=ST.zmierzone[f]?'':' style="opacity:.45"';
-    t+='<tr'+sz+'><td>'+lbl(f)+(ST.zmierzone[f]?'':' †')+'</td><td>'+pl(przed)+'</td><td>'+pl(po)+
+    tab+='<tr'+sz+'><td>'+lbl(f)+(ST.zmierzone[f]?'':' †')+'</td><td>'+pl(przed)+'</td><td>'+pl(po)+
        '</td><td class="'+(d<-5?'g':'')+'">'+(d>0?'+':'')+Math.round(d)+' %</td></tr>';});
   const uwagi=[];
-  if(bazowy.kor!==1) uwagi.push('* kolumna „teraz" pokazuje czas pogłosu po korekcie pomiaru telefonem (×'+
-    pl(bazowy.kor)+'), żeby obie kolumny stały na tej samej podstawie');
-  if(PASMA.some(f=>!ST.zmierzone[f])) uwagi.push('† pasmo bez wiarygodnego pomiaru — przyjęto Tmid, wiersz jest szacunkiem');
-  $('wynTab').innerHTML=t+'</tbody></table>'+
+  if(bazowy.kor!==1) uwagi.push(
+    t('* kolumna „teraz" pokazuje czas pogłosu po korekcie pomiaru telefonem (×{kor}), żeby obie kolumny stały na tej samej podstawie',
+      {kor:pl(bazowy.kor)}));
+  if(PASMA.some(f=>!ST.zmierzone[f])) uwagi.push(
+    t('† pasmo bez wiarygodnego pomiaru — przyjęto Tmid, wiersz jest szacunkiem'));
+  $('wynTab').innerHTML=tab+'</tbody></table>'+
     (uwagi.length?'<p class="note" style="font-size:12px;margin-top:8px">'+uwagi.join('<br>')+'</p>':'');
 
   /* Wybór wbrew rekomendacji zostaje widoczny w propozycji, nie tylko w kroku 3
      — to jest ta informacja, której handlowiec potrzebuje przy rozmowie. */
   $('wynRekom').innerHTML = (ST.rekom&&ST.mont!==ST.rekom.id)
-    ? '<div class="msg warn"><b>Policzone dla wersji '+montaz().n.split(' · ')[0]+
-      ', a zalecana była '+((wyk().montaze.find(m=>m.id===ST.rekom.id)||{}).n||'').split(' · ')[0]+
-      '.</b><br>'+ST.rekom.tekst.replace(/<\/?b>/g,'')+'</div>'
+    ? '<div class="msg warn"><b>'+
+      t('Policzone dla wersji {wybrana}, a zalecana była {zalecana}.',
+        {wybrana:t(montaz().n).split(' · ')[0],
+         zalecana:t((wyk().montaze.find(m=>m.id===ST.rekom.id)||{}).n||'').split(' · ')[0]})+
+      '</b><br>'+ST.rekom.tekst.replace(/<\/?b>/g,'')+'</div>'
     : '';
 
   /* Bilans tonalny ma sens tylko wtedy, gdy oba pasma zostały FAKTYCZNIE zmierzone.
@@ -919,18 +929,20 @@ function pokazWynik(dolny,gorny,bazowy){
   const rPrzed=ST.T[250]/ST.T[1000], rPo=bazowy.T_po[250]/bazowy.T_po[1000];
   const zle=zlyBilans(rPrzed,rPo);
   $('wynBil').innerHTML= !(ST.zmierzone[250]&&ST.zmierzone[1000])
-    ? '<div class="msg warn"><b>Równowagi tonalnej nie da się ocenić.</b> Pasmo '+
-      (!ST.zmierzone[250]?'250 Hz':'1 kHz')+' nie dało wiarygodnego wyniku, a bez niego porównanie dołu z górą jest bezpodstawne. '+
-      'Głośnik zewnętrzny zwykle dowozi oba pasma.</div>'
+    ? '<div class="msg warn"><b>'+t('Równowagi tonalnej nie da się ocenić.')+'</b> '+
+      t('Pasmo {pasmo} nie dało wiarygodnego wyniku, a bez niego porównanie dołu z górą jest bezpodstawne. Głośnik zewnętrzny zwykle dowozi oba pasma.',
+        {pasmo:!ST.zmierzone[250]?'250 Hz':'1 kHz'})+'</div>'
     : !zle
-      ? '<div class="msg good"><b>Równowaga tonalna zachowana.</b> Stosunek T(250 Hz) do T(1 kHz) zmienia się z '+
-        pl(rPrzed)+' na '+pl(rPo)+'. Wnętrze wyciszy się równomiernie.</div>'
-      : '<div class="msg warn"><b>Uwaga na równowagę tonalną.</b> Stosunek T(250 Hz) do T(1 kHz) rośnie z '+
-        pl(rPrzed)+' na '+pl(rPo)+' — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego.'+
+      ? '<div class="msg good"><b>'+t('Równowaga tonalna zachowana.')+'</b> '+
+        t('Stosunek T(250 Hz) do T(1 kHz) zmienia się z {przed} na {po}. Wnętrze wyciszy się równomiernie.',
+          {przed:pl(rPrzed), po:pl(rPo)})+'</div>'
+      : '<div class="msg warn"><b>'+t('Uwaga na równowagę tonalną.')+'</b> '+
+        t('Stosunek T(250 Hz) do T(1 kHz) rośnie z {przed} na {po} — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego.',
+          {przed:pl(rPrzed), po:pl(rPo)})+
         (ST.wyk==='tex'&&ST.mont==='w50'
-          ? ' <b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej.'
+          ? ' '+t('<b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej.')
           : ST.wyk==='nuo'&&ST.mont==='n50'
-            ? ' NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>Absorber 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm.'
+            ? ' '+t('NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>Absorber 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm.')
             : '')+'</div>';
 
   /* mieszczenie się */
@@ -938,29 +950,32 @@ function pokazWynik(dolny,gorny,bazowy){
      ramka też wisi na ścianie. */
   const potrz=zajmie(ST.pogladowy?gorny:bazowy);
   $('wynMies').innerHTML = potrz>dostepne()
-    ? '<div class="msg err"><b>Nie mieści się na wybranych powierzchniach.</b> Panele zajmą '+pl(potrz,1)+
-      ' m², dostępne około '+pl(dostepne(),1)+' m². Rozłóż je na ściany i sufit albo przyjmij łagodniejszy cel.</div>'
+    ? '<div class="msg err"><b>'+t('Nie mieści się na wybranych powierzchniach.')+'</b> '+
+      t('Panele zajmą {potrzeba} m², dostępne około {dostepne} m². Rozłóż je na ściany i sufit albo przyjmij łagodniejszy cel.',
+        {potrzeba:pl(potrz,1), dostepne:pl(dostepne(),1)})+'</div>'
     : '';
 
   const d=[
-    ['kubatura', pl(ST.V,1)+' m³'],
-    ['pole granic', pl(ST.S,1)+' m²'],
-    ['cel Tmid', pl(ST.cel)+' s'],
-    ['wykończenie', wyk().nazwa],
-    ['wariant', montaz().n.replace(' · zalecane','')],
-    ['format', format().n],
-    ['pole czynne sztuki', pl(poleCzynne())+' m²'],
-    ['pole zajmowane na ścianie', pl(poleZewn())+' m² na sztukę'],
-    ['model', bazowy.eyring?'Eyring (α średnie > '+ALFA_EYRING+')':'Sabine'],
-    ['powierzchnia lica', pl(bazowy.pow,1)+' m²'],
-    ['dostępne miejsce', pl(dostepne(),1)+' m²'],
-    ['wersja silnika', ST.wersjaSilnika||'nie podano'],
-    ['rozrzut pasm 250–4 k', ST.rozrzutPasm!=null?pl(ST.rozrzutPasm)+'× (próg '+pl(MAX_ROZRZUT_PASM,1)+')':'nie sprawdzono'],
-    ['kontrola wejścia', ST.kontrola&&ST.kontrola.uwagi.length
-      ? '<span class="y">przeszła z uwagami ('+ST.kontrola.uwagi.length+')</span>'
-      : '<span class="g">przeszła</span>']
+    [t('kubatura'), pl(ST.V,1)+' m³'],
+    [t('pole granic'), pl(ST.S,1)+' m²'],
+    [t('cel Tmid'), pl(ST.cel)+' s'],
+    [t('wykończenie'), t(wyk().nazwa)],
+    [t('wariant'), t(montaz().n).replace(' · '+t('zalecane'),'')],
+    [t('format'), t(format().n)],
+    [t('pole czynne sztuki'), pl(poleCzynne())+' m²'],
+    [t('pole zajmowane na ścianie'), pl(poleZewn())+' m² '+t('na sztukę')],
+    [t('model'), bazowy.eyring?t('Eyring (α średnie > {prog})',{prog:pl(ALFA_EYRING)}):'Sabine'],
+    [t('powierzchnia lica'), pl(bazowy.pow,1)+' m²'],
+    [t('dostępne miejsce'), pl(dostepne(),1)+' m²'],
+    [t('wersja silnika'), ST.wersjaSilnika||t('nie podano')],
+    [t('rozrzut pasm 250–4 k'), ST.rozrzutPasm!=null
+      ? pl(ST.rozrzutPasm)+'× '+t('(próg {prog})',{prog:pl(MAX_ROZRZUT_PASM,1)})
+      : t('nie sprawdzono')],
+    [t('kontrola wejścia'), ST.kontrola&&ST.kontrola.uwagi.length
+      ? '<span class="y">'+t('przeszła z uwagami ({ile})',{ile:ST.kontrola.uwagi.length})+'</span>'
+      : '<span class="g">'+t('przeszła')+'</span>']
   ];
-  if(ST.pogladowy) d.push(['widełki korekty','×'+pl(KOR_MIN)+' … ×'+pl(KOR_MAX)]);
+  if(ST.pogladowy) d.push([t('widełki korekty'),'×'+pl(KOR_MIN)+' … ×'+pl(KOR_MAX)]);
   $('wynDiag').innerHTML=d.map(([a,b])=>'<span>'+a+'</span><span>'+b+'</span>').join('');
   ST.wynik={bazowy:bazowy,dolny:dolny,gorny:gorny};
 
@@ -999,12 +1014,12 @@ const KLUCZ_POMIARU='rt60-pomiar';
   if(surowe){ try{ j=JSON.parse(surowe); }catch(e){ j=null; } }
   if(j){
     ST.jPomiaru=j; ST.godzPomiaru=(j.czas||'').slice(11,16); ST.zrodloWej='pomiar';
-    $('skad').innerHTML='Nic z wyniku nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.';
+    $('skad').innerHTML=t('Nic z wyniku nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.');
     przyjmij(j);
   }else{
-    $('skad').innerHTML='Plik JSON pobrany na końcu badania czasu pogłosu. '+
-      'Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.<br>'+
-      '<a href="index.html" style="color:var(--cool)">Nie masz jeszcze wyniku? Zmierz czas pogłosu &rarr;</a>';
+    $('skad').innerHTML=t('Plik JSON pobrany na końcu badania czasu pogłosu. Nic z niego nie jest nigdzie wysyłane — cały rachunek dzieje się w tej przeglądarce.')+'<br>'+
+      '<a href="index.html" style="color:var(--cool)">'+
+      t('Nie masz jeszcze wyniku? Zmierz czas pogłosu')+' &rarr;</a>';
   }
   rysujZrodlo();
 })();
@@ -1021,47 +1036,47 @@ const KLUCZ_POMIARU='rt60-pomiar';
 
 const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const slug=t=>String(t||'').toLowerCase()
-  .replace(/[ąćęłńóśźż]/g,c=>({'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z'}[c]))
-  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const slug=x=>Jezyk.slug(x);
 
 /* Raport jako samodzielna strona HTML. Otwiera się w każdej przeglądarce, bez
    sieci, i ma własny przycisk drukowania — stąd PDF, bez wciągania do projektu
    obcej biblioteki. Jasny motyw, bo to dokument do wydruku, nie ekran. */
 function raportHTML(){
   const w=ST.wynik, b=w.bazowy, p=ST.pomiarZrodlo||{};
-  const data=new Date().toLocaleDateString('pl-PL');
-  const tor=ST.pogladowy?'głośnik telefonu — pomiar poglądowy':'głośnik zewnętrzny — pomiar pełny';
+  const data=Jezyk.data(new Date().toISOString())||'';
+  const tor=ST.pogladowy?t('głośnik telefonu — pomiar poglądowy'):t('głośnik zewnętrzny — pomiar pełny');
   const rPrzed=ST.T[250]/ST.T[1000], rPo=b.T_po[250]/b.T_po[1000];
   const bilansOK=ST.zmierzone[250]&&ST.zmierzone[1000]?!zlyBilans(rPrzed,rPo):null;
 
   const wiersze=PASMA.map(f=>{
     const przed=ST.T[f]*b.kor, po=b.T_po[f], d=100*(po-przed)/przed;
-    return '<tr><td>'+lbl(f)+(ST.zmierzone[f]?'':' <span class="sz">szacunek</span>')+
+    return '<tr><td>'+lbl(f)+(ST.zmierzone[f]?'':' <span class="sz">'+t('szacunek')+'</span>')+
       '</td><td>'+pl(przed)+'</td><td>'+pl(po)+'</td><td>'+(d>0?'+':'')+Math.round(d)+' %</td></tr>';
   }).join('');
 
   const ile=ST.pogladowy
-    ? '<b>'+w.dolny.szt+'–'+w.gorny.szt+' szt.</b> <span class="sz">widełki, bo pomiar był poglądowy</span>'
-    : '<b>'+b.szt+' szt.</b>';
+    ? '<b>'+w.dolny.szt+'–'+w.gorny.szt+' '+t('szt.')+'</b> <span class="sz">'+
+      t('widełki, bo pomiar był poglądowy')+'</span>'
+    : '<b>'+b.szt+' '+t('szt.')+'</b>';
 
   const podstawa=[
-    ['Kubatura', pl(ST.V,1)+' m³'],
-    ['Pole granic', pl(ST.S,1)+' m²'],
-    ['Cel T<sub>mid</sub>', pl(ST.cel)+' s'],
-    ['Chłonność zmierzona A', pl(0.161*ST.V/ST.Tmid,1)+' m² Sab'],
-    ['Model', b.eyring?'Eyring':'Sabine'],
-    ['Powierzchnia czynna paneli', pl(b.pow,1)+' m²'],
-    ['Zajęta powierzchnia ścian', pl(b.szt*poleZewn(),1)+' m²'],
-    ['α panelu', PASMA.map(f=>pl(montaz().alfa[f])).join(' / ')+' <span class="sz">(125…4000 Hz)</span>'],
-    ['Źródło α', esc(opisPodstawy())],
-    ['Silnik pomiarowy', esc(ST.wersjaSilnika||'nie podano')],
-    ['Kontrola wejścia', ST.kontrola&&ST.kontrola.przeszla?'przeszła':'—']
+    [t('Kubatura'), pl(ST.V,1)+' m³'],
+    [t('Pole granic'), pl(ST.S,1)+' m²'],
+    [t('Cel')+' T<sub>mid</sub>', pl(ST.cel)+' s'],
+    [t('Chłonność zmierzona A'), pl(0.161*ST.V/ST.Tmid,1)+' m² Sab'],
+    [t('Model'), b.eyring?'Eyring':'Sabine'],
+    [t('Powierzchnia czynna paneli'), pl(b.pow,1)+' m²'],
+    [t('Zajęta powierzchnia ścian'), pl(b.szt*poleZewn(),1)+' m²'],
+    ['α '+t('panelu'), PASMA.map(f=>pl(montaz().alfa[f])).join(' / ')+
+      ' <span class="sz">(125…4000 Hz)</span>'],
+    [t('Źródło α'), esc(opisPodstawy())],
+    [t('Silnik pomiarowy'), esc(ST.wersjaSilnika||t('nie podano'))],
+    [t('Kontrola wejścia'), ST.kontrola&&ST.kontrola.przeszla?t('przeszła'):'—']
   ].map(x=>'<tr><td>'+x[0]+'</td><td colspan="3">'+x[1]+'</td></tr>').join('');
 
   return '<!DOCTYPE html><html lang="pl"><head><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-  '<title>Raport akustyczny — '+esc(ST.typ||'pomieszczenie')+'</title><style>'+
+  '<title>'+esc(t('Raport akustyczny'))+' — '+esc(t(ST.typ||'pomieszczenie'))+'</title><style>'+
   'body{font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#15202B;'+
   'background:#fff;max-width:760px;margin:0 auto;padding:28px 20px 60px}'+
   'h1{font-size:25px;margin:0 0 4px;letter-spacing:-.02em}'+
@@ -1083,51 +1098,56 @@ function raportHTML(){
   'table{break-inside:avoid}}'+
   '</style></head><body>'+
 
-  '<h1>Raport akustyczny</h1>'+
-  '<p class="pod">'+esc(ST.typ||'pomieszczenie')+' · '+pl(ST.L,1)+' × '+pl(ST.W,1)+' × '+pl(ST.H,1)+' m'+
-  ' · '+pl(ST.V,1)+' m³ · '+data+'<br>Pomiar: '+esc(tor)+'</p>'+
+  '<h1>'+esc(t('Raport akustyczny'))+'</h1>'+
+  '<p class="pod">'+esc(t(ST.typ||'pomieszczenie'))+' · '+pl(ST.L,1)+' × '+pl(ST.W,1)+' × '+pl(ST.H,1)+' m'+
+  ' · '+pl(ST.V,1)+' m³ · '+data+'<br>'+esc(t('Pomiar: {czym}',{czym:tor}))+'</p>'+
 
-  '<h2>Stan teraz i po adaptacji</h2>'+
-  '<p class="duze">Czas pogłosu <b>'+pl(ST.Tmid*b.kor)+' s</b> &rarr; <b>'+
+  '<h2>'+esc(t('Stan teraz i po adaptacji'))+'</h2>'+
+  '<p class="duze">'+esc(t('Czas pogłosu'))+' <b>'+pl(ST.Tmid*b.kor)+' s</b> &rarr; <b>'+
   pl((b.T_po[500]+b.T_po[1000])/2)+' s</b></p>'+
-  '<p class="sz">T<sub>mid</sub>, średnia z pasm 500 Hz i 1 kHz. Cel: '+pl(ST.cel)+' s.</p>'+
-  (ST.pogladowy?'<div class="uwaga"><b>Pomiar wykonano głośnikiem telefonu.</b> '+
-   'Mikrofon i głośnik są w jednej obudowie, więc czas pogłosu wychodzi zwykle o 20–30 % za krótki. '+
-   'Liczby poniżej to widełki, nie deklaracja. Pomiar głośnikiem zewnętrznym zamieni je w jedną wartość.</div>':'')+
+  '<p class="sz">T<sub>mid</sub>, '+esc(t('średnia z pasm 500 Hz i 1 kHz. Cel: {cel} s.',{cel:pl(ST.cel)}))+'</p>'+
+  (ST.pogladowy?'<div class="uwaga"><b>'+esc(t('Pomiar wykonano głośnikiem telefonu.'))+'</b> '+
+   esc(t('Mikrofon i głośnik są w jednej obudowie, więc czas pogłosu wychodzi zwykle o 20–30 % za krótki. Liczby poniżej to widełki, nie deklaracja. Pomiar głośnikiem zewnętrznym zamieni je w jedną wartość.'))+'</div>':'')+
 
-  '<h2>Proponowana adaptacja</h2>'+
+  '<h2>'+esc(t('Proponowana adaptacja'))+'</h2>'+
   '<p class="duze">'+ile+'</p>'+
-  '<table><tr><td>Wykończenie</td><td colspan="3">'+esc(wyk().nazwa)+'</td></tr>'+
-  '<tr><td>Wersja</td><td colspan="3">'+esc(montaz().n.replace(' · zalecane',''))+'</td></tr>'+
-  '<tr><td>Format</td><td colspan="3">'+esc(format().n)+'</td></tr>'+
-  '<tr><td>Skład</td><td colspan="3">'+esc(skladKartonow(ST.pogladowy?w.dolny.szt:b.szt))+'</td></tr>'+
-  '<tr><td>Rozmieszczenie</td><td colspan="3">'+
-  (ST.gdzie==='sciany'?'ściany':ST.gdzie==='sufit'?'sufit':'ściany i sufit')+'</td></tr></table>'+
+  '<table><tr><td>'+esc(t('Wykończenie'))+'</td><td colspan="3">'+esc(t(wyk().nazwa))+'</td></tr>'+
+  '<tr><td>'+esc(t('Wersja'))+'</td><td colspan="3">'+
+    esc(t(montaz().n).replace(' · '+t('zalecane'),''))+'</td></tr>'+
+  '<tr><td>'+esc(t('Format'))+'</td><td colspan="3">'+esc(t(format().n))+'</td></tr>'+
+  '<tr><td>'+esc(t('Skład'))+'</td><td colspan="3">'+
+    esc(skladKartonow(ST.pogladowy?w.dolny.szt:b.szt))+'</td></tr>'+
+  '<tr><td>'+esc(t('Rozmieszczenie'))+'</td><td colspan="3">'+
+  esc(ST.gdzie==='sciany'?t('ściany'):ST.gdzie==='sufit'?t('sufit'):t('ściany i sufit'))+'</td></tr></table>'+
   (ST.rekom&&ST.mont!==ST.rekom.id
-    ? '<div class="uwaga">Wybrano inną wersję niż zalecana. '+esc(ST.rekom.tekst.replace(/<[^>]+>/g,''))+'</div>'
+    ? '<div class="uwaga">'+esc(t('Wybrano inną wersję niż zalecana.'))+' '+
+      esc(ST.rekom.tekst.replace(/<[^>]+>/g,''))+'</div>'
     : ST.rekom?'<div class="'+(ST.rekom.typ==='standard'?'dobrze':'uwaga')+'">'+
       esc(ST.rekom.tekst.replace(/<[^>]+>/g,''))+'</div>':'')+
 
-  '<h2>Czas pogłosu w pasmach</h2>'+
-  '<table><thead><tr><th>pasmo</th><th>teraz</th><th>po</th><th>zmiana</th></tr></thead>'+
+  '<h2>'+esc(t('Czas pogłosu w pasmach'))+'</h2>'+
+  '<table><thead><tr><th>'+esc(t('pasmo'))+'</th><th>'+esc(t('teraz'))+'</th><th>'+
+  esc(t('po'))+'</th><th>'+esc(t('zmiana'))+'</th></tr></thead>'+
   '<tbody>'+wiersze+'</tbody></table>'+
   (bilansOK===null
-    ? '<div class="uwaga">Równowagi tonalnej nie dało się ocenić — brakuje wiarygodnego wyniku w paśmie 250 Hz albo 1 kHz.</div>'
+    ? '<div class="uwaga">'+esc(t('Równowagi tonalnej nie dało się ocenić — brakuje wiarygodnego wyniku w paśmie 250 Hz albo 1 kHz.'))+'</div>'
     : bilansOK
-      ? '<div class="dobrze"><b>Równowaga tonalna zachowana.</b> Stosunek T(250 Hz) do T(1 kHz) zmienia się z '+
-        pl(rPrzed)+' na '+pl(rPo)+'. Wnętrze wyciszy się równomiernie.</div>'
-      : '<div class="uwaga"><b>Uwaga na równowagę tonalną.</b> Stosunek T(250 Hz) do T(1 kHz) rośnie z '+
-        pl(rPrzed)+' na '+pl(rPo)+' — pomieszczenie wytłumi się mocniej w górze pasma niż w dole.</div>')+
+      ? '<div class="dobrze"><b>'+esc(t('Równowaga tonalna zachowana.'))+'</b> '+
+        esc(t('Stosunek T(250 Hz) do T(1 kHz) zmienia się z {przed} na {po}. Wnętrze wyciszy się równomiernie.',
+          {przed:pl(rPrzed), po:pl(rPo)}))+'</div>'
+      : '<div class="uwaga"><b>'+esc(t('Uwaga na równowagę tonalną.'))+'</b> '+
+        esc(t('Stosunek T(250 Hz) do T(1 kHz) rośnie z {przed} na {po} — pomieszczenie wytłumi się mocniej w górze pasma niż w dole.',
+          {przed:pl(rPrzed), po:pl(rPo)}))+'</div>')+
 
-  '<h2>Podstawa rachunku</h2>'+
+  '<h2>'+esc(t('Podstawa rachunku'))+'</h2>'+
   '<table>'+podstawa+'</table>'+
 
-  '<div class="stopka">Wartości α paneli są tymczasowe do czasu otrzymania tabel od producentów; '+
-  'kierunek ewentualnego błędu jest bezpieczny — model zaniża pochłanianie. '+
-  'Czas pogłosu po adaptacji jest obliczony, nie zmierzony. Sprawdzisz go, powtarzając badanie po montażu.<br>'+
-  'Raport wygenerowany przez '+esc(WERSJA)+' na podstawie pomiaru '+esc(ST.wersjaSilnika||'—')+'.</div>'+
+  '<div class="stopka">'+
+  esc(t('Wartości α paneli są tymczasowe do czasu otrzymania tabel od producentów; kierunek ewentualnego błędu jest bezpieczny — model zaniża pochłanianie. Czas pogłosu po adaptacji jest obliczony, nie zmierzony. Sprawdzisz go, powtarzając badanie po montażu.'))+'<br>'+
+  esc(t('Raport wygenerowany przez {wersja} na podstawie pomiaru {silnik}.',
+    {wersja:WERSJA, silnik:ST.wersjaSilnika||'—'}))+'</div>'+
 
-  '<button onclick="window.print()">Drukuj / Zapisz jako PDF</button>'+
+  '<button onclick="window.print()">'+esc(t('Drukuj / Zapisz jako PDF'))+'</button>'+
   '</body></html>';
 }
 
@@ -1189,7 +1209,7 @@ function propozycjaJSON(){
 $('bWynik').onclick=async()=>{
   const w=ST.wynik; if(!w)return;
   const b=$('bWynik'), etykieta=b.textContent;
-  b.disabled=true; b.textContent='Pakuję…';
+  b.disabled=true; b.textContent=t('Pakuję…');
   try{
     const enc=new TextEncoder(), prop=propozycjaJSON();
     const pliki=[
@@ -1216,62 +1236,71 @@ $('bWynik').onclick=async()=>{
     const nazwa='wynik-'+(slug(ST.typ)||'pomieszczenie')+'-'+slug(montaz().id)+
       '-'+Paczka.stempel()+'.zip';
     Paczka.dl(Paczka.zip(pliki),nazwa);
-    $('wynZapis').innerHTML='<span class="g">Zapisano <b>'+nazwa+'</b></span> — '+pliki.length+
-      ' plików'+(pasuje?', z odpowiedziami impulsowymi':
-      ', <b>bez odpowiedzi impulsowych</b> — patrz czytaj-to.txt')+'.';
+    $('wynZapis').innerHTML='<span class="g">'+t('Zapisano <b>{nazwa}</b>',{nazwa:nazwa})+'</span> — '+
+      (pasuje
+        ? t('{ile} plików, z odpowiedziami impulsowymi.',{ile:pliki.length})
+        : t('{ile} plików, <b>bez odpowiedzi impulsowych</b> — patrz czytaj-to.txt.',{ile:pliki.length}));
   }catch(e){
-    $('wynZapis').innerHTML='<span class="r">Nie udało się spakować ('+esc(e.message)+').</span>';
+    $('wynZapis').innerHTML='<span class="r">'+
+      t('Nie udało się spakować ({blad}).',{blad:esc(e.message)})+'</span>';
   }
   b.disabled=false; b.textContent=etykieta;
 };
 
 function opisPaczki(prop,ir){
+  /* Opis paczki idzie w języku, w którym klient pracował — trafia do niego
+     i do nas, a nie do maszyny. Bez znaków diakrytycznych, bo plik tekstowy
+     bywa otwierany w programach, które nie zgadną kodowania. */
   const L=[];
-  L.push('WYNIK BADANIA AKUSTYCZNEGO I DOBORU ADAPTACJI');
+  L.push(t('WYNIK BADANIA AKUSTYCZNEGO I DOBORU ADAPTACJI'));
   L.push('='.repeat(52),'');
-  L.push('Pomieszczenie: '+ST.L+' x '+ST.W+' x '+ST.H+' m, '+prop.zrodlo_pomiaru.V+' m3');
-  L.push('Charakter pomiaru: '+prop.zrodlo_pomiaru.charakter);
-  L.push('Czas poglosu Tmid: '+prop.zrodlo_pomiaru.Tmid+' s, cel: '+prop.cel_Tmid_s+' s');
-  L.push('Wybrane panele: '+prop.panel.wykonczenie_nazwa+', '+prop.panel.wariant_nazwa);
-  L.push('Ilosc: '+(prop.propozycja.typ==='widelki'
-    ? prop.propozycja.sztuk_od+'-'+prop.propozycja.sztuk_do+' szt. (widelki)'
-    : prop.propozycja.sztuk+' szt.'));
-  L.push('','ZAWARTOSC','');
-  L.push('raport.html                Dokument do czytania i wydruku. Otworz go');
-  L.push('                           w przegladarce; ma wlasny przycisk zapisu do PDF.');
+  L.push(t('Pomieszczenie: {L} x {W} x {H} m, {V} m3',
+    {L:ST.L, W:ST.W, H:ST.H, V:prop.zrodlo_pomiaru.V}));
+  L.push(t('Charakter pomiaru: {jaki}',{jaki:prop.zrodlo_pomiaru.charakter}));
+  L.push(t('Czas poglosu Tmid: {T} s, cel: {cel} s',
+    {T:prop.zrodlo_pomiaru.Tmid, cel:prop.cel_Tmid_s}));
+  L.push(t('Wybrane panele: {wykonczenie}, {wariant}',
+    {wykonczenie:t(prop.panel.wykonczenie_nazwa), wariant:t(prop.panel.wariant_nazwa)}));
+  L.push(t('Ilosc: {ile}',{ile: prop.propozycja.typ==='widelki'
+    ? t('{od}-{do} szt. (widelki)',{od:prop.propozycja.sztuk_od, 'do':prop.propozycja.sztuk_do})
+    : t('{ile} szt.',{ile:prop.propozycja.sztuk})}));
+  L.push('', t('ZAWARTOSC'), '');
+  L.push('raport.html');
+  L.push(t('   Dokument do czytania i wydruku. Otworz go w przegladarce;'));
+  L.push(t('   ma wlasny przycisk zapisu do PDF.'));
   L.push('');
-  L.push('propozycja-adaptacji.json  Dobor w postaci danych: wybrane panele, ilosc,');
-  L.push('                           uzyte alfa wraz ze zrodlem, przewidywany czas');
-  L.push('                           poglosu po adaptacji.');
+  L.push('propozycja-adaptacji.json');
+  L.push(t('   Dobor w postaci danych: wybrane panele, ilosc, uzyte alfa wraz'));
+  L.push(t('   ze zrodlem, przewidywany czas poglosu po adaptacji.'));
   L.push('');
   if(ST.pomiarZrodlo){
-    L.push('badanie-akustyczne.json    Wyniki pomiaru. Ten plik wczytuje modul doboru,');
-    L.push('                           wiec mozna do niego wrocic i przeliczyc adaptacje');
-    L.push('                           na nowo, bez powtarzania badania.');
+    L.push('badanie-akustyczne.json');
+    L.push(t('   Wyniki pomiaru. Ten plik wczytuje modul doboru, wiec mozna do'));
+    L.push(t('   niego wrocic i przeliczyc adaptacje na nowo, bez powtarzania badania.'));
     L.push('');
   }
   if(ir){
-    L.push('ir-punkt-N.wav             Odpowiedzi impulsowe z kazdego punktu pomiarowego,');
-    L.push('                           32-bit float, '+(ir.fs||48000)+' Hz. To jest surowiec:');
-    L.push('                           wynikaja z niego T20, T30, C50, D50 i STI.');
-    L.push('                           Pozwalaja przeliczyc wszystko na nowo albo sprawdzic');
-    L.push('                           wynik niezaleznym narzedziem (REW, ARTA, Audacity,');
-    L.push('                           Python) bez wracania do pomieszczenia.');
+    L.push('ir-punkt-N.wav');
+    L.push(t('   Odpowiedzi impulsowe z kazdego punktu pomiarowego, 32-bit float,'));
+    L.push(t('   {fs} Hz. To jest surowiec: wynikaja z niego T20, T30, C50, D50',{fs:ir.fs||48000}));
+    L.push(t('   i STI. Pozwalaja przeliczyc wszystko na nowo albo sprawdzic wynik'));
+    L.push(t('   niezaleznym narzedziem (REW, ARTA, Audacity, Python) bez'));
+    L.push(t('   wracania do pomieszczenia.'));
   }else{
-    L.push('UWAGA: w paczce NIE MA odpowiedzi impulsowych.');
+    L.push(t('UWAGA: w paczce NIE MA odpowiedzi impulsowych.'));
     L.push('');
-    L.push('Powstaja one w programie pomiarowym i zyja tylko w pamieci tej strony.');
-    L.push('Brakuje ich, gdy dobor policzono z wczytanego pliku zamiast przejsc');
-    L.push('wprost z badania, albo gdy przegladarka nie pozwolila ich odlozyc');
-    L.push('(okno prywatne, brak miejsca, zablokowany zapis danych).');
+    L.push(t('Powstaja one w programie pomiarowym i zyja tylko w pamieci tamtej'));
+    L.push(t('strony. Brakuje ich, gdy dobor policzono z wczytanego pliku zamiast'));
+    L.push(t('przejsc wprost z badania, albo gdy przegladarka nie pozwolila ich'));
+    L.push(t('odlozyc (okno prywatne, brak miejsca, zablokowany zapis danych).'));
     L.push('');
-    L.push('Zeby miec komplet: wykonaj badanie i przejdz do doboru przyciskiem');
-    L.push('"Dobierz panele", bez zamykania karty przegladarki po drodze.');
+    L.push(t('Zeby miec komplet: wykonaj badanie i przejdz do doboru przyciskiem'));
+    L.push(t('"Dobierz panele", bez zamykania karty przegladarki po drodze.'));
   }
   L.push('');
-  L.push('Przewidywany czas poglosu po adaptacji jest OBLICZONY, nie zmierzony.');
-  L.push('Sprawdzisz go, powtarzajac badanie po montazu paneli — program porowna');
-  L.push('wynik z tym, co obiecal.');
+  L.push(t('Przewidywany czas poglosu po adaptacji jest OBLICZONY, nie zmierzony.'));
+  L.push(t('Sprawdzisz go, powtarzajac badanie po montazu paneli — program porowna'));
+  L.push(t('wynik z tym, co obiecal.'));
   L.push('');
   return L.join('\r\n');
 }
