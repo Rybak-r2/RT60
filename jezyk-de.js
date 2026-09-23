@@ -80,6 +80,7 @@
   S["5,8"]="5,8";
   S["4,2"]="4,2";
   S["2,9"]="2,9";
+  S["dobrze (od {ile} dB)"]="gut (ab {ile} dB)";
   S["Uzupełnij wszystkie trzy wymiary."]="Füllen Sie alle drei Maße aus.";
   S["Uzupełnij: {czego}."]="Bitte ergänzen: {czego}.";
   S[" i "]=" und ";
@@ -91,7 +92,7 @@
   S["Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika."]="Die Schallquelle wurde gewechselt. Prüfen Sie den Pegel erneut — die vorherige Prüfung galt einem anderen Lautsprecher.";
   S["Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę."]="Halten Sie die Lautstärketaste bis zum Anschlag nach oben, strecken Sie den Arm mit dem Telefon aus und drücken Sie Pegel prüfen. Bleiben Sie still.";
   S["Jeśli masz podłączony głośnik Bluetooth, rozłącz go — inaczej to przez niego wyjdzie sygnał."]="Ist ein Bluetooth-Lautsprecher verbunden, trennen Sie ihn — sonst kommt das Signal aus ihm heraus.";
-  S["Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę."]="Stellen Sie den Lautsprecher auf etwa drei Viertel der Skala, gehen Sie 2 m von ihm weg und drücken Sie Pegel prüfen. Bleiben Sie still.";
+  S["Zacznij od mniej więcej trzech czwartych skali głośnika, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. O tym, czy poziom wystarcza, rozstrzyga pasek poniżej, a nie pozycja pokrętła. Zachowaj ciszę."]="Beginnen Sie bei etwa drei Vierteln der Lautstärkeskala, gehen Sie 2 m vom Lautsprecher weg und drücken Sie Pegel prüfen. Ob der Pegel ausreicht, entscheidet die Anzeige unten, nicht die Stellung des Reglers. Bleiben Sie still.";
   S["Łączę…"]="Verbinde…";
   S["Brak dostępu do mikrofonu ({blad}). Strona musi działać przez HTTPS."]="Kein Zugriff auf das Mikrofon ({blad}). Die Seite muss über HTTPS laufen.";
   S["Sprawdzam…"]="Prüfe…";
@@ -111,12 +112,13 @@
   S["Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu — dociera do niego {proc} % tego pola pogłosowego, które powinno tu być. Czas pogłosu zmierzysz mimo to, ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte: na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik."]="Das Mikrofon nimmt fast nur den Direktschall des Telefonlautsprechers auf — es erreichen es {proc} % des Diffusfeldes, das hier vorhanden sein müsste. Die Nachhallzeit lässt sich dennoch messen, die Kennwerte der Sprachverständlichkeit (C50, D50, STI) entfallen jedoch: Mit einem einzigen Gerät ist der nötige Abstand zur Quelle nicht zu erreichen. Ein externer Lautsprecher schaltet das vollständige Ergebnis frei.";
   S["Mikrofon jest za blisko głośnika — dociera do niego tylko {proc} % spodziewanego pola pogłosowego. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie."]="Das Mikrofon ist dem Lautsprecher zu nah — es erreichen es nur {proc} % des erwarteten Diffusfeldes. Gehen Sie mindestens 2 Meter von ihm weg und prüfen Sie erneut.";
   S["Sygnał jest przy tym nisko ({poziom} dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar."]="Das Signal liegt dabei niedrig ({poziom} dBFS) — lauter gestellt wird die Messung deutlich sicherer.";
+  S["Zakres badania: {od} – {do}."]="Messbereich: {od} – {do}.";
   S["Zapas wystarcza na wynik orientacyjny."]="Der Abstand reicht für einen orientierenden Wert.";
   S["Głośnik zewnętrzny dałby pewniejszy pomiar."]="Ein externer Lautsprecher ergäbe eine sicherere Messung.";
   S["Podgłośnij o kreskę."]="Drehen Sie um eine Stufe lauter.";
   S["Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie."]="Der Lautsprecher geht in die Kompression und verkürzt das Ausklingen. Drehen Sie um eine Stufe leiser und prüfen Sie erneut.";
+  S["Zapas nad tłem wystarcza, ale sygnał jest cichy ({poziom} dBFS). Podgłośnij o kreskę i sprawdź ponownie — wtedy pomiar zniesie przypadkowy hałas w trakcie badania."]="Der Abstand zum Störpegel reicht aus, doch das Signal ist leise ({poziom} dBFS). Drehen Sie um eine Stufe lauter und prüfen Sie erneut — dann übersteht die Messung ein zufälliges Geräusch während des Durchlaufs.";
   S["Poziom prawidłowy. Nie zmieniaj już głośności."]="Pegel in Ordnung. Ändern Sie die Lautstärke ab jetzt nicht mehr.";
-  S["Zakres badania: {od} – {do}."]="Messbereich: {od} – {do}.";
   S["głośnik"]="Lautsprecher";
   S["Sygnał — nie ruszaj się"]="Signal — bitte still stehen";
   S["Liczę…"]="Berechne…";

@@ -136,6 +136,65 @@ bezbłędnie tam, gdzie obie heurystyki się przewracają.
 
 ---
 
+### 1.6 Zapas nad tłem a zakres dynamiki — skąd zysk sweepu
+
+Pytanie wraca regularnie: instrukcja każe ustawić głośnik na trzy czwarte
+skali, a wskaźnik uznaje za wystarczający sygnał wyraźnie cichszy. Wygląda to
+na rozjazd założeń. Nie jest nim — to dwie różne wielkości.
+
+**Zapas nad tłem** (`snrAc`) to stosunek energii nagrania do energii tła
+w paśmie, liczony na SUROWYM nagraniu. Progi wskaźnika: `SNR_AC_MIN = 20 dB`
+(„wystarczy"), `SNR_AC_GOOD = 26 dB` („dobrze").
+
+**Zakres dynamiki zaniku** (`range`) to zapas szczytu obwiedni nad podłogą
+szumu wyznaczoną metodą Lundeby'ego, liczony na odpowiedzi impulsowej PO
+DEKONWOLUCJI. To na nim stoją progi ISO 3382: 35 dB dla T30, 25 dB dla T20.
+
+Te dwie liczby dzieli **zysk przetwarzania sweepu**. Sweep rozkłada energię
+na 1,5 sekundy i całe pasmo; dekonwolucja filtrem odwrotnym ściska ją z powrotem
+w impuls, a szum — nieskorelowany ze sweepem — zostaje rozmazany. Zysk rośnie
+z iloczynem szerokości pasma i czasu, więc jest tym większy, im wyższe pasmo
+i im dłuższy sweep.
+
+Zmierzone prawdziwym kodem silnika, na pokoju wzorcowym o znanym
+T60 = 0,600 s (`docs/test-poziom.js`):
+
+| zapas nad tłem, 1 kHz | zakres zaniku | wynik | odtworzone T |
+|---|---|---|---|
+| 15,2 dB | 49,8 dB | **pasmo odrzucone** | — |
+| 23,1 dB | 57,8 dB | T30 | 0,590 s |
+| 26,1 dB | 60,5 dB | T30 | 0,604 s |
+
+Wnioski są trzy i warto je mieć zapisane.
+
+**Cichy sygnał naprawdę wystarcza.** Przy 23 dB zapasu zakres zaniku wynosi
+58 dB — próg ISO dla T30 przekroczony o 23 dB. Wskaźnik nie kłamie; po prostu
+nie pokazuje, skąd bierze się margines.
+
+**Próg 20 dB jest konserwatywny, nie liberalny.** Przy 15 dB program odrzuca
+pasmo, choć zakres zaniku wyniósłby 50 dB, czyli aż nadto. Odrzuca celowo:
+w teście tło jest BIAŁE, a realny hałas siedzi nisko i nie jest stały, więc
+125 i 250 Hz wypadają w praktyce gorzej, niż pokazuje tabela. Test dowodzi
+mechanizmu, nie tego, że każdy cichy pomiar jest dobry.
+
+**Dlatego istnieje drugi próg, bezwzględny.** `PEAK_MIN_DBFS = −50` i
+`PEAK_LOW_DBFS = −40` pilnują poziomu nagrania, a nie stosunku. Sam zapas
+w bardzo cichym pokoju osiąga próg nawet przy sygnale ledwie słyszalnym —
+i taki pomiar przewróci się od pierwszego trzaśnięcia drzwiami.
+
+**Co z tego wynika dla treści.** Pozycja pokrętła nie mówi nic o poziomie
+w pomieszczeniu — rozstrzyga pasek. „Trzy czwarte skali" jest punktem startu,
+żeby pierwsze sprawdzenie nie wypadło absurdalnie, i tak jest teraz napisane.
+Osobno rozdzielone zostały dwa warunki w komunikacie końcowym: „Poziom
+prawidłowy, nie zmieniaj już głośności" należy się dopiero wtedy, gdy
+spełnione są OBA — zapas i poziom bezwzględny. Wcześniej program przy cichym
+sygnale mówił naraz „nie zmieniaj głośności" i „podgłośnienie da pewniejszy
+pomiar", czyli dwa przeciwne polecenia w jednym zdaniu.
+
+Progi zostają bez zmian. Komentarz przy nich mówi, że czekają na kalibrację
+na realnych urządzeniach, a pomiar pokazał, że są raczej za ostre niż za
+luźne — zmienianie ich bez danych z terenu byłoby zgadywaniem.
+
 ## Część 2. Kontrakt danych
 
 Eksport JSON (`silnik-v13`). Pola krytyczne dla modułu doboru:

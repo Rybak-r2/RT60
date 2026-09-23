@@ -78,6 +78,7 @@
   S["5,8"]="5.8";
   S["4,2"]="4.2";
   S["2,9"]="2.9";
+  S["dobrze (od {ile} dB)"]="good (from {ile} dB)";
   S["Uzupełnij wszystkie trzy wymiary."]="Fill in all three dimensions.";
   S["Uzupełnij: {czego}."]="Fill in: {czego}.";
   S[" i "]=" and ";
@@ -89,7 +90,7 @@
   S["Zmieniono źródło dźwięku. Sprawdź poziom ponownie — poprzedni pomiar dotyczył innego głośnika."]="The sound source has changed. Check the level again — the previous check applied to a different speaker.";
   S["Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę."]="Hold the volume-up button until it stops, hold the phone at arm's length and press Check level. Keep quiet.";
   S["Jeśli masz podłączony głośnik Bluetooth, rozłącz go — inaczej to przez niego wyjdzie sygnał."]="If a Bluetooth speaker is connected, disconnect it — otherwise the signal will come out of that instead.";
-  S["Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę."]="Set the speaker to about three quarters of its volume range, move 2 m away from it and press Check level. Keep quiet.";
+  S["Zacznij od mniej więcej trzech czwartych skali głośnika, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. O tym, czy poziom wystarcza, rozstrzyga pasek poniżej, a nie pozycja pokrętła. Zachowaj ciszę."]="Start at about three quarters of the speaker's volume range, move 2 m away from it and press Check level. Whether the level is sufficient is decided by the meter below, not by the position of the dial. Keep quiet.";
   S["Łączę…"]="Connecting…";
   S["Brak dostępu do mikrofonu ({blad}). Strona musi działać przez HTTPS."]="No microphone access ({blad}). The page must be served over HTTPS.";
   S["Sprawdzam…"]="Checking…";
@@ -109,12 +110,13 @@
   S["Mikrofon rejestruje prawie wyłącznie dźwięk bezpośredni z głośnika telefonu — dociera do niego {proc} % tego pola pogłosowego, które powinno tu być. Czas pogłosu zmierzysz mimo to, ale wskaźniki zrozumiałości mowy (C50, D50, STI) zostaną pominięte: na jednym urządzeniu nie da się uzyskać wymaganego odstępu od źródła. Głośnik zewnętrzny odblokowuje pełny wynik."]="The microphone is picking up almost only direct sound from the phone speaker — {proc} % of the reverberant field that should be present reaches it. You can still measure reverberation time, but the speech intelligibility metrics (C50, D50, STI) will be omitted: a single device cannot provide the required distance from the source. An external speaker unlocks the full result.";
   S["Mikrofon jest za blisko głośnika — dociera do niego tylko {proc} % spodziewanego pola pogłosowego. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie."]="The microphone is too close to the speaker — only {proc} % of the expected reverberant field reaches it. Move at least 2 metres away and check again.";
   S["Sygnał jest przy tym nisko ({poziom} dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar."]="The signal is also low ({poziom} dBFS) — turning it up will give a markedly more reliable measurement.";
+  S["Zakres badania: {od} – {do}."]="Measurement range: {od} – {do}.";
   S["Zapas wystarcza na wynik orientacyjny."]="The margin is enough for an indicative result.";
   S["Głośnik zewnętrzny dałby pewniejszy pomiar."]="An external speaker would give a more reliable measurement.";
   S["Podgłośnij o kreskę."]="Turn it up by one step.";
   S["Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie."]="The speaker is compressing and shortening the decay. Turn it down by one step and check again.";
+  S["Zapas nad tłem wystarcza, ale sygnał jest cichy ({poziom} dBFS). Podgłośnij o kreskę i sprawdź ponownie — wtedy pomiar zniesie przypadkowy hałas w trakcie badania."]="The margin above background is sufficient, but the signal is quiet ({poziom} dBFS). Turn it up by one step and check again — the measurement will then survive a stray noise during the test.";
   S["Poziom prawidłowy. Nie zmieniaj już głośności."]="Level is correct. Do not change the volume from now on.";
-  S["Zakres badania: {od} – {do}."]="Measurement range: {od} – {do}.";
   S["głośnik"]="speaker";
   S["Sygnał — nie ruszaj się"]="Signal — stay still";
   S["Liczę…"]="Computing…";

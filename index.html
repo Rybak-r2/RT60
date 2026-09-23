@@ -469,7 +469,7 @@ $('ver').textContent='silnik '+WERSJA;
   $('sl3').style.flex='1';
   $('sl1').textContent=t('za mało');
   $('sl2').textContent=SNR_AC_MIN+'–'+SNR_AC_GOOD;
-  $('sl3').textContent='dobrze (od '+SNR_AC_GOOD+' dB)';
+  $('sl3').textContent=t('dobrze (od {ile} dB)',{ile:SNR_AC_GOOD});
 })();
 
 /* Separator dziesiętny bierze się z klawiatury systemowej, nie ze strony.
@@ -553,7 +553,7 @@ document.querySelectorAll('input[name=src]').forEach(r=>r.onchange=()=>{
 function hintPoziomu(){return ST.src==='phone'
   ? t('Przytrzymaj przycisk głośności w górę do oporu, wyciągnij rękę z telefonem i naciśnij Sprawdź poziom. Zachowaj ciszę.')
     +' '+t('Jeśli masz podłączony głośnik Bluetooth, rozłącz go — inaczej to przez niego wyjdzie sygnał.')
-  : t('Ustaw głośność głośnika mniej więcej na trzy czwarte skali, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. Zachowaj ciszę.');}
+  : t('Zacznij od mniej więcej trzech czwartych skali głośnika, odsuń się od niego na 2 m i naciśnij Sprawdź poziom. O tym, czy poziom wystarcza, rozstrzyga pasek poniżej, a nie pozycja pokrętła. Zachowaj ciszę.');}
 
 $('b3a').onclick=async()=>{
   const b=$('b3a');b.disabled=true;b.textContent=t('Łączę…');
@@ -693,9 +693,18 @@ $('b3b').onclick=async()=>{
       : t('Mikrofon jest za blisko głośnika — dociera do niego tylko {proc} % spodziewanego pola pogłosowego. Odsuń się od niego na co najmniej 2 metry i sprawdź ponownie.',
           {proc:Math.round(poznyKontrolny*100)}));
     $('b3c').classList.remove('hide');return;}
-  const cicho=r.peakDb<PEAK_LOW_DBFS
+  /* Zapas nad tłem i poziom BEZWZGLĘDNY to dwa osobne warunki i muszą być
+     rozstrzygane osobno. Wcześniej program mówił naraz „nie zmieniaj już
+     głośności" i „podgłośnienie da wyraźnie pewniejszy pomiar" — dwa przeciwne
+     polecenia w jednym komunikacie. „Poziom prawidłowy" należy się dopiero
+     wtedy, gdy spełnione są OBA. */
+  const cichy=r.peakDb<PEAK_LOW_DBFS;
+  const cicho=cichy
     ? ' '+t('Sygnał jest przy tym nisko ({poziom} dBFS) — podgłośnienie da wyraźnie pewniejszy pomiar.',
         {poziom:r.peakDb.toFixed(0)}) : '';
+  const zakres=(ST.active.length&&ST.active.length<BANDS.length)
+    ? ' '+t('Zakres badania: {od} – {do}.',
+        {od:lbl(ST.active[0]), 'do':lbl(ST.active[ST.active.length-1])}) : '';
   if(sAc<SNR_AC_GOOD){S($('m3b'),'warn',t('Zapas wystarcza na wynik orientacyjny.')+cicho+' '+
     (ST.src==='phone'?t('Głośnik zewnętrzny dałby pewniejszy pomiar.'):t('Podgłośnij o kreskę.')));}
   else{
@@ -707,10 +716,10 @@ $('b3b').onclick=async()=>{
         S($('m3b'),'warn',t('Głośnik wchodzi w kompresję i skraca wybrzmienie. Przycisz o jedną kreskę i sprawdź ponownie.'));
         $('b3c').classList.remove('hide');return;}
     }
-    S($('m3b'),cicho?'warn':'good',t('Poziom prawidłowy. Nie zmieniaj już głośności.')+cicho+
-      (ST.active.length&&ST.active.length<BANDS.length
-        ? ' '+t('Zakres badania: {od} – {do}.',
-            {od:lbl(ST.active[0]), 'do':lbl(ST.active[ST.active.length-1])}) : ''));
+    S($('m3b'), cichy?'warn':'good', cichy
+      ? t('Zapas nad tłem wystarcza, ale sygnał jest cichy ({poziom} dBFS). Podgłośnij o kreskę i sprawdź ponownie — wtedy pomiar zniesie przypadkowy hałas w trakcie badania.',
+          {poziom:r.peakDb.toFixed(0)})+zakres
+      : t('Poziom prawidłowy. Nie zmieniaj już głośności.')+zakres);
   }
   $('b3c').classList.remove('hide');
 };
