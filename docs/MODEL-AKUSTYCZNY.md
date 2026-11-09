@@ -507,9 +507,15 @@ Oporność przepływu tkaniny wpływa na wynik i **musi trafić do specyfikacji*
 | 600 | meblowa | **−5,4 %** |
 | 1500 | zbita lub powlekana | **−21,5 %** |
 
-**Wymóg: Rf < 250 Pa·s/m, docelowo < 100.** Do ok. 250 tkanina jest obojętna, a
-przy 100 nawet minimalnie pomaga w dole pasma. Powyżej 600 zaczyna kasować to,
-za co klient płaci.
+**Wymóg: `Rf` ≤ 100 Pa·s/m** — i jest to zaostrzenie wobec wcześniejszego
+`< 250`. Powodem jest welon owijający wełnę (3.10): leży pod tkaniną, więc
+liczy się **suma oporu obu warstw**, a nie sama tkanina. Budżet to
+**300 Pa·s/m łącznie**, z czego welonowi przypada do 200.
+
+Tabela wyżej opisuje tkaninę w izolacji, czyli przy założeniu, że pod nią nie
+ma nic. Tak było w pierwszej wersji modelu i stąd wzięła się dawna wartość
+`< 250`. Powyżej 600 tkanina kasuje to, za co klient płaci — ale przy welonie
+pod spodem granica przesuwa się w dół o tyle, ile wnosi welon.
 
 ### 3.8 Orientacyjne ilości
 
@@ -681,32 +687,64 @@ przepływu welonu `Rs`, więc `Zs = Zs_wełny + Rs`.
 | NUO 100 mm | bez welonu (w programie) | 0,51 | 0,71 | 0,85 | 0,93 | 0,73 | 0,38 |
 | | `Rs` 200 | 0,53 | 0,70 | 0,82 | 0,90 | 0,76 | **0,44** |
 
-**Kierunek jest korzystny i nic nie trzeba wycofywać.** Welon podnosi dół
-pasma, a w pasmach mowy — z których liczy się liczba sztuk — niczego nie psuje.
-Obecne wartości w programie są więc **zaniżone, czyli bezpieczne**: sprzedajemy
-mniej, niż panel daje, a nie więcej.
+#### Kierunek błędu zależy od oporu welonu i odwraca się w połowie zakresu
 
-Gdzie to widać najmocniej: tekstylny 50 mm przy 500 Hz idzie z 0,67 na 0,76,
-co przy średniej z pasm mowy oznacza około 6 % więcej chłonności, czyli
-w typowym pomieszczeniu jedną sztukę mniej. Przy NUO liczba sztuk się nie
-zmienia, bo pasma mowy zostają bez ruchu; rośnie za to 4 kHz z 0,37 na 0,43.
+Pierwsza wersja tego rozdziału orzekała, że brak welonu w rachunku zaniża
+wynik, czyli myli się bezpiecznie. **To jest prawdziwe tylko do `Rs` około
+300 Pa·s/m.** Powyżej welon zaczyna blokować wejście fali w wełnę, α w pasmach
+mowy spada i potrzebnych sztuk przybywa — a wtedy obecne wartości obiecują
+za dużo, nie za mało.
 
-**Optimum nie leży w nieskończoności.** Przy `Rs` 500 góra pasma zaczyna
-tracić: tekstylny 50 mm spada przy 1 kHz z 0,88 na 0,84, a przy 2 kHz z 0,89
-na 0,86. Sensowny zakres całkowitego oporu powierzchniowego to mniej więcej
-**200–300 Pa·s/m**.
+Liczba sztuk w pomieszczeniu odniesienia (biuro 8 × 5 × 2,8 m, cel 0,60 s):
 
-> **Konsekwencja dla specyfikacji tkaniny (3.7), i to jest usterka.** Wymóg
-> `Rf < 250, docelowo < 100` postawiono przy założeniu, że tkanina jest
-> **jedyną** warstwą oporową na licu. Przy panelach tekstylnych welon leży pod
-> nią, więc liczy się **suma**: welon plus tkanina. Jeżeli welon ma 200, to
-> tkanina o `Rf` 250 daje razem 450 i wychodzimy poza zakres korzystny.
-> Wymóg trzeba przeredagować na sumę, gdy tylko poznamy `Rs` welonu.
+| wariant | `Rs` 0 (w programie) | 200 | 300 | 400 | 600 | 800 |
+|---|---|---|---|---|---|---|
+| tekstylny 50 mm | 21 | 20 | 20 | 20 | 21 | 21 |
+| tekstylny 100 mm | 20 | 20 | 20 | 21 | 21 | 22 |
+| NUO 50 mm | 26 | 26 | 26 | 27 | 28 | 29 |
+| NUO 100 mm | 26 | 26 | 27 | 27 | **29** | **30** |
 
-**Czego brakuje:** jednej liczby — `Rs` flizeliny, albo jej gramatury
-i rodzaju, z których da się ją oszacować z dokładnością wystarczającą do
-rachunku. Dopóki jej nie ma, w programie zostają wartości bez welonu, bo mylą
-się w stronę bezpieczną.
+NUO reaguje mocniej, bo jego chłonność w pasmach mowy i tak zależy od tego,
+czy dźwięk przejdzie przez mikroperforację do wełny — opór welonu dokłada się
+wtedy szeregowo do oporu otworów.
+
+Welon jest ze **szkła, 60 g/m²**. Welony tej gramatury mieszczą się zwykle
+w 200–600 Pa·s/m, ale decyduje nie sama gramatura, tylko ilość spoiwa
+i grubość włókna: dwa welony o tej samej masie potrafią różnić się oporem
+trzykrotnie. Przedział obejmuje więc próg 300 po obu stronach i nie
+rozstrzyga niczego.
+
+#### Rozwiązanie: nie mierzyć, tylko narzucić
+
+Zamiast ścigać opór welonu, który akurat kupujemy, wpisujemy go do
+specyfikacji — tak samo, jak od początku robimy z tkaniną (3.7). Welon
+przestaje być niewiadomą i staje się parametrem zamówieniowym.
+
+> **Wymóg: welon + tkanina razem ≤ 300 Pa·s/m**, z podziałem
+> **welon ≤ 200**, **tkanina ≤ 100**.
+
+Przy takim ograniczeniu wartości α w programie są bezpieczne **z definicji**:
+w tym zakresie welon tylko pomaga, a my nadal obiecujemy tyle, co bez niego.
+Znika konieczność przeliczania czegokolwiek i znika ryzyko, że następna
+dostawa welonu po cichu przesunie akustykę.
+
+Dla dostawcy przekłada się to na przepuszczalność powietrza, którą zwykle ma
+w karcie wyrobu (ISO 9237 albo DIN 53887), bo `Rs = Δp / v`:
+
+| przepuszczalność przy 200 Pa | odpowiada `Rs` | ocena |
+|---|---|---|
+| ≥ 1000 l/(m²·s) | ≤ 200 | **wymagane dla welonu** |
+| 650 | 300 | granica obojętności |
+| 500 | 400 | zaczyna kosztować górę pasma |
+| 250 | 800 | +4 sztuki przy NUO |
+
+Lekki welon szklany 60 g/m² zwykle spełnia ten wymóg, więc prawdopodobnie nic
+on nie kosztuje — ale od tej chwili jest **zapisany, a nie zakładany**.
+
+**Co zostaje do sprawdzenia:** przepuszczalność z karty welonu, którego
+używamy. Jeżeli wyjdzie poniżej 1000 l/(m²·s), trzeba będzie albo zmienić
+welon, albo przeliczyć α — i wtedy wiadomo dokładnie, co zrobić. Do tego czasu
+w programie zostają wartości bez welonu.
 
 
 ## Część 4. Otwarte
@@ -729,12 +767,13 @@ się w stronę bezpieczną.
    dowodu, że jest prawdziwe.
 6. **Drugie pomieszczenie** — różnica 32 % pochodzi z jednego salonu o krótkim
    pogłosie. Kierunek pewny, skala niekoniecznie.
-7. **Oporność przepływu flizeliny owijającej wełnę** — w obu wyrobach wełna
-   jest owijana flizeliną, żeby nie pyliła. Welon leży na powierzchni wełny
-   i jest warstwą oporową, której model dotąd nie uwzględniał (3.10).
-   Kierunek jest korzystny — brak tej warstwy w rachunku zaniża wynik — więc
-   nic się dziś nie sprzedaje na wyrost. Do policzenia na nowo potrzebna jest
-   jedna liczba: `Rs` welonu albo jego gramatura i rodzaj.
+7. **Przepuszczalność powietrza welonu owijającego wełnę** — welon jest
+   warstwą oporową na licu i do `Rs` około 300 Pa·s/m pomaga, a powyżej
+   zaczyna szkodzić (3.10). Welon szklany 60 g/m² mieści się zwykle
+   w 200–600, czyli po obu stronach progu. Specyfikacja narzuca teraz
+   `Rs` ≤ 200, co odpowiada przepuszczalności ≥ 1000 l/(m²·s) przy 200 Pa.
+   **Do sprawdzenia w karcie welonu, którego używamy** — jedna pozycja.
+   Jeżeli wyjdzie niżej, albo zmieniamy welon, albo przeliczamy α.
 
 ---
 
