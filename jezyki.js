@@ -152,10 +152,23 @@ function tlumaczDOM(korzen){
     const doZmiany=[];
     let n;
     while((n=w.nextNode())){
-      const rdzen=n.nodeValue.trim();
+      const surowy=n.nodeValue;
+      /* BIAŁE ZNAKI TRZEBA ŚCIĄGNĄĆ DO JEDNEJ SPACJI, nie tylko obciąć z brzegów.
+         Zdanie zawinięte w źródle HTML na kilka linii trafia do DOM razem
+         z tymi złamaniami i wcięciami, a klucz w słowniku ma pojedyncze
+         spacje — bo ekstraktor je ściąga. Bez tego takie zdanie nie trafia
+         w żaden klucz i zostaje po polsku we wszystkich językach, mimo że
+         tłumaczenie istnieje i test kompletności nic nie zgłasza.
+         Złapane na „Trzymaj telefon w wyciągniętej ręce, mikrofonem w górę…"
+         w kroku 3 pomiaru. */
+      const rdzen=surowy.replace(/\s+/g,' ').trim();
       if(!rdzen) continue;
       const przetlumaczony=t(rdzen);
-      if(przetlumaczony!==rdzen) doZmiany.push([n, n.nodeValue.replace(rdzen, przetlumaczony)]);
+      if(przetlumaczony===rdzen) continue;
+      /* Spacje na brzegach zostają — sąsiadują ze znacznikami i ich usunięcie
+         skleiłoby tekst z sąsiednim elementem. */
+      const przed=surowy.match(/^\s*/)[0], po=surowy.match(/\s*$/)[0];
+      doZmiany.push([n, przed+przetlumaczony+po]);
     }
     doZmiany.forEach(function(x){ x[0].nodeValue=x[1]; });
 

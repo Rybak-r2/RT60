@@ -1043,6 +1043,20 @@ w trakcie wpisywania nie kasowało danych.
 | `docs/test-jezyki.js` | kompletność, hasła osierocone, podstawienia, znaczniki HTML, polskie znaki w obcym tłumaczeniu |
 | `docs/test-przecieki.js` | napisy, które nigdy nie przechodzą przez `t()` — sklejane w kodzie albo używane jako klucz bez wywołania |
 
+**Trzecia klasa usterek: silnik trafia obok klucza.** Zdanie zawinięte
+w źródle HTML na kilka linii trafia do DOM razem ze złamaniami i wcięciami,
+a klucz w słowniku ma pojedyncze spacje, bo ekstraktor je ściąga. Jeżeli
+`tlumaczDOM()` normalizuje inaczej niż ekstraktor, takie zdanie nie trafia
+w żaden klucz i zostaje po polsku we wszystkich językach — przy czym
+**oba poprzednie testy milczą**: słownik jest kompletny, a w kodzie nic nie
+omija `t()`. Tak przeciekło zdanie „Trzymaj telefon w wyciągniętej ręce,
+mikrofonem w górę…" w kroku 3 pomiaru.
+
+`test-jezyki.js` bierze dlatego **prawdziwe węzły tekstowe z obu stron**,
+puszcza na nich **prawdziwy** `Jezyk.tlumaczDOM()` i porównuje wynik z tym,
+co daje bezpośrednie zajrzenie do słownika. Każda rozbieżność między silnikiem
+a ekstraktorem wychodzi od razu, niezależnie od tego, co ją spowodowało.
+
 Statyczne znaczniki nie wymagały żadnej zmiany: skoro kluczem jest polski
 tekst, to ten, który już stoi w HTML, jest gotowym kluczem. `Jezyk.tlumaczDOM()`
 chodzi po węzłach tekstowych raz, przy starcie, i podmienia zawartość.

@@ -89,7 +89,76 @@ JEZYKI.forEach(kod=>{
     (zle2.length?' (jest '+zle2.length+', np. '+JSON.stringify(S[zle2[0]])+')':''));
 });
 
-/*── 6. zachowanie silnika ──*/
+/*── 6. podmiana w ZNACZNIKACH, na prawdziwych węzłach tekstowych ──
+  Kompletność słownika nie wystarcza. Zdanie zawinięte w źródle HTML na kilka
+  linii trafia do DOM razem ze złamaniami i wcięciami, a klucz w słowniku ma
+  pojedyncze spacje — bo ekstraktor je ściąga. Jeżeli silnik normalizuje
+  inaczej niż ekstraktor, takie zdanie nie trafia w żaden klucz i zostaje po
+  polsku, a oba wcześniejsze testy milczą: słownik jest kompletny, a w kodzie
+  nic nie omija t().
+
+  Dlatego ten test bierze PRAWDZIWE węzły tekstowe z obu stron, puszcza na nich
+  PRAWDZIWY Jezyk.tlumaczDOM() i sprawdza, że każdy z nich faktycznie się
+  zmienił. Złapane na „Trzymaj telefon w wyciągniętej ręce, mikrofonem w górę…"
+  w kroku 3 pomiaru — tłumaczenie istniało, a na ekranie stał polski. */
+function wezlyZeStrony(plik){
+  const h=fs.readFileSync(path.join(KAT,plik),'utf8');
+  const mk=h.split('<script')[0].replace(/<style[\s\S]*?<\/style>/g,' ');
+  const out=[];
+  let m; const re=/>([^<]+)</g;
+  while((m=re.exec(mk))){
+    if(/[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(m[1])) out.push(m[1]);
+  }
+  return out;
+}
+/* Atrapa DOM wystarczająca dla tlumaczDOM: spacer po węzłach i brak pól
+   z podpowiedzią. Węzły są prawdziwe — to jest sedno tego testu. */
+function atrapaDOM(surowe){
+  const wezly=surowe.map(v=>({nodeValue:v}));
+  global.window.document={
+    body:{},
+    createTreeWalker(){ let i=0; return {nextNode:()=>i<wezly.length?wezly[i++]:null}; },
+    querySelectorAll:()=>[],
+    documentElement:{setAttribute(){}}
+  };
+  return wezly;
+}
+
+/* Porównujemy z tym, co POWINNO wyjść ze słownika, a nie z „cokolwiek się
+   zmieniło". Część haseł ma tłumaczenie identyczne z oryginałem („orient.",
+   „START", „ok") i wymaganie różnicy zgłaszałoby je jako błąd. */
+['en','de'].forEach(kod=>{
+  ['index.html','dobor.html'].forEach(plik=>{
+    const surowe=wezlyZeStrony(plik);
+    const wezly=atrapaDOM(surowe);
+    Jezyk.ustaw(kod,false);
+    Jezyk.tlumaczDOM();
+    const zle2=[];
+    wezly.forEach((w,i)=>{
+      const norm=surowe[i].replace(/\s+/g,' ').trim();
+      const przed=surowe[i].match(/^\s*/)[0], po=surowe[i].match(/\s*$/)[0];
+      const oczek=przed+(Jezyk.slownik[kod][norm]||norm)+po;
+      if(w.nodeValue!==oczek) zle2.push(norm);
+    });
+    sprawdz(zle2.length===0,
+      kod+' · '+plik+': silnik trafia w ten sam klucz co słownik'+
+      (zle2.length?' (nie trafia w '+zle2.length+', np. '+
+        JSON.stringify(zle2[0].slice(0,60))+')':''));
+  });
+});
+Jezyk.ustaw('pl',false);
+
+/* Białe znaki na brzegach muszą przetrwać — sąsiadują ze znacznikami
+   i ich utrata skleiłaby tekst z sąsiednim elementem. */
+(function(){
+  const surowy='\n  Dalej\n  ';
+  const w=atrapaDOM([surowy]);
+  Jezyk.ustaw('en',false); Jezyk.tlumaczDOM(); Jezyk.ustaw('pl',false);
+  sprawdz(w[0].nodeValue==='\n  Continue\n  ',
+    'podmiana zachowuje białe znaki na brzegach węzła');
+})();
+
+/*── 7. zachowanie silnika ──*/
 console.log('\nSilnik tłumaczeń\n');
 
 Jezyk.ustaw('pl',false);
