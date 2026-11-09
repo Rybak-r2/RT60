@@ -403,8 +403,9 @@ Wtedy α dla montaży zbadanych bierzemy wprost, a model służy tylko do reszty
 
 ### 3.6 Panel — ramka MDF, dwa kartony, dwa różne pola
 
-Wełna siedzi w **ramce z MDF 15 mm**, z litym tyłem; tkanina obszywa lico.
-Wymiar zewnętrzny panelu jest więc o 30 mm większy od wełny w obu osiach.
+Wełna siedzi w **ramce ze sklejki albo MDF, 16 mm**, z litym tyłem; tkanina
+obszywa lico. Wymiar zewnętrzny panelu jest więc o 32 mm większy od wełny
+w obu osiach.
 
 **Liczymy w sztukach.** Przy panelu dzielonym jedna sztuka to **komplet**
 dwóch paneli z jednej płyty — i tak trzeba to nazywać, bo klient musi wiedzieć,
@@ -412,10 +413,10 @@ ile paneli faktycznie dostanie: od tego zależy, co da się ułożyć na ściani
 
 | sztuka | zawartość | wełna czynna | pole czynne | pole zewnętrzne |
 |---|---|---|---|---|
-| **panel pojedynczy** | 1060 × 640 | 1030 × 610 | 0,628 m² | 0,678 m² |
-| **komplet dzielony** | 640 × 640 | 610 × 610 | 0,372 m² | 0,410 m² |
-| | 640 × 420 | 610 × 390 | 0,238 m² | 0,269 m² |
-| | **razem komplet** | | **0,610 m²** | **0,678 m²** |
+| **panel pojedynczy** | 1060 × 640 | 1028 × 608 | 0,625 m² | 0,678 m² |
+| **komplet dzielony** | 640 × 640 | 608 × 608 | 0,370 m² | 0,410 m² |
+| | 640 × 420 | 608 × 388 | 0,236 m² | 0,269 m² |
+| | **razem komplet** | | **0,606 m²** | **0,678 m²** |
 
 Komplet powstaje z przecięcia płyty wzdłuż na 610 i 390 mm, a służy
 **architekturze**: dwa formaty pozwalają układać na ścianie i suficie mozaikę,
@@ -429,7 +430,7 @@ formatów na jednej ścianie (rząd obok kolumny) krawędzie się rozjeżdżały
 nie o błąd rachunku, tylko o realną, fizyczną różnicę wynikającą z tego, że
 komplet to dwa oddzielnie oprawione kawałki, każdy z własną ramką na styku,
 podczas gdy panel pojedynczy miał tam ciągłą wełnę bez przerwy. Wydłużenie
-panelu do 1060 mm (z liciem rosnącym razem z ramą, do 1030 × 610 mm) usuwa
+panelu do 1060 mm (z liciem rosnącym razem z ramą, do 1028 × 608 mm) usuwa
 tę niezgodność: **pole zewnętrzne obu formatów jest teraz identyczne, 0,678 m²
 każdy** — 640 + 420 mm faktycznie zestawia się w linii z 1060 mm.
 
@@ -452,8 +453,8 @@ z badania komorowego gotowego panelu w dużych ramach producenta (2440 × 1220),
 gdzie rama zajmowała ułamek powierzchni. Przy naszych formatach rama to już
 8–17 % i tamto założenie obiecywałoby więcej, niż panel daje.
 
-**Akustycznie obie sztuki są w przybliżeniu takie same — 0,628 wobec
-0,610 m², różnica ok. 3 %.** Panel pojedynczy jest teraz nieco większy (żeby
+**Akustycznie obie sztuki są w przybliżeniu takie same — 0,625 wobec
+0,606 m², różnica ok. 3 %.** Panel pojedynczy jest teraz nieco większy (żeby
 zejść się z kompletem na ścianie), więc pochłania odrobinę więcej wełny —
 to jest realna, choć drobna różnica, nie tylko inny zapis tej samej rzeczy.
 Trzy procent to dużo mniej niż niepewność samego pomiaru telefonem (20–30 %,
@@ -466,7 +467,7 @@ co do metra.
 To jest poprawka, którą wymusiła ramka:
 
 - **Pole czynne** — powierzchnia, do której stosuje się α. To sama wełna;
-  ramka MDF nie pochłania, boki i tył są lite.
+  ramka nie pochłania, boki i tył są lite.
 - **Pole zewnętrzne** — tyle miejsca panel faktycznie zajmuje na ścianie.
 
 Sprawdzenie „czy panele się zmieszczą" musi iść z pola **zewnętrznego**.
@@ -671,10 +672,10 @@ technologia naciągania na to pozwala, to pytanie do wytwórcy, nie do modelu.
    dowodu, że jest prawdziwe.
 6. **Drugie pomieszczenie** — różnica 32 % pochodzi z jednego salonu o krótkim
    pogłosie. Kierunek pewny, skala niekoniecznie.
-7. **Wełna do panelu 1030 × 610 mm** — 3.4 opisuje płytę wełny jako 1000 × 610 mm,
+7. **Wełna do panelu 1028 × 608 mm** — 3.4 opisuje płytę wełny jako 1000 × 610 mm,
    a po powiększeniu panelu pojedynczego (3.6, do 1060 mm zewnętrznie, żeby
-   zejść się z kompletem na ścianie) lico potrzebuje 1030 × 610 mm, czyli
-   30 mm więcej w jednym wymiarze. Nie wiadomo, czy 1000 × 610 to sztywny,
+   zejść się z kompletem na ścianie) lico potrzebuje 1028 × 608 mm, czyli
+   28 mm więcej w jednym wymiarze. Nie wiadomo, czy 1000 × 610 to sztywny,
    katalogowy rozmiar płyty (i wtedy trzeba innego cięcia albo łączenia dwóch
    kawałków wewnątrz panelu), czy to tylko rozmiar, jaki dotąd zamawialiśmy
    od producenta na cięcie (i wtedy zmiana zamówienia jest formalnością). Do

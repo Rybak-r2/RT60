@@ -247,7 +247,7 @@
   S["Policz"]="Berechnen";
   S["Krok 4 z 4 · propozycja"]="Schritt 4 von 4 · Vorschlag";
   S["Ile paneli"]="Wie viele Elemente";
-  S["paneli 1030 × 610 mm"]="Elemente 1030 × 610 mm";
+  S["paneli 1028 × 608 mm"]="Elemente 1028 × 608 mm";
   S["Czas pogłosu po adaptacji"]="Nachhallzeit nach der Ertüchtigung";
   S["Zmień panele"]="Akustikelemente ändern";
   S["Zapisz wynik"]="Ergebnis speichern";
@@ -436,7 +436,7 @@
   S["Sprawdzisz go, powtarzajac badanie po montazu paneli — program porowna"]="Sie pruefen sie, indem Sie die Messung nach der Montage wiederholen — das";
   S["wynik z tym, co obiecal."]="Programm vergleicht das Ergebnis mit dem, was es versprochen hat.";
   S["Panel 1060 × 640 mm"]="Element 1060 × 640 mm";
-  S["Jedna sztuka, lico czynne 1030 × 610 mm."]="Ein Stück, wirksame Sichtfläche 1030 × 610 mm.";
+  S["Jedna sztuka, lico czynne 1028 × 608 mm."]="Ein Stück, wirksame Sichtfläche 1028 × 608 mm.";
   S["Komplet 640 × 640 i 640 × 420 mm"]="Set aus 640 × 640 und 640 × 420 mm";
   S["Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie."]="Zwei Elemente je Set, aus einer längs geteilten Platte. Zum Verlegen von Mosaiken an Wand und Decke.";
   S["Zestaw mieszany — po połowie"]="Gemischtes Set — je zur Hälfte";

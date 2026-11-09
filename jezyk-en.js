@@ -245,7 +245,7 @@
   S["Policz"]="Calculate";
   S["Krok 4 z 4 · propozycja"]="Step 4 of 4 · proposal";
   S["Ile paneli"]="How many panels";
-  S["paneli 1030 × 610 mm"]="panels 1030 × 610 mm";
+  S["paneli 1028 × 608 mm"]="panels 1028 × 608 mm";
   S["Czas pogłosu po adaptacji"]="Reverberation time after treatment";
   S["Zmień panele"]="Change the panels";
   S["Zapisz wynik"]="Save the result";
@@ -434,7 +434,7 @@
   S["Sprawdzisz go, powtarzajac badanie po montazu paneli — program porowna"]="You can verify it by repeating the test once the panels are mounted — the";
   S["wynik z tym, co obiecal."]="program will compare the result with what it promised.";
   S["Panel 1060 × 640 mm"]="Panel 1060 × 640 mm";
-  S["Jedna sztuka, lico czynne 1030 × 610 mm."]="One unit, active face 1030 × 610 mm.";
+  S["Jedna sztuka, lico czynne 1028 × 608 mm."]="One unit, active face 1028 × 608 mm.";
   S["Komplet 640 × 640 i 640 × 420 mm"]="Set of 640 × 640 and 640 × 420 mm";
   S["Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie."]="Two panels per set, cut lengthwise from one board. For laying mosaics on walls and ceilings.";
   S["Zestaw mieszany — po połowie"]="Mixed set — half and half";

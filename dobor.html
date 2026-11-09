@@ -140,7 +140,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
   <p class="eyebrow">Krok 4 z 4 · propozycja</p>
   <h1>Ile paneli</h1>
   <div id="wynTryb"></div>
-  <div class="big"><div class="num" id="wynSzt">—</div><div class="cap" id="wynCap">paneli 1030 × 610 mm</div></div>
+  <div class="big"><div class="num" id="wynSzt">—</div><div class="cap" id="wynCap">paneli 1028 × 608 mm</div></div>
   <div id="wynGl"></div>
   <h2>Czas pogłosu po adaptacji</h2>
   <div id="wynTab"></div>
@@ -219,8 +219,8 @@ const PASMA=[125,250,500,1000,2000,4000];
 
   Wszystkie trzy tabele do podmiany na α_p od producentów przed rozmową
   z klientem. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.4, 3.5 i 3.9. */
-/* FORMATY_TEX — panele tekstylne. Panel ma ramkę 15 mm dookoła, więc
-   lico czynne jest o 30 mm mniejsze w obu osiach od wymiaru zewnętrznego.
+/* FORMATY_TEX — panele tekstylne. Panel ma ramkę 16 mm dookoła, więc
+   lico czynne jest o 32 mm mniejsze w obu osiach od wymiaru zewnętrznego.
 
    UWAGA: od listopada 2026 oba wykończenia mają WŁASNE formaty. Wcześniej
    dzieliły jedną tablicę, żeby dało się je mieszać na jednej ścianie —
@@ -237,21 +237,21 @@ const PASMA=[125,250,500,1000,2000,4000];
    we wcześniejszej wersji (1030 mm) — żeby przy montażu obok kompletu
    (640 + 420 = 1060 mm) obie ściany paneli schodziły się co do milimetra,
    zamiast rozjeżdżać się o jedną grubość ramki. Lico rośnie razem z ramą
-   (1030 × 610 mm), więc pole czynne panelu rośnie z 0,610 do 0,628 m² —
+   (1028 × 608 mm), więc pole czynne panelu rośnie z 0,606 do 0,625 m² —
    to jest realny, nieco większy kawałek wełny, nie tylko inny zapis.
 
    Ramka nie pochłania, więc pole czynne liczy się z lica, a pole zewnętrzne
    z całego panelu — bo tyle miejsca zajmuje on na ścianie. */
 const FORMATY_TEX=[
   {id:'k1', n:'Panel 1060 × 640 mm',
-   o:'Jedna sztuka, lico czynne 1030 × 610 mm.',
-   panele:[{n:'1060 × 640', dl:1.060, sz:0.640, wdl:1.030, wsz:0.610}]},
+   o:'Jedna sztuka, lico czynne 1028 × 608 mm.',
+   panele:[{n:'1060 × 640', dl:1.060, sz:0.640, wdl:1.028, wsz:0.608}]},
   {id:'k2', n:'Komplet 640 × 640 i 640 × 420 mm',
    o:'Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie.',
-   panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.610, wsz:0.610},
-           {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.610, wsz:0.390}]},
+   panele:[{n:'640 × 640', dl:0.640, sz:0.640, wdl:0.608, wsz:0.608},
+           {n:'640 × 420', dl:0.640, sz:0.420, wdl:0.608, wsz:0.388}]},
   /* Zestaw mieszany: sztuki po połowie jednego i drugiego rodzaju. Pole czynne
-     obu formatów różni się o ok. 3 % (0,628 wobec 0,610 m²), więc przeplatanka
+     obu formatów różni się o ok. 3 % (0,625 wobec 0,606 m²), więc przeplatanka
      w praktyce nie zmienia ani liczby sztuk, ani powierzchni pochłaniającej —
      daje wyłącznie trzy formaty paneli do układania zamiast jednego lub
      dwóch. Pole zewnętrzne obu formatów jest teraz identyczne (0,6784 m²

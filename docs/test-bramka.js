@@ -201,8 +201,8 @@ const mieszany2=policz('tex','w100','k3');
 const w50 =policz('tex','w50','k1');
 const nuo =policz('nuo','n100','k1');
 const nuo50=policz('nuo','n50','k1');
-console.log('        tekstylny 100 mm, 1030×610 : '+w100.szt+' szt., '+w100.pow+' m²');
-console.log('        tekstylny  50 mm, 1030×610 : '+w50.szt +' szt., '+w50.pow +' m²');
+console.log('        tekstylny 100 mm, 1028×608 : '+w100.szt+' szt., '+w100.pow+' m²');
+console.log('        tekstylny  50 mm, 1028×608 : '+w50.szt +' szt., '+w50.pow +' m²');
 const nuoKpl=policz('nuo','n100','k2');
 console.log('        NUO_WALL 100 mm, 1000×500  : '+nuo.szt +' szt., '+nuo.pow +' m²');
 console.log('        NUO_WALL  50 mm, 1000×500  : '+nuo50.szt+' szt., '+nuo50.pow+' m²');
@@ -212,11 +212,11 @@ function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
 /* Od listopada 2026 oba wykończenia mają WŁASNE formaty: NUO przeszedł na
    1000 × 500 ze względów technologicznych. Test pilnuje rozdziału, bo wspólna
    tablica była wcześniej świadomą decyzją i łatwo ją przez pomyłkę przywrócić. */
-sprawdz(w100.czynne===0.628&&Math.abs(nuo.czynne-0.4473)<0.0005,
-  'każde wykończenie ma własny format — tekstylny 0,628 m², NUO 0,447 m²');
+sprawdz(Math.abs(w100.czynne-0.625)<0.0005&&Math.abs(nuo.czynne-0.4473)<0.0005,
+  'każde wykończenie ma własny format — tekstylny 0,625 m², NUO 0,447 m²');
 /* Ramka MDF nie pochłania, ale zajmuje ścianę. Mylenie tych dwóch pól
    zaniżało zapotrzebowanie na miejsce o 8–13 %. */
-sprawdz(w100.zewn===0.678&&w100.czynne===0.628,
+sprawdz(w100.zewn===0.678&&Math.abs(w100.czynne-0.625)<0.0005,
   'panel tekstylny zajmuje więcej ściany, niż pochłania');
 /* NUO liczy się z lica tak samo jak tekstylne, tylko ramiak jest inny:
    sklejka topolowa 30 × 18 mm, w widoku 18 mm, więc lico jest mniejsze
