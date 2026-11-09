@@ -444,7 +444,7 @@ function opisPodstawy(){
   return (ST.wyk==='nuo'
     ? t('α policzone z geometrii panelu: mikroperforacja forniru (otwór 0,5 mm, raster 3 mm) modelem Maa, wełna 40–60 kg/m³ za nim modelem Mikiego, wartość najmniejsza z przedziału gęstości w każdym paśmie.')
     : t('α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.'))+
-    ' '+t('Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają.');
+    ' '+t('Liczone z samego lica panelu — pozostałe powierzchnie nie pochłaniają.');
 }
 
 const ST={};
@@ -944,7 +944,7 @@ function pokazWynik(dolny,gorny,bazowy){
     $('wynCap').textContent=t(format().n)+'  ·  '+skladKartonow(bazowy.szt);
     $('wynTryb').innerHTML='';
     $('wynGl').innerHTML='<div class="msg good">'+
-      t('Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają.')+'</div>';
+      t('Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — pozostałe powierzchnie nie pochłaniają.')+'</div>';
   }
 
   /* tabela T po adaptacji */

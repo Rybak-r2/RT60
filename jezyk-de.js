@@ -255,7 +255,7 @@
   S["np. 0,45"]="z. B. 0,45";
   S["α policzone z geometrii panelu: mikroperforacja forniru (otwór 0,5 mm, raster 3 mm) modelem Maa, wełna 40–60 kg/m³ za nim modelem Mikiego, wartość najmniejsza z przedziału gęstości w każdym paśmie."]="α aus der Geometrie des Elements selbst berechnet: das mikroperforierte Furnier (Löcher 0,5 mm, Raster 3 mm) nach dem Maa-Modell, die Wolle von 40–60 kg/m³ dahinter nach dem Miki-Modell, je Band der kleinste Wert aus dem Dichtebereich.";
   S["α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny."]="α aus dem Miki-Modell für Wolle von 40–60 kg/m³, je Band der kleinste Wert aus diesem Bereich — vorläufig, bis die α_p-Tabelle des Wolleherstellers vorliegt.";
-  S["Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają."]="Gerechnet allein mit der Sichtfläche des Elements: Seiten und Rückseite sind massiv und absorbieren daher nicht.";
+  S["Liczone z samego lica panelu — pozostałe powierzchnie nie pochłaniają."]="Gerechnet allein mit der Sichtfläche des Elements — die übrigen Flächen absorbieren nicht.";
   S["Przejęty wprost z badania, godz. {godz}."]="Direkt aus der Messung übernommen, {godz} Uhr.";
   S["Przejęty wprost z badania."]="Direkt aus der Messung übernommen.";
   S["Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki."]="Nichts lief über einen Server — das Ergebnis liegt im Speicher dieses Browser-Tabs.";
@@ -332,7 +332,7 @@
   S["Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. Dokładną liczbę da pomiar z głośnikiem zewnętrznym."]="Der Telefonlautsprecher gibt die Absorption des Raums zu hoch an, daher liegt der tatsächliche Bedarf irgendwo in dieser Spanne. Die genaue Zahl liefert eine Messung mit externem Lautsprecher.";
   S["Zacznij od {ile} szt."]="Beginnen Sie mit {ile} Stück.";
   S["Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, a nie nowym projektem. Górna granica przedziału to {max} szt."]="Wiederholen Sie die Messung nach der Montage. Ist das Ziel nicht erreicht, ergänzen Sie weitere — die Elemente sind ein Katalogartikel in festem Format, eine Nachbestellung ist also eine gewöhnliche Lieferung und keine neue Planung. Die Obergrenze der Spanne liegt bei {max} Stück.";
-  S["Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają."]="Die Messung ist vollwertig, daher ist die Zahl eindeutig. Gerechnet allein mit den Sichtflächen — Seiten und Rückseiten sind massiv und absorbieren nicht.";
+  S["Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — pozostałe powierzchnie nie pochłaniają."]="Die Messung ist vollwertig, daher ist die Zahl eindeutig. Gerechnet allein mit den Sichtflächen — die übrigen Flächen absorbieren nicht.";
   S["teraz"]="jetzt";
   S["po"]="nachher";
   S["zmiana"]="Änderung";

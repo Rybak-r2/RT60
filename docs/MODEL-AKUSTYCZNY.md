@@ -403,9 +403,15 @@ Wtedy α dla montaży zbadanych bierzemy wprost, a model służy tylko do reszty
 
 ### 3.6 Panel — ramka MDF, dwa kartony, dwa różne pola
 
-Wełna siedzi w **ramce ze sklejki albo MDF, 16 mm**, z litym tyłem; tkanina
-obszywa lico. Wymiar zewnętrzny panelu jest więc o 32 mm większy od wełny
-w obu osiach.
+Wełna siedzi w **ramce ze sklejki albo MDF, 16 mm**; tkanina obszywa lico.
+Wymiar zewnętrzny panelu jest więc o 32 mm większy od wełny w obu osiach.
+
+**Tyłu nie ma.** Wełna przylega od frontu do tkaniny, a od tyłu wprost do
+ściany. Dla rachunku nic to nie zmienia — model Mikiego i tak liczy warstwę
+porowatą na podłożu sztywnym, a ścianą jest teraz dosłownie ściana, nie płyta
+zamykająca ramkę. Zmienia natomiast masę panelu i to, co wolno napisać
+o reakcji na ogień: palnego materiału jest w panelu tyle, ile go jest
+w ramce.
 
 **Liczymy w sztukach.** Przy panelu dzielonym jedna sztuka to **komplet**
 dwóch paneli z jednej płyty — i tak trzeba to nazywać, bo klient musi wiedzieć,
@@ -467,7 +473,7 @@ co do metra.
 To jest poprawka, którą wymusiła ramka:
 
 - **Pole czynne** — powierzchnia, do której stosuje się α. To sama wełna;
-  ramka nie pochłania, boki i tył są lite.
+  ramka nie pochłania.
 - **Pole zewnętrzne** — tyle miejsca panel faktycznie zajmuje na ścianie.
 
 Sprawdzenie „czy panele się zmieszczą" musi iść z pola **zewnętrznego**.
@@ -483,9 +489,9 @@ w skali AW** (3.5), wzmocnione liczeniem najgorszej gęstości z przedziału
 (3.4), jest wielokrotnie większe od utraconych krawędzi i działa w tę samą,
 bezpieczną stronę.
 
-> **Do odnotowania, drugiego rzędu:** panel z litym tyłem **zakrywa**
-> powierzchnię, która sama coś pochłaniała — i zakrywa ją całym polem
-> zewnętrznym, razem z ramką. Rachunek dodaje `S_czynne · α_panel`, nie
+> **Do odnotowania, drugiego rzędu:** panel **zakrywa** powierzchnię, która
+> sama coś pochłaniała — i zakrywa ją całym polem zewnętrznym, razem z ramką.
+> Rachunek dodaje `S_czynne · α_panel`, nie
 > odejmując `S_zewn · α_ściany`. Dla tynku malowanego (α ≈ 0,02–0,05) to
 > zawyżenie zysku o 2–5 %, czyli mniej niż zaniżenie modelu.
 

@@ -253,7 +253,7 @@
   S["np. 0,45"]="e.g. 0.45";
   S["α policzone z geometrii panelu: mikroperforacja forniru (otwór 0,5 mm, raster 3 mm) modelem Maa, wełna 40–60 kg/m³ za nim modelem Mikiego, wartość najmniejsza z przedziału gęstości w każdym paśmie."]="α computed from the panel's own geometry: the micro-perforated veneer (0.5 mm holes, 3 mm pitch) by the Maa model, the 40–60 kg/m³ wool behind it by the Miki model, taking the lowest value in the density range for each band.";
   S["α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny."]="α from the Miki model for wool of 40–60 kg/m³, taking the lowest value in that range for each band — provisional until the α_p table arrives from the wool manufacturer.";
-  S["Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają."]="Computed from the panel face alone: the sides and back are solid, so they do not absorb.";
+  S["Liczone z samego lica panelu — pozostałe powierzchnie nie pochłaniają."]="Computed from the panel face alone — the remaining surfaces do not absorb.";
   S["Przejęty wprost z badania, godz. {godz}."]="Taken straight from the test, {godz}.";
   S["Przejęty wprost z badania."]="Taken straight from the test.";
   S["Nic nie przeszło przez serwer — wynik czeka w pamięci tej karty przeglądarki."]="Nothing passed through a server — the result is waiting in this browser tab's memory.";
@@ -330,7 +330,7 @@
   S["Głośnik telefonu zawyża chłonność pomieszczenia, więc rzeczywista potrzeba leży gdzieś w tym przedziale. Dokładną liczbę da pomiar z głośnikiem zewnętrznym."]="The phone speaker overstates the room's absorption, so the real requirement lies somewhere in this range. A measurement with an external speaker will give the exact figure.";
   S["Zacznij od {ile} szt."]="Start with {ile} pcs.";
   S["Po zamontowaniu powtórz badanie. Jeśli cel nie został osiągnięty, dołóż kolejne — panele są pozycją katalogową w stałym formacie, więc uzupełnienie zamówienia jest zwykłą dostawą, a nie nowym projektem. Górna granica przedziału to {max} szt."]="Repeat the test once they are mounted. If the target has not been reached, add more — the panels are a catalogue item in a fixed format, so topping up an order is an ordinary delivery, not a new design. The upper bound of the range is {max} pcs.";
-  S["Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — boki i tył są lite i nie pochłaniają."]="The measurement is a full one, so the figure is definite. It is computed from the panel faces alone — the sides and back are solid and do not absorb.";
+  S["Pomiar pełny, więc liczba jest konkretna. Liczona z samego lica paneli — pozostałe powierzchnie nie pochłaniają."]="The measurement is a full one, so the figure is definite. It is computed from the panel faces alone — the remaining surfaces do not absorb.";
   S["teraz"]="now";
   S["po"]="after";
   S["zmiana"]="change";
