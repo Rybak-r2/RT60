@@ -57,13 +57,16 @@ const POLSKIE_Z_ZALOZENIA=new Set([
   ' szt., powtorzyc badanie, w razie potrzeby dolozyc','widelki','liczba',
   /* Pochodzenie wartości α — pole `zrodlo` w propozycji. Opis dla tego, kto
      będzie sprawdzał rachunek, nie dla klienta. */
-  'SZACUNEK: krzywa producenta dla wariantu 50 mm przeliczona na 100 mm — WARTOSCI TYMCZASOWE',
-  'odczyt z wykresu alfa_p w ulotce NUO_WALL (muto, 10.2021) — WARTOSCI TYMCZASOWE, ',
-  'do podmiany na tabele alfa_p od producenta',
+  'model Maa dla mikroperforacji forniru (otwor 0,5 mm, raster 3 mm, plyta 0,8 mm, ',
+  'perforacja 2,18 %) zlozony z modelem Mikiego dla welny 40-60 kg/m3 dociskajacej ',
+  'do spodu forniru; alfa najmniejsza z przedzialu gestosci w kazdym pasmie. ',
+  'Zrodlo: docs/welna.py, nuo_zakresu()',
   'model Mikiego, welna deklarowana 40-60 kg/m3, alfa najmniejsza z przedzialu ',
   'w kazdym pasmie — WARTOSCI TYMCZASOWE, do podmiany na tabele alfa_p od producenta welny',
-  /* Identyfikatory: klucze magazynu, id opcji, wersje modułów, nazwy klas CSS. */
-  'rt60-pomiar','dobor.html','dobór v4','dobor-v4',
+  /* Identyfikatory: klucze magazynu, id opcji, nazwy klas CSS. Oznaczeń
+     wersji nie wypisujemy — łapie je WERSJE niżej, żeby podbicie numeru
+     nie wymagało dopisywania dwóch linii przy każdym wydaniu. */
+  'rt60-pomiar','dobor.html',
   'biuro','lekcyjna','salon','wlasny','obie-za-slabe','oba','gdzie',
   'pomiar','plik','dobrze','uwaga',
   /* Nazwy plików w paczce — muszą być jednakowe we wszystkich językach,
@@ -71,6 +74,10 @@ const POLSKIE_Z_ZALOZENIA=new Set([
   'badanie-akustyczne-','badanie-akustyczne.json.','ir-punkt-N.wav',
   'wynik-','pomieszczenie'
 ]);
+
+/* Oznaczenie wersji modułu — identyfikator, nie tekst. Wzorzec zamiast listy,
+   bo numer rośnie przy każdym wydaniu. */
+const WERSJE=/^(?:dob[oó]r[ -]v\d+|silnik-v\d+)$/;
 
 /*── słowa wyłącznie polskie, wyprowadzone ze słowników ──*/
 global.window={localStorage:{getItem:()=>null,setItem(){}},
@@ -127,7 +134,7 @@ let znalezione=0;
   const przecieki=[];
   (kod.match(/'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"/g)||[]).forEach(l=>{
     const v=l.slice(1,-1).replace(/\\'/g,"'").replace(/\\"/g,'"');
-    if(ok.has(v)||POLSKIE_Z_ZALOZENIA.has(v)) return;
+    if(ok.has(v)||POLSKIE_Z_ZALOZENIA.has(v)||WERSJE.test(v)) return;
     const tr=slowa(oczysc(v)).filter(w=>TYLKO_PL.has(w));
     if(tr.length&&!przecieki.some(x=>x.v===v)) przecieki.push({v:v,w:tr.join(', ')});
   });

@@ -253,8 +253,7 @@
   S["Zapisz wynik"]="Ergebnis speichern";
   S["Podstawa rachunku"]="Grundlage der Berechnung";
   S["np. 0,45"]="z. B. 0,45";
-  S["α dla absorbera 100 mm — szacunek z krzywej producenta przeliczonej na głębszy wariant; wartość tymczasowa do czasu otrzymania tabeli α_p."]="α für den 100-mm-Absorber — eine Schätzung aus der Herstellerkurve, auf die tiefere Variante umgerechnet; vorläufig, bis die α_p-Tabelle vorliegt.";
-  S["α odczytane z wykresu α_p w ulotce producenta (10.2021) — odczyt z obrazka, nie tabela."]="α aus dem α_p-Diagramm im Herstellerprospekt (10.2021) abgelesen — abgelesen aus einer Abbildung, nicht aus einer Tabelle.";
+  S["α policzone z geometrii panelu: mikroperforacja forniru (otwór 0,5 mm, raster 3 mm) modelem Maa, wełna 40–60 kg/m³ za nim modelem Mikiego, wartość najmniejsza z przedziału gęstości w każdym paśmie."]="α aus der Geometrie des Elements selbst berechnet: das mikroperforierte Furnier (Löcher 0,5 mm, Raster 3 mm) nach dem Maa-Modell, die Wolle von 40–60 kg/m³ dahinter nach dem Miki-Modell, je Band der kleinste Wert aus dem Dichtebereich.";
   S["α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny."]="α aus dem Miki-Modell für Wolle von 40–60 kg/m³, je Band der kleinste Wert aus diesem Bereich — vorläufig, bis die α_p-Tabelle des Wolleherstellers vorliegt.";
   S["Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają."]="Gerechnet allein mit der Sichtfläche des Elements: Seiten und Rückseite sind massiv und absorbieren daher nicht.";
   S["Przejęty wprost z badania, godz. {godz}."]="Direkt aus der Messung übernommen, {godz} Uhr.";
@@ -347,7 +346,7 @@
   S["Uwaga na równowagę tonalną."]="Achtung bei der klanglichen Balance.";
   S["Stosunek T(250 Hz) do T(1 kHz) rośnie z {przed} na {po} — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego."]="Das Verhältnis von T(250 Hz) zu T(1 kHz) steigt von {przed} auf {po} — der Raum wird oben stärker bedämpft als unten und kann schwer wirken.";
   S["<b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej."]="<b>100 mm Wolle statt 50 mm löst das, ohne Elemente hinzuzufügen</b> — bei 250 Hz absorbiert sie fast doppelt so viel.";
-  S["NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>Absorber 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm."]="NUO absorbiert schmalbandig mit einem Maximum bei 500–1000 Hz. <b>Der 100-mm-Absorber reicht tiefer und ändert die Stückzahl nicht</b> — und reicht das nicht, helfen im unteren Bereich Textilelemente mit 100 mm Wolle.";
+  S["NUO pochłania wąsko, bo mikroperforacja przestaje przepuszczać w górze pasma. <b>Wełna 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm."]="NUO absorbiert schmalbandig, weil die Mikroperforation im oberen Frequenzbereich nichts mehr durchlässt. <b>100 mm Wolle reicht tiefer und ändert die Stückzahl nicht</b> — und reicht das nicht, helfen im unteren Bereich Textilelemente mit 100 mm Wolle.";
   S["Nie mieści się na wybranych powierzchniach."]="Auf den gewählten Flächen ist dafür kein Platz.";
   S["Panele zajmą {potrzeba} m², dostępne około {dostepne} m². Rozłóż je na ściany i sufit albo przyjmij łagodniejszy cel."]="Die Elemente belegen {potrzeba} m², verfügbar sind etwa {dostepne} m². Verteilen Sie sie auf Wände und Decke oder nehmen Sie ein milderes Ziel an.";
   S["cel Tmid"]="Ziel Tmid";
@@ -442,6 +441,11 @@
   S["Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie."]="Zwei Elemente je Set, aus einer längs geteilten Platte. Zum Verlegen von Mosaiken an Wand und Decke.";
   S["Zestaw mieszany — po połowie"]="Gemischtes Set — je zur Hälfte";
   S["Połowa sztuk to panel duży, połowa to komplet mozaikowy. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania dokładnie tyle samo."]="Die Hälfte der Stücke ist das große Element, die andere Hälfte das Mosaik-Set. Drei Formate an der Wand und die größte Freiheit beim Verlegen. Die Absorption ist genau dieselbe.";
+  S["Panel 1000 × 500 mm"]="Element 1000 × 500 mm";
+  S["Jedna sztuka, lico czynne 964 × 464 mm."]="Ein Stück, wirksame Sichtfläche 964 × 464 mm.";
+  S["Komplet 500 × 500 i 2 × 500 × 250 mm"]="Set aus 500 × 500 und 2 × 500 × 250 mm";
+  S["Trzy panele w komplecie, składające się w linii w panel duży. Do układania mozaiki na ścianie i suficie."]="Drei Elemente je Set, die sich in einer Reihe zum großen Element fügen. Zum Verlegen von Mosaiken an Wand und Decke.";
+  S["Połowa sztuk to panel duży, połowa to komplet. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania o około 4 % mniej niż same panele duże."]="Die Hälfte der Stücke ist das große Element, die andere Hälfte das Set. Drei Formate an der Wand und die größte Freiheit beim Verlegen. Die Absorption liegt etwa 4 % unter der von großen Elementen allein.";
   S["Panele tekstylne"]="Textilelemente";
   S["Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny."]="Mineralwolle in einem Rahmen aus Holzwerkstoffplatte, die Sichtfläche mit akustisch transparentem Stoff bezogen. Stofffarbe frei wählbar.";
   S["Premium · wełna 100 mm, mocniej w dole pasma"]="Premium · 100 mm Wolle, stärker im unteren Bereich";
@@ -449,11 +453,9 @@
   S["Standard · wełna 50 mm"]="Standard · 50 mm Wolle";
   S["Pracuje w paśmie mowy, od około 800 Hz w górę. W dole pasma wypada wyraźnie słabiej — tam, gdzie wnętrze dudni, nie wystarczy."]="Sie wirkt im Sprachbereich, ab etwa 800 Hz aufwärts. Im unteren Bereich fällt sie deutlich schwächer aus — dort, wo ein Raum dröhnt, genügt sie nicht.";
   S["Panele drewniane NUO_WALL"]="Holzelemente NUO_WALL";
-  S["Fornir drewniany perforowany laserowo, w ramie, z absorberem na odwrocie. Materiał muto' GmbH — wybór gatunku drewna i grawerunku."]="Laserperforiertes Holzfurnier im Rahmen, mit Absorber auf der Rückseite. Material der muto' GmbH — Holzart und Gravur frei wählbar.";
-  S["Premium · absorber 100 mm, mocniej w dole pasma"]="Premium · 100 mm Absorber, stärker im unteren Bereich";
-  S["Grubszy absorber sięga niżej. Liczby sztuk to nie zmienia — w pasmach mowy oba warianty pochłaniają niemal wszystko — zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty."]="Der dickere Absorber reicht tiefer. An der Stückzahl ändert das nichts — in den Sprachbändern absorbieren beide Varianten nahezu alles — es ändert den unteren Bereich und damit die klangliche Balance. Der Wert für diese Tiefe ist eine Schätzung: der Hersteller gibt nur eine Kurve an, ohne Aufschlüsselung nach Varianten.";
-  S["Standard · absorber 50 mm"]="Standard · 50 mm Absorber";
-  S["Wariant płytszy, z krzywą pochłaniania wprost z ulotki producenta. Szczyt 500–1000 Hz, w dole pasma wyraźnie słabszy — przy 125 Hz pochłania 0,10."]="Die flachere Variante, mit der Absorptionskurve unmittelbar aus dem Herstellerprospekt. Maximum bei 500–1000 Hz, im unteren Bereich deutlich schwächer — bei 125 Hz absorbiert sie 0,10.";
+  S["Fornir drewniany mikroperforowany laserowo, naciągnięty na ramiak, z wełną mineralną w stalowej obudowie. Materiał muto' GmbH — wybór gatunku drewna i grawerunku."]="Lasermikroperforiertes Holzfurnier, auf einen Spannrahmen gezogen, mit Mineralwolle in einem Stahlgehäuse. Material der muto' GmbH — Holzart und Gravur frei wählbar.";
+  S["Grubsza wełna sięga niżej: przy 125 Hz pochłania 0,51 wobec 0,17. Liczby sztuk to praktycznie nie zmienia — w pasmach mowy oba warianty wypadają tak samo — zmienia dół pasma i przez to równowagę tonalną."]="Die dickere Wolle reicht tiefer: bei 125 Hz absorbiert sie 0,51 gegenüber 0,17. An der Stückzahl ändert das praktisch nichts — in den Sprachbändern sind beide Varianten gleich — es ändert den unteren Bereich und damit die klangliche Balance.";
+  S["Wariant płytszy. W pasmach mowy pracuje tak samo jak Premium, w dole pasma wyraźnie słabiej — przy 125 Hz pochłania 0,17."]="Die flachere Variante. In den Sprachbändern wirkt sie wie Premium, im unteren Bereich deutlich schwächer — bei 125 Hz absorbiert sie 0,17.";
   S["Restauracja"]="Restaurant";
   S["Pokój odsłuchowy"]="Abhörraum";
   S["Pomiar z tego badania"]="Die Messung aus dieser Untersuchung";

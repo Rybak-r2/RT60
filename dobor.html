@@ -164,7 +164,7 @@ summary{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transfo
 <script src="karta.js"></script>
 <script>
 "use strict";
-const WERSJA='dobór v4';
+const WERSJA='dobór v5';
 
 const PASMA=[125,250,500,1000,2000,4000];
 
@@ -219,8 +219,13 @@ const PASMA=[125,250,500,1000,2000,4000];
 
   Wszystkie trzy tabele do podmiany na α_p od producentów przed rozmową
   z klientem. Szczegóły: docs/MODEL-AKUSTYCZNY.md, 3.4, 3.5 i 3.9. */
-/* FORMATY — wspólne dla obu wykończeń. Panel ma ramkę 15 mm dookoła, więc
+/* FORMATY_TEX — panele tekstylne. Panel ma ramkę 15 mm dookoła, więc
    lico czynne jest o 30 mm mniejsze w obu osiach od wymiaru zewnętrznego.
+
+   UWAGA: od listopada 2026 oba wykończenia mają WŁASNE formaty. Wcześniej
+   dzieliły jedną tablicę, żeby dało się je mieszać na jednej ścianie —
+   NUO przeszedł na 1000 × 500 ze względów technologicznych i tej możliwości
+   już nie ma. Patrz FORMATY_NUO niżej i część 3.6 dokumentacji.
 
    Jednostką jest SZTUKA. Przy panelu dzielonym jedna sztuka to KOMPLET dwóch
    paneli z jednej płyty przeciętej wzdłuż na 610 i 390 mm — dlatego panel
@@ -237,7 +242,7 @@ const PASMA=[125,250,500,1000,2000,4000];
 
    Ramka nie pochłania, więc pole czynne liczy się z lica, a pole zewnętrzne
    z całego panelu — bo tyle miejsca zajmuje on na ścianie. */
-const FORMATY=[
+const FORMATY_TEX=[
   {id:'k1', n:'Panel 1060 × 640 mm',
    o:'Jedna sztuka, lico czynne 1030 × 610 mm.',
    panele:[{n:'1060 × 640', dl:1.060, sz:0.640, wdl:1.030, wsz:0.610}]},
@@ -256,12 +261,40 @@ const FORMATY=[
    mieszany:['k1','k2']}
 ];
 
+/* FORMATY_NUO — panele drewniane. Inna geometria niż tekstylne i inna ramka.
+
+   Fornir jest naciągany na ramiak ze sklejki topolowej o przekroju 30 × 18 mm:
+   18 mm widać od frontu, 30 mm wchodzi w stalową obudowę z wełną. Lico czynne
+   jest więc o 36 mm mniejsze w obu osiach, nie o 30 jak w tekstyliach.
+
+   Dwie opcje zakupu, obie o tym samym polu zewnętrznym 0,50 m²: jeden panel
+   1000 × 500 albo komplet trzech kawałków, które składają się z powrotem
+   w ten sam prostokąt (500 + 250 + 250 = 1000 mm, wszystkie 500 mm wysokie).
+
+   RÓŻNICA WOBEC TEKSTYLIÓW: tam komplet tracił 3 % pola czynnego i wybór
+   formatu był praktycznie tylko decyzją o wyglądzie. Tutaj komplet to TRZY
+   ramiaki zamiast jednego, więc traci 7,5 % — i po raz pierwszy w tym
+   produkcie wybór formatu realnie zmienia liczbę sztuk. */
+const FORMATY_NUO=[
+  {id:'k1', n:'Panel 1000 × 500 mm',
+   o:'Jedna sztuka, lico czynne 964 × 464 mm.',
+   panele:[{n:'1000 × 500', dl:1.000, sz:0.500, wdl:0.964, wsz:0.464}]},
+  {id:'k2', n:'Komplet 500 × 500 i 2 × 500 × 250 mm',
+   o:'Trzy panele w komplecie, składające się w linii w panel duży. Do układania mozaiki na ścianie i suficie.',
+   panele:[{n:'500 × 500', dl:0.500, sz:0.500, wdl:0.464, wsz:0.464},
+           {n:'500 × 250', dl:0.250, sz:0.500, wdl:0.214, wsz:0.464},
+           {n:'500 × 250', dl:0.250, sz:0.500, wdl:0.214, wsz:0.464}]},
+  {id:'k3', n:'Zestaw mieszany — po połowie',
+   o:'Połowa sztuk to panel duży, połowa to komplet. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania o około 4 % mniej niż same panele duże.',
+   mieszany:['k1','k2']}
+];
+
 const WYK={
   tex:{
     nazwa:'Panele tekstylne',
     opis:'Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny.',
     etykieta:'Wybierz wersję',
-    formaty:FORMATY,
+    formaty:FORMATY_TEX,
     montaze:[
       {id:'w100', premium:true, n:'Premium · wełna 100 mm, mocniej w dole pasma',
        o:'Sięga niżej: przy 250 Hz pochłania 0,67 wobec 0,36, a przy 125 Hz 0,47 wobec 0,14. To ta grubość chroni przed wytłumieniem samej góry pasma. Potrzeba jej też nieco mniej.',
@@ -272,23 +305,41 @@ const WYK={
   },
   nuo:{
     nazwa:'Panele drewniane NUO_WALL',
-    opis:'Fornir drewniany perforowany laserowo, w ramie, z absorberem na odwrocie. Materiał muto\' GmbH — wybór gatunku drewna i grawerunku.',
+    opis:'Fornir drewniany mikroperforowany laserowo, naciągnięty na ramiak, z wełną mineralną w stalowej obudowie. Materiał muto\' GmbH — wybór gatunku drewna i grawerunku.',
     etykieta:'Wybierz wersję',
-    /* Te same formaty co tekstylne i to samo liczenie pola czynnego z lica.
-       Wcześniej NUO miał własne, duże formaty ram producenta i pole czynne
-       równe zewnętrznemu, bo α pochodzi z badania komorowego gotowego panelu.
-       Przy naszym formacie to przestaje być bezpieczne: w próbce 2440 × 1220
-       rama zajmowała ułamek powierzchni, a w panelu 1060 × 640 jest to już
-       około 8 %. Liczenie z lica zaniża wynik o tyle samo — czyli w stronę
-       bezpieczną. Do sprawdzenia, gdy producent poda szerokość profilu. */
-    formaty:FORMATY,
+    formaty:FORMATY_NUO,
+    /* α LICZONE, NIE POŻYCZONE — i to jest zmiana statusu, nie tylko liczb.
+
+       Do listopada 2026 stała tu krzywa odczytana z ulotki muto' (1,00 przy
+       500 i 1000 Hz), a wariant 100 mm był szacunkiem przeskalowanym z niej
+       modelem. Ulotka opisuje jednak panel muto' z ICH absorberem — pianką
+       albo filcem, nigdy nam tego nie powiedziano — a my wypełniamy wełną
+       mineralną. To był inny wyrób.
+
+       Teraz α liczy się z WŁASNEJ geometrii panelu: fornir z podklejoną
+       fizeliną, przewiercone razem na wylot, łącznie 0,8 mm; otwory 0,5 mm
+       w rastrze 3 mm, czyli stopień perforacji 2,18 %. Przy takiej średnicy
+       to MIKROperforacja: lepka warstwa przyścienna wypełnia znaczną część
+       otworu i rozprasza energię w nim samym. Liczy się to teorią Maa (1998),
+       a wełnę za fornirem modelem Mikiego, z tą samą dyscypliną najgorszej
+       gęstości z przedziału 40–60 kg/m³ co w panelach tekstylnych.
+       Źródło liczb: docs/welna.py, funkcja nuo_zakresu().
+
+       Wełna dociska do spodu forniru: ramiak wchodzi w obudowę na 30 mm,
+       a obudowa ma 70 mm przy wełnie 50 i 120 mm przy wełnie 100 — w obu
+       wariantach 10 mm nadmiaru, więc pustki między nimi nie ma.
+
+       Co model mówi, a ulotka nie: przy 4 kHz reaktancja korków powietrza
+       w otworach rośnie do 4,46, czyli otwory przestają przepuszczać.
+       Stąd 0,37 wobec 0,92 dla gołej wełny — to jest fizyczna przyczyna
+       tego, że NUO zostawia górę pasma żywą. */
     montaze:[
-      {id:'n100', premium:true, n:'Premium · absorber 100 mm, mocniej w dole pasma',
-       o:'Grubszy absorber sięga niżej. Liczby sztuk to nie zmienia — w pasmach mowy oba warianty pochłaniają niemal wszystko — zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty.',
-       alfa:{125:0.20, 250:0.85, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}},
-      {id:'n50', n:'Standard · absorber 50 mm',
-       o:'Wariant płytszy, z krzywą pochłaniania wprost z ulotki producenta. Szczyt 500–1000 Hz, w dole pasma wyraźnie słabszy — przy 125 Hz pochłania 0,10.',
-       alfa:{125:0.10, 250:0.60, 500:1.00, 1000:1.00, 2000:0.75, 4000:0.45}}]
+      {id:'n100', premium:true, n:'Premium · wełna 100 mm, mocniej w dole pasma',
+       o:'Grubsza wełna sięga niżej: przy 125 Hz pochłania 0,51 wobec 0,17. Liczby sztuk to praktycznie nie zmienia — w pasmach mowy oba warianty wypadają tak samo — zmienia dół pasma i przez to równowagę tonalną.',
+       alfa:{125:0.51, 250:0.71, 500:0.85, 1000:0.93, 2000:0.73, 4000:0.38}},
+      {id:'n50', n:'Standard · wełna 50 mm',
+       o:'Wariant płytszy. W pasmach mowy pracuje tak samo jak Premium, w dole pasma wyraźnie słabiej — przy 125 Hz pochłania 0,17.',
+       alfa:{125:0.17, 250:0.46, 500:0.85, 1000:0.91, 2000:0.73, 4000:0.37}}]
   }
 };
 
@@ -391,9 +442,7 @@ $('ver').textContent=WERSJA;
 /* Podstawa rachunku zależy od wykończenia, więc opis powstaje razem z wynikiem. */
 function opisPodstawy(){
   return (ST.wyk==='nuo'
-    ? (ST.mont==='n100'
-        ? t('α dla absorbera 100 mm — szacunek z krzywej producenta przeliczonej na głębszy wariant; wartość tymczasowa do czasu otrzymania tabeli α_p.')
-        : t('α odczytane z wykresu α_p w ulotce producenta (10.2021) — odczyt z obrazka, nie tabela.'))
+    ? t('α policzone z geometrii panelu: mikroperforacja forniru (otwór 0,5 mm, raster 3 mm) modelem Maa, wełna 40–60 kg/m³ za nim modelem Mikiego, wartość najmniejsza z przedziału gęstości w każdym paśmie.')
     : t('α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny.'))+
     ' '+t('Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają.');
 }
@@ -799,8 +848,13 @@ function skladFormatu(f,n){
   }
   const p=f.panele;
   if(p.length===1) return t('{n} × panel {wymiar} mm',{n:n, wymiar:p[0].n});
+  /* Powtórzone wymiary zwijamy: komplet NUO ma dwa jednakowe kawałki i zapis
+     „500 × 250 + 500 × 250" czyta się gorzej niż „2 × 500 × 250". */
+  const grupy=[];
+  p.forEach(x=>{ const ost=grupy[grupy.length-1];
+    if(ost&&ost.n===x.n) ost.ile++; else grupy.push({n:x.n, ile:1}); });
   return t('{n} × komplet {wymiary} mm ({ile} {slowo})',
-    {n:n, wymiary:p.map(x=>x.n).join(' + '), ile:n*p.length,
+    {n:n, wymiary:grupy.map(g=>(g.ile>1?g.ile+' × ':'')+g.n).join(' + '), ile:n*p.length,
      slowo:ilu(n*p.length,t('panel'),t('panele'),t('paneli'))});
 }
 
@@ -944,7 +998,7 @@ function pokazWynik(dolny,gorny,bazowy){
         (ST.wyk==='tex'&&ST.mont==='w50'
           ? ' '+t('<b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej.')
           : ST.wyk==='nuo'&&ST.mont==='n50'
-            ? ' '+t('NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>Absorber 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm.')
+            ? ' '+t('NUO pochłania wąsko, bo mikroperforacja przestaje przepuszczać w górze pasma. <b>Wełna 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm.')
             : '')+'</div>';
 
   /* mieszczenie się */
@@ -1168,7 +1222,7 @@ function propozycjaJSON(){
   const w=ST.wynik; if(!w)return null;
   const r3=x=>x==null?null:+x.toFixed(3);
   return {
-    wersja:'dobor-v4', czas:new Date().toISOString(),
+    wersja:'dobor-v5', czas:new Date().toISOString(),
     zrodlo_pomiaru:{charakter:ST.pogladowy?'pogladowy':'pelny', Tmid:r3(ST.Tmid),
       V:+ST.V.toFixed(2), pole_granic_m2:+ST.S.toFixed(2),
       wersja_silnika:ST.wersjaSilnika||null},
@@ -1207,10 +1261,10 @@ function propozycjaJSON(){
     model:w.bazowy.eyring?'Eyring':'Sabine',
     alfa_panelu:montaz().alfa,
     alfa_zrodlo:ST.wyk==='nuo'
-      ? (ST.mont==='n100'
-          ? 'SZACUNEK: krzywa producenta dla wariantu 50 mm przeliczona na 100 mm — WARTOSCI TYMCZASOWE'
-          : 'odczyt z wykresu alfa_p w ulotce NUO_WALL (muto, 10.2021) — WARTOSCI TYMCZASOWE, '+
-            'do podmiany na tabele alfa_p od producenta')
+      ? 'model Maa dla mikroperforacji forniru (otwor 0,5 mm, raster 3 mm, plyta 0,8 mm, '+
+        'perforacja 2,18 %) zlozony z modelem Mikiego dla welny 40-60 kg/m3 dociskajacej '+
+        'do spodu forniru; alfa najmniejsza z przedzialu gestosci w kazdym pasmie. '+
+        'Zrodlo: docs/welna.py, nuo_zakresu()'
       : 'model Mikiego, welna deklarowana 40-60 kg/m3, alfa najmniejsza z przedzialu '+
         'w kazdym pasmie — WARTOSCI TYMCZASOWE, do podmiany na tabele alfa_p od producenta welny'
   };

@@ -73,6 +73,82 @@ for dw, dp, nazwa in [(.050, 0, "50 mm na scianie"), (.050, .050, "50 mm + pustk
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# NUO_WALL: fornir MIKROPERFOROWANY na welnie, teoria Maa.
+#
+# Zwykly panel perforowany (otwory kilkumilimetrowe) to szereg rezonatorow
+# Helmholtza: powietrze w otworze jest masa, pustka za nim sprezyna. Sam
+# z siebie prawie nie tlumi i dziala waskopasmowo.
+#
+# Przy otworach PONIZEJ milimetra robi sie inaczej. Przy sciance kazdego otworu
+# tworzy sie lepka warstwa przyscienna o grubosci delta = sqrt(2*eta/(rho*w)) —
+# przy 1 kHz w powietrzu okolo 0,07 mm. Gdy promien otworu jest tego samego
+# rzedu co kilka delta, powietrze przepychane przez otwor ociera sie o scianki
+# i rozprasza energie W SAMYM OTWORZE. Panel staje sie wlasnym tlumikiem,
+# a pochlanianie robi sie szerokopasmowe. Opisal to Dah-You Maa:
+# "Microperforated-panel wideband absorbers" (1987) oraz "Potential of
+# microperforated panel absorber", JASA 104 (1998).
+#
+# Nasz fornir: otwor 0,5 mm, czyli promien 0,25 mm — przy 1 kHz okolo 3,6
+# grubosci warstwy przysciennej. Dokladnie ten zakres.
+#
+# Wejsciem sa TRZY liczby konstrukcyjne: srednica otworu, grubosc plyty
+# i raster. Nic sie nie dopasowuje i nie zgaduje — i dlatego te wartosci
+# wolno postawic przed klientem, czego nie mozna bylo powiedziec o krzywej
+# pozyczonej z ulotki producenta, zmierzonej na innym wypelnieniu.
+# ─────────────────────────────────────────────────────────────────────────────
+ETA = 1.86e-5          # lepkosc dynamiczna powietrza [Pa*s]
+
+def maa(f, d, t, b):
+    """Znormalizowana impedancja plyty mikroperforowanej (Maa 1998).
+
+    d — srednica otworu [m], t — grubosc plyty [m], b — raster [m].
+    Zwraca (r + j*x) znormalizowane przez rho0*c0 oraz stopien perforacji.
+
+    Opor: pierwszy czlon to przeplyw Poiseuille'a, pierwiastek poprawia go
+    o cienienie warstwy przysciennej z czestotliwoscia, drugi czlon to straty
+    na wlocie i wylocie otworu.
+    Reaktancja: masa korka powietrza w kanale, poprawka na profil predkosci,
+    oraz korekcja koncowa 0,85*d/t na powietrze tuz przed i za otworem, ktore
+    porusza sie razem z korkiem.
+    """
+    w = 2 * math.pi * f
+    sig = math.pi * d * d / (4 * b * b)
+    k = d * math.sqrt(w * rho0 / (4 * ETA))        # stosunek promienia do delta
+    r = (32 * ETA * t) / (sig * rho0 * c0 * d * d) * \
+        (math.sqrt(1 + k * k / 32) + (math.sqrt(2) / 32) * k * d / t)
+    x = (w * t) / (sig * c0) * (1 + (9 + k * k / 2) ** -0.5 + 0.85 * d / t)
+    return complex(r, x), sig
+
+def przez_powietrze(f, L, Zl):
+    """Transformacja impedancji przez warstwe powietrza o grubosci L."""
+    if L <= 0:
+        return Zl
+    k0 = 2 * math.pi * f / c0
+    return Z0 * (Zl + 1j * Z0 * math.tan(k0 * L)) / (Z0 + 1j * Zl * math.tan(k0 * L))
+
+def nuo(d_welny, rho, d=0.5e-3, t=0.8e-3, b=3.0e-3, pustka=0.0):
+    """alfa(f) panelu NUO: fornir mikroperforowany + welna + sztywny tyl.
+
+    Konstrukcja wg danych wytworcy: fornir z podklejona fizelina, przewiercone
+    razem na wylot, lacznie 0,8 mm; otwory 0,5 mm w rastrze 3 mm; ramiak ze
+    sklejki topolowej 30 mm glebokosci wchodzi w stalowa obudowe (70 mm przy
+    welnie 50, 120 mm przy welnie 100), wiec welna dociska do spodu forniru
+    i pustki miedzy nimi NIE MA — stad pustka=0.
+    """
+    out = {}
+    for f in PASMA:
+        Zw = impedancja(f, sigma_z_gestosci(rho), d_welny, 0.0)
+        Zp, _ = maa(f, d, t, b)
+        out[f] = alfa_rozproszone(Z0 * Zp + przez_powietrze(f, pustka, Zw))
+    return out
+
+def nuo_zakresu(d_welny, rho_min=40, rho_max=60, krok=5, **kw):
+    """alfa najmniejsza w kazdym pasmie w calym przedziale gestosci welny —
+    ta sama dyscyplina, co przy panelach tekstylnych (patrz krzywa_zakresu)."""
+    krz = [nuo(d_welny, r, **kw) for r in range(int(rho_min), int(rho_max) + 1, krok)]
+    return {f: min(k[f] for k in krz) for f in PASMA}
+
+# ─────────────────────────────────────────────────────────────────────────────
 # AW wg ISO 11654 — zeby model dalo sie porownac z tym, co producent DEKLARUJE.
 # Deklaracja wlasciwosci uzytkowych welny podaje wylacznie AW (0,90 dla
 # 50-80 mm, 1,00 dla 100-200 mm) i ani jednej wartosci pasmowej, wiec to
@@ -146,3 +222,35 @@ if __name__ == '__main__':
         w, k = aw(a)
         print(f"  {nazwa:<20}" + "  ".join(f"{a[f]:5.2f}" for f in PASMA) + f"  {w:5.2f}{k}")
     print("\n  Te wartosci ida do dobor.html.")
+
+    # ── NUO_WALL: fornir mikroperforowany na welnie ──────────────────────────
+    _, sig = maa(1000, 0.5e-3, 0.8e-3, 3.0e-3)
+    print("\n=== NUO_WALL — fornir mikroperforowany, teoria Maa ===")
+    print("    otwor 0,5 mm, raster 3 mm -> stopien perforacji %.2f %%, plyta 0,8 mm"
+          % (100 * sig))
+    print("    welna dociska do spodu forniru (ramiak 30 mm w obudowie 70/120 mm)\n")
+    print(f"  {'wariant':<20}" + "  ".join(f"{f:>5}" for f in PASMA) + f"  {'AW':>6}")
+    for nazwa, d in [("standard 50 mm", .050), ("premium 100 mm", .100)]:
+        a = nuo_zakresu(d)
+        w, ksz = aw(a)
+        print(f"  {nazwa:<20}" + "  ".join(f"{a[f]:5.2f}" for f in PASMA) +
+              f"  {w:5.2f}{ksz}")
+    print("  %-20s" % "ulotka muto' (odczyt)" +
+          "  ".join(f"{v:5.2f}" for v in (.10, .60, 1.00, 1.00, .75, .45)))
+    print("""
+    Ulotka opisuje panel muto' z ICH absorberem — pianka albo filc, nigdy nam
+    tego nie powiedziano. My wypelniamy welna mineralna, wiec krzywa z ulotki
+    opisuje inny wyrob. Model opisuje nasz, z jego wlasnej geometrii.
+
+    Gdzie model potwierdza ulotke: zalamanie w gorze pasma. Reaktancja korkow
+    powietrza w otworach rosnie od 0,60 przy 500 Hz do 4,46 przy 4 kHz — przy
+    4 kHz otwory przestaja przepuszczac. Goła welna dalaby tam 0,92.""")
+    print("\n  %8s %8s %8s" % ("f [Hz]", "opor r", "reakt. x"))
+    for f in PASMA:
+        Z, _ = maa(f, 0.5e-3, 0.8e-3, 3.0e-3)
+        print("  %8d %8.2f %8.2f" % (f, Z.real, Z.imag))
+    print("\n    Opor ponizej 1, czyli ponizej optimum Maa — sam fornir pochlania")
+    print("    malo, robote robi welna, a perforacja dziala jak czesciowo")
+    print("    przezroczyste lico. Rzadszy raster podnosi bas, ale scina srodek")
+    print("    i gore: przy 5 mm alfa(1k) spada z 0,91 na 0,61. 3 mm jest")
+    print("    najszerszym kompromisem z mozliwych.")

@@ -440,15 +440,17 @@ pojedynczego. Pole zewnętrzne obu formatów jest identyczne, więc przeplatanka
 (patrz niżej), więc też **nie zmienia w praktyce liczby sztuk potrzebnych do
 celu** — średnia z obu jest bliska każdemu z osobna.
 
-**Te same trzy formaty obowiązują dla obu wykończeń.** Panele drewniane miały
-wcześniej własne, duże formaty ram producenta (950 × 950, 2480 × 950,
-2440 × 1220) i pole czynne równe zewnętrznemu, bo ich α pochodzi z badania
-komorowego gotowego panelu. **Przy naszym formacie to przestaje być
-bezpieczne:** w próbce 2440 × 1220 rama zajmowała ułamek powierzchni,
-a w panelu 1060 × 640 jest to już około 8 %. Dlatego NUO liczy się teraz
-z lica, tak samo jak tekstylne — zaniża wynik o mniej więcej tyle, ile wynosi
-udział ramy, czyli w stronę bezpieczną. Do sprawdzenia, gdy producent poda
-szerokość profilu.
+**Formaty rozeszły się między wykończeniami (listopad 2026).** Przez pewien
+czas oba wykończenia dzieliły tę samą tablicę formatów — świadomie, żeby dało
+się mieszać tekstylia z NUO na jednej ścianie. Ze względów technologicznych
+NUO przeszedł na 1000 × 500 mm i tej możliwości już nie ma: 1060 × 640 nie
+zestawi się w linii z 1000 × 500. Szczegóły formatów NUO w 3.9.
+
+Co z tamtej decyzji zostaje: **oba wykończenia liczą się z lica.** Panele
+drewniane miały wcześniej pole czynne równe zewnętrznemu, bo ich α pochodziło
+z badania komorowego gotowego panelu w dużych ramach producenta (2440 × 1220),
+gdzie rama zajmowała ułamek powierzchni. Przy naszych formatach rama to już
+8–17 % i tamto założenie obiecywałoby więcej, niż panel daje.
 
 **Akustycznie obie sztuki są w przybliżeniu takie same — 0,628 wobec
 0,610 m², różnica ok. 3 %.** Panel pojedynczy jest teraz nieco większy (żeby
@@ -514,85 +516,139 @@ Punkt odniesienia z testu regresyjnego (salon 39,75 m³, Tmid 0,353 s, cel
 
 | wariant | powierzchnia | sztuk |
 |---|---|---|
-| tekstylny, wełna 100 mm, 1030 × 610 | 2,66 m² | 5 |
-| tekstylny, wełna 50 mm, 1030 × 610 | 2,87 m² | 5 |
-| NUO_WALL 950 × 950 | 2,28 m² | 3 |
+| tekstylny, wełna 100 mm, 1060 × 640 | 2,66 m² | 5 |
+| tekstylny, wełna 50 mm, 1060 × 640 | 2,87 m² | 5 |
+| NUO_WALL 100 mm, 1000 × 500 | 2,57 m² | 6 |
+| NUO_WALL 50 mm, 1000 × 500 | 2,60 m² | 6 |
 
-NUO wypada powierzchniowo najoszczędniej, bo w pasmach mowy ma α ≈ 1,00.
-To nie znaczy, że jest najlepszym wyborem — patrz 3.9.
+NUO wypada powierzchniowo niewiele oszczędniej od tekstyliów, ale **sztuk
+potrzeba więcej**, bo panel jest mniejszy. To nie znaczy, że jest gorszym
+wyborem — o tym, kiedy jest lepszy, mówi 3.9.
 
-### 3.9 NUO_WALL — co wiemy i czego nie
+### 3.9 NUO_WALL — α liczone z geometrii, nie pożyczone
 
-Fornir drewniany perforowany laserowo, w ramie aluminiowej, z absorberem na
-odwrocie. System firmy **muto' GmbH** (Karlsruhe); ALACER jest tu odsprzedawcą,
-nie wytwórcą — inaczej niż przy panelach tekstylnych.
+Fornir drewniany mikroperforowany laserowo, naciągnięty na ramiak, z wełną
+mineralną w stalowej obudowie. System firmy **muto' GmbH** (Karlsruhe); ALACER
+jest tu odsprzedawcą, nie wytwórcą — inaczej niż przy panelach tekstylnych.
 
-**Formaty ram:** 950 × 950, 2480 × 950 i 2440 × 1220 mm. Moduły są duże, więc
-liczba sztuk skacze skokowo — przy małym pomieszczeniu sensowny jest właściwie
-tylko format 950 × 950.
+#### Konstrukcja
 
-**Dwie grubości absorbera: 50 i 100 mm.** Ulotka podaje **jedną** krzywą
-pochłaniania, bez wskazania wariantu.
+| element | wymiar |
+|---|---|
+| fornir z podklejoną fizeliną, przewiercone razem na wylot | 0,8 mm |
+| mikroperforacja | otwór **0,5 mm**, raster **3 mm** w obu osiach |
+| stopień perforacji | **2,18 %** |
+| ramiak ze sklejki topolowej | 30 × 18 mm — **18 mm widać**, 30 mm wchodzi w obudowę |
+| obudowa stalowa | 70 mm przy wełnie 50 mm, 120 mm przy wełnie 100 mm |
 
-| α_p | 125 | 250 | 500 | 1 k | 2 k | 4 k | źródło |
-|---|---|---|---|---|---|---|---|
-| **50 mm** | 0,10 | 0,60 | 1,00 | 1,00 | 0,75 | 0,45 | odczyt wykresu z ulotki |
-| **100 mm** | 0,20 | 0,85 | 1,00 | 1,00 | 0,75 | 0,45 | **szacunek** |
+Fizelina stabilizuje fornir przy naciąganiu; jest przewiercona razem z nim,
+więc nie jest warstwą oporową — kanał otworu ma 0,8 mm na całej długości.
 
-Krzywą z ulotki przypisaliśmy wariantowi **cieńszemu**: α 0,10 przy 125 Hz
-i szczyt 500–1000 Hz to sygnatura układu płytkiego — warstwa 100 mm dałaby przy
-125 Hz raczej 0,3–0,4. Założenie jest zarazem ostrożne: przypisanie krzywej
-wariantowi grubszemu zmuszałoby do zgadywania **w dół** dla cieńszego, czyli do
-obiecywania więcej, niż wiemy.
+**Wełna dociska do spodu forniru i pustki między nimi nie ma.** Wynika to
+z wymiarów: ramiak wchodzi w obudowę na 30 mm, a 30 + 50 = 80 wobec 70 i
+30 + 100 = 130 wobec 120 — w obu wariantach 10 mm nadmiaru. Zgodność w obu
+grubościach nie wygląda na przypadek.
 
-Wariant 100 mm policzony metodą, którą 3.5 przewiduje dla konfiguracji
-niezbadanych — **modelem użytym wyłącznie do różnicy, zakotwiczonym na krzywej
-producenta**: krotność α(100 mm)/α(50 mm) z modelu Mikiego, wzięta najmniejsza
-z zakresu opornści możliwych dla wypełnienia (pianka melaminowa albo lekki filc,
-σ ≈ 8–20 000 Pa·s/m²), a wynik dodatkowo ścięty o jeden krok ISO.
+#### Formaty — dwie opcje zakupu
 
-**Dlaczego można sobie pozwolić na szacunek akurat tutaj:** grubość absorbera
-**nie zmienia liczby paneli**. Oba warianty mają α 1,00 przy 500 i 1000 Hz,
-czyli w pasmach, z których liczy się Tmid i powierzchnia. Różnica siedzi
-wyłącznie w dole pasma, więc wpływa jedynie na **werdykt o równowadze
-tonalnej**. Dlatego szacunek jest celowo zaniżony: niższe α przy 250 Hz każe
-ostrzegać częściej, a to jest bezpieczny kierunek pomyłki.
+| sztuka | zewnętrzny | lico czynne | pole czynne | pole zajmowane |
+|---|---|---|---|---|
+| panel duży | 1000 × 500 | 964 × 464 | 0,4473 m² | 0,5000 m² |
+| komplet: | 500 × 500 | 464 × 464 | 0,2153 m² | |
+| | 2 × 500 × 250 | 464 × 214 | 2 × 0,0993 m² | |
+| | **razem** | | **0,4139 m²** | **0,5000 m²** |
+| zestaw mieszany | po połowie | | 0,4306 m² | 0,5000 m² |
 
-**Charakter: absorber wąskopasmowy.** Ulotka mówi wprost „particularly in
-frequencies between 400 Hz and 1250 Hz" i wykres to potwierdza. Konsekwencje
-handlowe, które trzeba umieć powiedzieć klientowi:
+Trzy kawałki kompletu składają się z powrotem **dokładnie** w panel duży:
+500 + 250 + 250 = 1000 mm, wszystkie 500 mm wysokie, pole zewnętrzne
+identyczne. Wariant dwuczęściowy (500 × 500 + 500 × 250) dawałby 0,375 m²
+i 750 mm — czyli ten sam rozjazd krawędzi, który w panelach tekstylnych
+kosztował zmianę 1030 → 1060 mm.
 
-1. **Przy dudniącym dole NUO ustępuje wełnie.** Wariant 50 mm daje przy 125 Hz
-   0,10 wobec 0,47 wełny 100 mm — prawie pięciokrotnie mniej. Wariant 100 mm
-   nadrabia przy 250 Hz (0,85 wobec 0,67), ale przy 125 Hz nadal zostaje w tyle.
-2. **Przy 4 kHz zostawia górę żywą** (0,45 wobec 0,92). To bywa **zaletą**:
-   wełna potrafi wygłuszyć wnętrze na głucho, NUO nie.
-3. Sprawdzenie równowagi tonalnej (3.3) wyłapuje jedno i drugie samo, bez
-   osobnej reguły w kodzie.
+**Różnica wobec tekstyliów, którą trzeba znać:** tam komplet tracił 3 % pola
+czynnego i wybór formatu był praktycznie decyzją o wyglądzie. Tutaj komplet
+to **trzy ramiaki zamiast jednego**, więc traci **7,5 %** — i po raz pierwszy
+w tym produkcie wybór formatu realnie zmienia liczbę sztuk.
 
-**Producent nie dysponuje innymi badaniami** (ustalone 1.09.2026). Tabela α_p
-dla obu grubości nie nadejdzie, bo jej nie ma. To zmienia status liczb z 3.9:
-**przestają być wartością tymczasową w oczekiwaniu na dane, a stają się
-wartością roboczą** — najlepszą, jaka jest dostępna, i jedyną, jaką będziemy
-mieli, dopóki nie zmierzymy gotowego panelu sami.
+#### α — model Maa, nie ulotka
 
-Konsekwencja, którą trzeba trzymać: **żadna liczba, którą sprzedajemy, nie
-opiera się na szacunku.** Liczba paneli NUO wychodzi z krzywej 50 mm, czyli
-z odczytu ulotki, i jest identyczna dla obu grubości — bo oba warianty mają
-α 1,00 przy 500 i 1000 Hz, z których liczy się Tmid. Szacunek dla 100 mm
-wpływa wyłącznie na komentarz o równowadze tonalnej. Gdyby kiedyś któraś
-z tych wartości się zmieniła, ta granica musi zostać: **szacunek opisuje,
-odczyt liczy.**
+Do listopada 2026 stała tu krzywa odczytana z ulotki muto' (1,00 przy 500
+i 1000 Hz), a wariant 100 mm był szacunkiem przeskalowanym z niej modelem.
+**Obie wartości zostały zastąpione rachunkiem z własnej geometrii panelu.**
 
-**Czego nadal brakuje:**
+Powód jest zasadniczy: ulotka opisuje panel muto' z **ich** absorberem —
+pianką melaminową albo filcem, nigdy nam tego nie powiedziano — a my
+wypełniamy wełną mineralną. To był inny wyrób, a nie ta sama rzecz
+z niepewnym pomiarem.
+
+| wariant | 125 | 250 | 500 | 1 k | 2 k | 4 k |
+|---|---|---|---|---|---|---|
+| ulotka muto' (do 11.2026) | 0,10 | 0,60 | 1,00 | 1,00 | 0,75 | 0,45 |
+| **standard, wełna 50 mm** | 0,17 | 0,46 | **0,85** | **0,91** | 0,73 | 0,37 |
+| **premium, wełna 100 mm** | 0,51 | 0,71 | **0,85** | **0,93** | 0,73 | 0,38 |
+
+Źródło liczb: `docs/welna.py`, funkcja `nuo_zakresu()` — uruchamialne.
+
+**Dlaczego teoria Maa.** Zwykły panel perforowany (otwory kilkumilimetrowe)
+to szereg rezonatorów Helmholtza: powietrze w otworze jest masą, pustka za nim
+sprężyną; sam z siebie prawie nie tłumi. Przy otworach **poniżej milimetra**
+robi się inaczej: przy ściance każdego otworu tworzy się lepka warstwa
+przyścienna o grubości √(2η/ρω) — przy 1 kHz w powietrzu około 0,07 mm. Gdy
+promień otworu jest rzędu kilku takich warstw, powietrze ociera się o ścianki
+i **rozprasza energię w samym otworze**. Opisał to Dah-You Maa (1987, 1998).
+Nasz otwór ma promień 0,25 mm, czyli przy 1 kHz około 3,6 grubości warstwy —
+dokładnie ten zakres.
+
+Wejściem są trzy liczby konstrukcyjne: średnica otworu, grubość płyty, raster.
+Nic się nie dopasowuje i nie zgaduje. Wełnę za fornirem liczy model Mikiego,
+z tą samą dyscypliną **najgorszej gęstości z przedziału 40–60 kg/m³, pasmo po
+paśmie**, co przy panelach tekstylnych (3.4). Oba wykończenia stoją więc
+wreszcie na jednej podstawie.
+
+**Gdzie model potwierdza ulotkę.** Załamanie w górze pasma. Reaktancja korków
+powietrza w otworach rośnie z 0,60 przy 500 Hz do **4,46 przy 4 kHz** — otwory
+przestają przepuszczać. Model daje tam 0,37, ulotka 0,45, goła wełna miałaby
+0,92. Mechanizm i rząd wielkości się zgadzają, więc model nie zmyśla — a przy
+okazji to jest fizyczna przyczyna tego, co handlowo nazywamy „NUO zostawia górę
+pasma żywą".
+
+**Cena przejścia na model:** około **trzy sztuki więcej** w typowym
+pomieszczeniu (26 zamiast 23 w biurze 8 × 5 × 2,8 m przy celu 0,60 s). Kierunek
+jest bezpieczny, bo model Mikiego zaniża o 0,10–0,15 w skali AW (3.5), a pomiar
+komorowy ma krawędzie próbki, których model nie liczy. Prawda leży zatem
+między ulotką a modelem, bliżej modelu.
+
+#### Co z tego wynika dla sprzedaży
+
+| sytuacja | co powiedzieć |
+|---|---|
+| pomieszczenie dudni w dole pasma | NUO ustępuje wełnie. Standard daje przy 125 Hz 0,17 wobec 0,47 dla tekstylnego 100 mm. Premium nadrabia do 0,51 i jest wtedy wyborem obowiązkowym. |
+| wnętrze ma pozostać żywe w górze | To **zaleta** NUO. Przy 4 kHz 0,37 wobec 0,92 — nie wygłusza wnętrza na głucho. |
+| grubość a liczba sztuk | **Grubość wełny nie zmienia liczby sztuk NUO.** W pasmach mowy oba warianty wypadają tak samo (0,85/0,91 wobec 0,85/0,93). Zmienia dół pasma — tam różnica jest trzykrotna. Przy tekstylnych Premium potrzeba *mniej* — ta asymetria zostaje. |
+| wybór formatu | Komplet wymaga o 2 sztuki więcej niż panel duży (28 wobec 26 w przykładzie). Przy tekstylnych ta różnica była pomijalna, tutaj nie jest. |
+
+#### Czego nadal brakuje
 
 | | dlaczego to blokuje |
 |---|---|
-| **do którego wariantu odnosi się krzywa z ulotki** | całe przypisanie 50/100 mm stoi na przesłance z kształtu krzywej. Do rozstrzygnięcia pytaniem do producenta — to jedna informacja, nie badanie |
-| **który absorber** — pianka melaminowa czy filc akustyczny | ulotka podaje jedną krzywą dla obu, a to dwa różne materiały |
-| pomiar własny gotowego panelu | jedyna droga do wartości zmierzonych, skoro producent badań nie ma. Program do tego służy — patrz 6.2 |
+| pomiar własny gotowego panelu wg ISO 354 | jedyna droga do wartości zmierzonych; producent badań nie ma i mieć nie będzie. Obecnie nieplanowany |
 | ceny i terminy dostaw | bez nich nie ma zamówienia |
-| klasa ogniowa | NUO to **B1 wg DIN 4102, i to z badania orientacyjnego**; wełna jest A1. W obiektach użyteczności publicznej potrafi to rozstrzygnąć wybór za klienta |
+| klasa ogniowa | NUO to **B1 wg DIN 4102, z badania orientacyjnego**. To nie jest klasa europejska: klasyfikacja wg PN-EN 13501-1, której wymagają polskie przepisy, nie wynika z niej automatycznie |
+
+**Zamknięte od 11.2026:** stopień perforacji, grubość płyty, raster, materiał
+wypełnienia i to, czy między fornirem a wełną jest pustka. Te pytania stały
+w poprzedniej wersji tej części jako blokujące — odpowiedzi przyszły od
+wytwórcy i siedzą w rachunku.
+
+**Obserwacja z rachunku, nie decyzja:** raster 3 mm jest dobrze dobrany.
+Rzadszy podnosi bas, ale ścina środek i górę — przy 5 mm α(1 kHz) spada
+z 0,91 na 0,61. 3 mm to najszerszy kompromis z możliwych.
+
+Druga obserwacja: fizelina pozostawiona **lita**, jako warstwa oporowa za
+fornirem, podniosłaby 125 Hz z 0,17 na około 0,34 i 4 kHz z 0,37 na 0,42,
+praktycznie nie ruszając pasm mowy — czyli **bez zmiany liczby sztuk**.
+Poprawiłaby dokładnie te dwa pasma, w których NUO jest najsłabszy. Czy
+technologia naciągania na to pozwala, to pytanie do wytwórcy, nie do modelu.
 
 
 ## Część 4. Otwarte
@@ -603,17 +659,19 @@ odczyt liczy.**
    montażu (3.5). **Prosić trzeba o raport z badania ISO 354 wraz z opisem
    montażu.**
 2. **Pomiar własny panelu NUO_WALL** — producent innych badań nie ma (3.9),
-   więc to jedyna droga do wartości zmierzonych zamiast odczytanych z wykresu.
+   a od 11.2026 α liczymy z geometrii panelu, nie z jego wykresu. Pomiar
+   komorowy pozostaje jedyną drogą do wartości **zmierzonych** zamiast
+   policzonych, i jedynym sprawdzianem modelu Maa na tym wyrobie.
 3. **Potwierdzenie gęstości dostarczanej wełny** — przedział 40–60 kg/m³ jest
    założeniem zakupowym (3.4), nie wartością z karty; `AFr` producent podaje
    jako `NPD`.
 4. **Terminy dostaw** obu wykończeń — do odpowiedzi na zapytanie (6.3).
-4. **Weryfikacja przyrządem odniesienia** — jeden pomiar równolegle z REW i
+5. **Weryfikacja przyrządem odniesienia** — jeden pomiar równolegle z REW i
    UMIK-1. Wiemy, że 0,376 s jest lepiej ugruntowane niż 0,288, ale nie mamy
    dowodu, że jest prawdziwe.
-5. **Drugie pomieszczenie** — różnica 32 % pochodzi z jednego salonu o krótkim
+6. **Drugie pomieszczenie** — różnica 32 % pochodzi z jednego salonu o krótkim
    pogłosie. Kierunek pewny, skala niekoniecznie.
-6. **Wełna do panelu 1030 × 610 mm** — 3.4 opisuje płytę wełny jako 1000 × 610 mm,
+7. **Wełna do panelu 1030 × 610 mm** — 3.4 opisuje płytę wełny jako 1000 × 610 mm,
    a po powiększeniu panelu pojedynczego (3.6, do 1060 mm zewnętrznie, żeby
    zejść się z kompletem na ścianie) lico potrzebuje 1030 × 610 mm, czyli
    30 mm więcej w jednym wymiarze. Nie wiadomo, czy 1000 × 610 to sztywny,
@@ -632,8 +690,8 @@ Stan na 31 sierpnia 2026, po wdrożeniu bramki wiarygodności wejścia.
 
 | gałąź | zawartość |
 |---|---|
-| `main` | **produkcja** — silnik pomiarowy `v15`, `dobór v4`, trzy wersje językowe (6.7) |
-| `claude/rt60-model-akustyczny-5-4-xgg0qk` | gałąź robocza; po przeniesieniu na produkcję zrównana z `main` |
+| `main` | **produkcja** — silnik pomiarowy `v15`, `dobór v5`, trzy wersje językowe (6.7) |
+| `claude/rt60-model-akustyczny-5-4-xgg0qk` | gałąź robocza: `dobór v5` — własne formaty NUO i α z modelu Maa (3.9) |
 
 Kolejność jest stała i nie skraca się jej: wszystko powstaje na gałęzi
 roboczej, jest sprawdzane na linku podglądowym, a przeniesienie na produkcję
@@ -653,7 +711,7 @@ działaniem zależnym od jakości pomiaru (6.1), nie samym zapisem pliku.
 Karta pomieszczenia `karta.js` — historia jednego wnętrza w `localStorage`,
 wspólna dla obu programów, z porównaniem „przed / po" po montażu (6.2).
 
-Moduł doboru `dobór v4` — przejmuje pomiar wprost z badania albo z wczytanego
+Moduł doboru `dobór v5` — przejmuje pomiar wprost z badania albo z wczytanego
 pliku, sprawdza wiarygodność wejścia (5.3), liczy powierzchnię i liczbę paneli
 w wybranym wykończeniu i formacie, przełącza Sabine/Eyring, sprawdza równowagę
 tonalną, podaje widełki przy pomiarze poglądowym.

@@ -203,22 +203,32 @@ const nuo =policz('nuo','n100','k1');
 const nuo50=policz('nuo','n50','k1');
 console.log('        tekstylny 100 mm, 1030×610 : '+w100.szt+' szt., '+w100.pow+' m²');
 console.log('        tekstylny  50 mm, 1030×610 : '+w50.szt +' szt., '+w50.pow +' m²');
-console.log('        NUO_WALL 100 mm, 950×950   : '+nuo.szt +' szt., '+nuo.pow +' m²');
-console.log('        NUO_WALL  50 mm, 950×950   : '+nuo50.szt+' szt., '+nuo50.pow+' m²');
+const nuoKpl=policz('nuo','n100','k2');
+console.log('        NUO_WALL 100 mm, 1000×500  : '+nuo.szt +' szt., '+nuo.pow +' m²');
+console.log('        NUO_WALL  50 mm, 1000×500  : '+nuo50.szt+' szt., '+nuo50.pow+' m²');
 
 function sprawdz(warunek,opis){ if(warunek)console.log('  ok    '+opis);
   else {zle++;console.log('  BŁĄD  '+opis);} }
-sprawdz(w100.czynne===0.628&&nuo.czynne===0.628,
-  'formaty są wspólne dla obu wykończeń — to samo pole czynne');
+/* Od listopada 2026 oba wykończenia mają WŁASNE formaty: NUO przeszedł na
+   1000 × 500 ze względów technologicznych. Test pilnuje rozdziału, bo wspólna
+   tablica była wcześniej świadomą decyzją i łatwo ją przez pomyłkę przywrócić. */
+sprawdz(w100.czynne===0.628&&Math.abs(nuo.czynne-0.4473)<0.0005,
+  'każde wykończenie ma własny format — tekstylny 0,628 m², NUO 0,447 m²');
 /* Ramka MDF nie pochłania, ale zajmuje ścianę. Mylenie tych dwóch pól
    zaniżało zapotrzebowanie na miejsce o 8–13 %. */
 sprawdz(w100.zewn===0.678&&w100.czynne===0.628,
   'panel tekstylny zajmuje więcej ściany, niż pochłania');
-/* NUO liczy się teraz z lica tak samo jak tekstylne. Przy formacie 1060 × 640
-   rama zajmuje około 8 % powierzchni panelu, więc przypisanie jej α zmierzonego
-   na próbce 2440 × 1220 obiecywałoby więcej, niż panel da. */
-sprawdz(nuo.zewn===0.678&&nuo.czynne===0.628,
-  'NUO liczy się z lica tak samo jak tekstylne — rama nie pochłania');
+/* NUO liczy się z lica tak samo jak tekstylne, tylko ramiak jest inny:
+   sklejka topolowa 30 × 18 mm, w widoku 18 mm, więc lico jest mniejsze
+   o 36 mm w obu osiach, a nie o 30 jak przy ramce MDF. */
+sprawdz(nuo.zewn===0.5&&Math.abs(nuo.czynne-0.4473)<0.0005,
+  'NUO: panel 1000 × 500 zajmuje 0,50 m², lico czynne 964 × 464 mm');
+/* Komplet to TRZY ramiaki zamiast jednego, więc traci 7,5 % pola czynnego —
+   i po raz pierwszy w tym produkcie wybór formatu zmienia liczbę sztuk. */
+sprawdz(nuoKpl.panele.length===3&&nuoKpl.zewn===nuo.zewn&&nuoKpl.czynne<nuo.czynne,
+  'komplet NUO to trzy kawałki o tym samym polu zewnętrznym, ale mniejszym czynnym');
+sprawdz(nuoKpl.szt>nuo.szt,
+  'komplet NUO wymaga więcej sztuk niż panel duży — trzy ramy zamiast jednej');
 /* Oba kartony to jedna płyta wełny pocięta bez odpadu, ale panel pojedynczy
    jest teraz o 30 mm dłuższy (żeby zejść się z kompletem na ścianie), więc
    pochłania nieco więcej — różnica ok. 3 %, akustycznie wciąż nieistotna. */
@@ -235,26 +245,32 @@ sprawdz(mieszany2.zewn===w100.zewn&&mieszany2.zewn===mozaika.zewn,
   'zestaw mieszany zajmuje na ścianie tyle samo co oba formaty z osobna — krawędzie się zgadzają');
 sprawdz(mieszany2.sklad.indexOf('1060 × 640')>=0&&mieszany2.sklad.indexOf('640 × 420')>=0,
   'skład zestawu mieszanego wymienia panele obu rodzajów');
-sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.6&&nuo.alfa[250]===0.85,
+sprawdz(w100.alfa[250]===0.67&&w50.alfa[250]===0.36&&nuo50.alfa[250]===0.46&&nuo.alfa[250]===0.71,
   'do rachunku idzie α wybranego wariantu, nie jedna tabela dla wszystkich');
 /* Wełna kupowana na spec 40–60 kg/m³: α musi być najgorsza z przedziału,
    inaczej obietnica trzyma się tylko przy szczęśliwej dostawie. */
 sprawdz(w100.alfa[500]===0.77&&w100.alfa[1000]===0.85,
   'wełna liczona najgorszym przypadkiem z przedziału 40–60 kg/m³');
-/* Grubość absorbera NUO zmienia dół pasma, a nie liczbę paneli: oba warianty
-   nasycają się na 1,00 w pasmach mowy, z których liczy się Tmid. */
-sprawdz(nuo.szt===nuo50.szt&&nuo.pow===nuo50.pow,
-  'grubość absorbera NUO nie zmienia liczby paneli, tylko dół pasma');
+/* Grubość wełny w NUO zmienia dół pasma, a nie liczbę paneli: w pasmach mowy
+   oba warianty wypadają praktycznie tak samo (0,85/0,91 wobec 0,85/0,93).
+   Przy 125 Hz różnica jest za to trzykrotna — i to ona uzasadnia Premium. */
+sprawdz(nuo.szt===nuo50.szt,
+  'grubość wełny w NUO nie zmienia liczby paneli, tylko dół pasma');
+sprawdz(nuo.alfa[125]/nuo50.alfa[125]>2.5,
+  'Premium NUO sięga w dole pasma ponad dwukrotnie głębiej niż Standard');
 sprawdz(w50.pow>w100.pow,'wełna 50 mm wymaga większej powierzchni niż 100 mm');
-sprawdz(nuo.pow<w100.pow,'NUO wymaga mniejszej powierzchni — α 1,00 w pasmach mowy');
-sprawdz(nuo50.zrodlo.indexOf('NUO_WALL')>=0&&nuo.zrodlo.indexOf('SZACUNEK')>=0&&
-  w100.zrodlo.indexOf('Mikiego')>=0,
-  'eksport podaje właściwe źródło α — także to, że 100 mm NUO jest szacunkiem');
+sprawdz(nuo.pow<w100.pow,'NUO wymaga mniejszej powierzchni — mikroperforacja przepuszcza w pasmach mowy');
+/* Po przejściu na model obie wartości NUO mają JEDNO źródło i żadna nie jest
+   już szacunkiem przeskalowanym z cudzej krzywej. */
+sprawdz(nuo50.zrodlo.indexOf('Maa')>=0&&nuo.zrodlo.indexOf('Maa')>=0&&
+  nuo.zrodlo.indexOf('SZACUNEK')<0&&w100.zrodlo.indexOf('Mikiego')>=0,
+  'eksport podaje źródło α — NUO z modelu Maa, bez szacunku');
 /* Format z poprzedniego wykończenia nie może wywrócić rachunku — wybór cofa
-   się wtedy do pierwszego formatu wykończenia właśnie wybranego. */
-const mieszany=policz('nuo','n100','k1');
-sprawdz(mieszany.czynne===0.628&&mieszany.szt>0,
-  'format wspólny dla obu wykończeń liczy się tak samo');
+   się wtedy do pierwszego formatu wykończenia właśnie wybranego. Odkąd
+   formaty są różne, ta ścieżka jest realna przy każdej zmianie wykończenia. */
+const poZmianie=policz('nuo','n100','k1');
+sprawdz(Math.abs(poZmianie.czynne-0.4473)<0.0005&&poZmianie.szt>0,
+  'po zmianie wykończenia rachunek bierze format tego wykończenia');
 
 console.log('\nRekomendacja wersji — ma wskazywać pomiar, nie cennik');
 /* Wersję wybiera równowaga tonalna po adaptacji, liczona osobno dla obu

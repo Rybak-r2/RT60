@@ -251,8 +251,7 @@
   S["Zapisz wynik"]="Save the result";
   S["Podstawa rachunku"]="Basis of the calculation";
   S["np. 0,45"]="e.g. 0.45";
-  S["α dla absorbera 100 mm — szacunek z krzywej producenta przeliczonej na głębszy wariant; wartość tymczasowa do czasu otrzymania tabeli α_p."]="α for the 100 mm absorber — an estimate from the manufacturer's curve rescaled to the deeper variant; provisional until the α_p table arrives.";
-  S["α odczytane z wykresu α_p w ulotce producenta (10.2021) — odczyt z obrazka, nie tabela."]="α read off the α_p chart in the manufacturer's leaflet (10.2021) — read from an image, not a table.";
+  S["α policzone z geometrii panelu: mikroperforacja forniru (otwór 0,5 mm, raster 3 mm) modelem Maa, wełna 40–60 kg/m³ za nim modelem Mikiego, wartość najmniejsza z przedziału gęstości w każdym paśmie."]="α computed from the panel's own geometry: the micro-perforated veneer (0.5 mm holes, 3 mm pitch) by the Maa model, the 40–60 kg/m³ wool behind it by the Miki model, taking the lowest value in the density range for each band.";
   S["α z modelu Mikiego dla wełny 40–60 kg/m³, wartość najmniejsza z tego przedziału w każdym paśmie — wartości tymczasowe do czasu otrzymania tabeli α_p od producenta wełny."]="α from the Miki model for wool of 40–60 kg/m³, taking the lowest value in that range for each band — provisional until the α_p table arrives from the wool manufacturer.";
   S["Liczone z samego lica panelu: boki i tył są lite, więc nie pochłaniają."]="Computed from the panel face alone: the sides and back are solid, so they do not absorb.";
   S["Przejęty wprost z badania, godz. {godz}."]="Taken straight from the test, {godz}.";
@@ -345,7 +344,7 @@
   S["Uwaga na równowagę tonalną."]="Mind the tonal balance.";
   S["Stosunek T(250 Hz) do T(1 kHz) rośnie z {przed} na {po} — pomieszczenie wytłumi się mocniej w górze pasma niż w dole i może sprawiać wrażenie ciężkiego."]="The ratio of T(250 Hz) to T(1 kHz) rises from {przed} to {po} — the room will be damped more at the top of the band than at the bottom and may feel heavy.";
   S["<b>Wełna 100 mm zamiast 50 mm rozwiązuje to bez dokładania paneli</b> — przy 250 Hz pochłania niemal dwa razy więcej."]="<b>100 mm wool instead of 50 mm solves this without adding panels</b> — at 250 Hz it absorbs almost twice as much.";
-  S["NUO pochłania wąsko, ze szczytem 500–1000 Hz. <b>Absorber 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm."]="NUO absorbs over a narrow range, peaking at 500–1000 Hz. <b>The 100 mm absorber reaches lower and does not change the panel count</b> — and if that is not enough, textile panels with 100 mm wool will help at the low end.";
+  S["NUO pochłania wąsko, bo mikroperforacja przestaje przepuszczać w górze pasma. <b>Wełna 100 mm sięga niżej i nie zmienia liczby paneli</b> — a jeśli to nie wystarczy, w dole pasma pomogą panele tekstylne z wełną 100 mm."]="NUO absorbs over a narrow range, because the micro-perforation stops letting sound through at the top of the band. <b>100 mm wool reaches lower and does not change the panel count</b> — and if that is not enough, textile panels with 100 mm wool will help at the low end.";
   S["Nie mieści się na wybranych powierzchniach."]="They do not fit on the selected surfaces.";
   S["Panele zajmą {potrzeba} m², dostępne około {dostepne} m². Rozłóż je na ściany i sufit albo przyjmij łagodniejszy cel."]="The panels will take up {potrzeba} m², with about {dostepne} m² available. Spread them over walls and ceiling or accept a gentler target.";
   S["cel Tmid"]="Tmid target";
@@ -440,6 +439,11 @@
   S["Dwa panele w komplecie, z jednej płyty przeciętej wzdłuż. Do układania mozaiki na ścianie i suficie."]="Two panels per set, cut lengthwise from one board. For laying mosaics on walls and ceilings.";
   S["Zestaw mieszany — po połowie"]="Mixed set — half and half";
   S["Połowa sztuk to panel duży, połowa to komplet mozaikowy. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania dokładnie tyle samo."]="Half the units are the large panel, half are the mosaic set. Three formats on the wall and the greatest freedom in arranging them. Absorption is exactly the same.";
+  S["Panel 1000 × 500 mm"]="Panel 1000 × 500 mm";
+  S["Jedna sztuka, lico czynne 964 × 464 mm."]="One unit, active face 964 × 464 mm.";
+  S["Komplet 500 × 500 i 2 × 500 × 250 mm"]="Set of 500 × 500 and 2 × 500 × 250 mm";
+  S["Trzy panele w komplecie, składające się w linii w panel duży. Do układania mozaiki na ścianie i suficie."]="Three panels per set, which line up into the large panel. For laying mosaics on walls and ceilings.";
+  S["Połowa sztuk to panel duży, połowa to komplet. Trzy formaty na ścianie, największa swoboda w układaniu. Pochłania o około 4 % mniej niż same panele duże."]="Half the units are the large panel, half are the set. Three formats on the wall and the greatest freedom in arranging them. Absorption is about 4 % lower than with large panels alone.";
   S["Panele tekstylne"]="Textile panels";
   S["Wełna mineralna w ramie z płyty drewnopochodnej, lico obszyte tkaniną akustycznie transparentną. Dowolny kolor tkaniny."]="Mineral wool in a wood-based board frame, the face covered with acoustically transparent fabric. Any fabric colour.";
   S["Premium · wełna 100 mm, mocniej w dole pasma"]="Premium · 100 mm wool, stronger at the low end";
@@ -447,11 +451,9 @@
   S["Standard · wełna 50 mm"]="Standard · 50 mm wool";
   S["Pracuje w paśmie mowy, od około 800 Hz w górę. W dole pasma wypada wyraźnie słabiej — tam, gdzie wnętrze dudni, nie wystarczy."]="It works in the speech range, from about 800 Hz up. At the low end it is markedly weaker — where a room booms, it is not enough.";
   S["Panele drewniane NUO_WALL"]="NUO_WALL wooden panels";
-  S["Fornir drewniany perforowany laserowo, w ramie, z absorberem na odwrocie. Materiał muto' GmbH — wybór gatunku drewna i grawerunku."]="Laser-perforated wood veneer in a frame, with an absorber behind it. Material by muto' GmbH — choice of wood species and engraving.";
-  S["Premium · absorber 100 mm, mocniej w dole pasma"]="Premium · 100 mm absorber, stronger at the low end";
-  S["Grubszy absorber sięga niżej. Liczby sztuk to nie zmienia — w pasmach mowy oba warianty pochłaniają niemal wszystko — zmienia dół pasma i przez to równowagę tonalną. Wartość dla tej głębokości jest szacunkiem: producent podaje jedną krzywą, bez rozbicia na warianty."]="The thicker absorber reaches lower. It does not change the number of units — in the speech bands both variants absorb almost everything — it changes the low end and with it the tonal balance. The value for this depth is an estimate: the manufacturer publishes a single curve, without a breakdown by variant.";
-  S["Standard · absorber 50 mm"]="Standard · 50 mm absorber";
-  S["Wariant płytszy, z krzywą pochłaniania wprost z ulotki producenta. Szczyt 500–1000 Hz, w dole pasma wyraźnie słabszy — przy 125 Hz pochłania 0,10."]="The shallower variant, with the absorption curve straight from the manufacturer's leaflet. It peaks at 500–1000 Hz and is markedly weaker at the low end — at 125 Hz it absorbs 0.10.";
+  S["Fornir drewniany mikroperforowany laserowo, naciągnięty na ramiak, z wełną mineralną w stalowej obudowie. Materiał muto' GmbH — wybór gatunku drewna i grawerunku."]="Laser micro-perforated wood veneer stretched over a stretcher frame, with mineral wool in a steel housing. Material by muto' GmbH — choice of wood species and engraving.";
+  S["Grubsza wełna sięga niżej: przy 125 Hz pochłania 0,51 wobec 0,17. Liczby sztuk to praktycznie nie zmienia — w pasmach mowy oba warianty wypadają tak samo — zmienia dół pasma i przez to równowagę tonalną."]="The thicker wool reaches lower: at 125 Hz it absorbs 0.51 against 0.17. It barely changes the number of units — in the speech bands both variants perform the same — it changes the low end and with it the tonal balance.";
+  S["Wariant płytszy. W pasmach mowy pracuje tak samo jak Premium, w dole pasma wyraźnie słabiej — przy 125 Hz pochłania 0,17."]="The shallower variant. In the speech bands it performs the same as Premium, at the low end markedly weaker — at 125 Hz it absorbs 0.17.";
   S["Restauracja"]="Restaurant";
   S["Pokój odsłuchowy"]="Listening room";
   S["Pomiar z tego badania"]="The measurement from this test";
